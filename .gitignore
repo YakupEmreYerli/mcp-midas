@@ -1,0 +1,17 @@
+# Credentials — never commit
+.env
+
+# Playwright persistent browser profile (contains session cookies)
+.midas-session/
+.midas-state.json
+
+# Build & deps
+node_modules/
+dist/
+
+# Discovery output (may contain account data)
+discovery/
+
+# Scan output — belongs to a separate project, kept out of this repo
+scans/
+*-log.txt

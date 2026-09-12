@@ -3,7 +3,7 @@
 Midas Atlas API'sine **salt okuma** erişimi veren MCP sunucusu. BIST portföyünü,
 pozisyonları ve işlem geçmişini okur; hiçbir emir göndermez.
 
-> **İkiz dosya:** bu dosyanın eşi `AGENTS.md`. Birini değiştirirsen diğerini de değiştir.
+> **İkiz dosya:** bu dosyanın eşi `CLAUDE.md`. Birini değiştirirsen diğerini de değiştir.
 
 ## Bağlayıcı kurallar
 

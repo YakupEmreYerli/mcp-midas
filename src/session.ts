@@ -40,15 +40,17 @@ export class MidasSession {
       // The saved state is stale (refresh_token lives ~24h), and a headless browser cannot
       // show the SSO form or the push prompt. Relaunch visibly just long enough to log in,
       // snapshot the fresh tokens, then go back to the mode the caller asked for.
+      // The stale snapshot is dropped first: its localStorage is replayed by an init script
+      // on every navigation, which would overwrite the fresh tokens right after the callback
+      // and bounce the app from /dashboard back to /login.
+      await this.closeContext();
+      fs.rmSync(config.stateFile, { force: true });
+      await this.launch(false);
+      if (this.needsLogin()) await this.login(true);
+      await this.saveState();
       if (this.headless) {
         await this.closeContext();
-        await this.launch(false);
-        if (this.needsLogin()) await this.login(false);
-        await this.saveState();
-        await this.closeContext();
         await this.launch(true);
-      } else {
-        await this.login(false);
       }
     }
 
@@ -120,7 +122,7 @@ export class MidasSession {
         await this.context!.addInitScript(
           `(() => { if (location.origin !== ${JSON.stringify(origin.origin)}) return;
              for (const [k, v] of ${JSON.stringify(items.map((i: any) => [i.name, i.value]))}) {
-               try { localStorage.setItem(k, v); } catch {}
+               try { if (localStorage.getItem(k) === null) localStorage.setItem(k, v); } catch {}
              } })()`
         );
       }

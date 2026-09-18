@@ -26,8 +26,24 @@ export class MidasSession {
   }
 
   async ensureStarted(): Promise<void> {
+    if (this.starting) return this.starting;
     if (this.page && !this.page.isClosed()) return;
     this.starting ??= this.start().finally(() => {
+      this.starting = null;
+    });
+    return this.starting;
+  }
+
+  /**
+   * Recreate an expired session inside the running MCP process. Concurrent callers share
+   * this one visible login flow through `starting`.
+   */
+  async reauthenticate(): Promise<void> {
+    if (this.starting) return this.starting;
+    this.starting = (async () => {
+      await this.closeContext();
+      await this.start();
+    })().finally(() => {
       this.starting = null;
     });
     return this.starting;
@@ -36,7 +52,7 @@ export class MidasSession {
   private async start(): Promise<void> {
     await this.launch(this.headless);
 
-    if (this.needsLogin()) {
+    if (this.needsLogin() || !(await this.isAuthenticated())) {
       // The saved state is stale (refresh_token lives ~24h), and a headless browser cannot
       // show the SSO form or the push prompt. Relaunch visibly just long enough to log in,
       // snapshot the fresh tokens, then go back to the mode the caller asked for.
@@ -46,7 +62,13 @@ export class MidasSession {
       await this.closeContext();
       fs.rmSync(config.stateFile, { force: true });
       await this.launch(false);
-      if (this.needsLogin()) await this.login(true);
+      if (this.needsLogin() || !(await this.isAuthenticated())) {
+        await this.clearAppStorage();
+        await this.login(true);
+        if (!(await this.isAuthenticated())) {
+          throw new Error("Midas login finished but the API still rejects the session (HTTP 401).");
+        }
+      }
       await this.saveState();
       if (this.headless) {
         await this.closeContext();
@@ -131,6 +153,47 @@ export class MidasSession {
     }
   }
 
+  /**
+   * The URL alone cannot be trusted: the persistent profile keeps `midas:member-uid` and
+   * the expiry keys in localStorage after the auth cookies are gone, so the app renders
+   * /dashboard for a dead session. Ask the API gateway directly — it answers 401 when
+   * the cookies are missing or expired.
+   */
+  private async isAuthenticated(): Promise<boolean> {
+    const page = this.page!;
+    for (let i = 0; i < 40 && !this.rid; i++) await page.waitForTimeout(250);
+    if (!this.rid) return false;
+    const status = (await page
+      .evaluate(
+        `(async () => (await fetch(${JSON.stringify(config.graphqlUrl)}, {
+           method: "POST",
+           credentials: "include",
+           headers: {
+             "content-type": "application/json",
+             "midas-app-id": "midas_web",
+             "x-apollo-operation-name": "__typename",
+             "x-client-version": ${JSON.stringify(config.clientVersion)},
+             "x-midas-rid": ${JSON.stringify(this.rid)},
+           },
+           body: JSON.stringify({ query: "{__typename}" }),
+         })).status)()`
+      )
+      .catch(() => 0)) as number;
+    return status !== 0 && status !== 401 && status !== 403;
+  }
+
+  /** Drops the app's stale localStorage so it stops pretending to be logged in and shows the SSO form. */
+  private async clearAppStorage(): Promise<void> {
+    const page = this.page!;
+    await page.evaluate(`localStorage.clear(); sessionStorage.clear()`).catch(() => {});
+    await page.goto(config.atlasUrl, { waitUntil: "domcontentloaded" }).catch(() => {});
+    await page.waitForTimeout(3000);
+    if (!this.needsLogin()) {
+      await page.goto(new URL("login", config.atlasUrl).href, { waitUntil: "domcontentloaded" }).catch(() => {});
+      await page.waitForTimeout(3000);
+    }
+  }
+
   private needsLogin(): boolean {
     const url = this.page!.url();
     return url.includes("sso.getmidas.com") || url.includes("/login");
@@ -206,6 +269,22 @@ export class MidasSession {
   async getMemberUid(): Promise<string> {
     await this.ensureStarted();
     return this.memberUid!;
+  }
+
+  isStarted(): boolean {
+    return !!this.page && !this.page.isClosed();
+  }
+
+  /**
+   * Reloads an idle, already-open session and snapshots it. Never starts a browser or a
+   * login on its own: a push prompt nobody asked for would just time out.
+   */
+  async keepAlive(): Promise<void> {
+    if (this.starting || !this.isStarted() || this.needsLogin()) return;
+    await this.page!.reload({ waitUntil: "domcontentloaded" });
+    await this.page!.waitForTimeout(3000);
+    if (this.needsLogin()) return;
+    await this.saveState();
   }
 
   async close(): Promise<void> {

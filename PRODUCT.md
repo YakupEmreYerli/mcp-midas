@@ -36,7 +36,7 @@ Evet'e basmak zor, bilinçli Evet kolaydır.
 ## Capabilities and Constraints
 
 - Onay kapısı atlanamaz: ajanın cevaplayabileceği hiçbir kanal (HTTP, dosya, env) olmaz.
-- Pencere yerel HTML çizer; ağ erişimi ve dış kaynak yoktur, fontlar sistemden gelir.
+- Pencere yerel HTML çizer; ağ erişimi ve dış kaynak yoktur. Martian Mono depodaki alt kümeden (`onay/fontlar/`) `data:` URL olarak gömülür, Fira Sans sistemden gelir.
 - Geri dönüş zinciri: tasarımlı pencere → kdialog → zenity → yoksa işlem reddedilir.
 - Para biçimi Türkçe (₺1.234,56).
 

@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import * as midas from "./midas.js";
 import { getTechnicals, getCandles } from "./technicals.js";
+import { getTransactions, getTransactionFilters } from "./history.js";
 
 /**
  * Builds a fresh MCP server with every Midas tool registered. The browser session is a
@@ -72,7 +73,9 @@ export function createServer(): McpServer {
 
   tool(
     "get_asset_info",
-    "Get descriptive information about an instrument (full name, market, description) together with its current price.",
+    "Get descriptive information about an instrument (full name, market, description) together with its current price, " +
+      "plus the Atlas instrument-page stats: for TEFAS funds risk level (riskLevel), value dates, tax, annual management fee " +
+      "and investor count; for stocks daily band, 52-week range and ratios. Symbol search is fuzzy: check exactMatch and name.",
     { symbol: z.string().describe("Ticker or company name to look up") },
     ({ symbol }) => midas.getAssetInfo(symbol),
     READ_ONLY
@@ -117,9 +120,47 @@ export function createServer(): McpServer {
 
   tool(
     "get_pending_orders",
-    "List orders for a symbol that are still waiting to execute, including their order ids for cancellation.",
-    { symbol: z.string().describe("Ticker whose pending orders to list") },
+    "List orders still waiting to execute, with their order ids. Omit symbol to get every pending order on every " +
+      "account (BIST, TEFAS, US) in one call; with a symbol only that instrument's orders.",
+    { symbol: z.string().optional().describe("Optional ticker; omit for all pending orders") },
     ({ symbol }) => midas.getPendingOrders(symbol),
+    READ_ONLY
+  );
+
+  tool(
+    "get_transactions",
+    "Account activity history (Atlas 'İşlem geçmişi'), newest first: stock/ETF/TEFAS fund buys and sells, TL deposits " +
+      "and withdrawals, FX buys/sells, fund interest (nema), withholding tax (stopaj), dividends, instant cash. Each row has " +
+      "date/time, category, symbol, side, order type, quantity, average price, amount, currency and status " +
+      "(COMPLETED, PENDING, CANCELLED, REJECTED, EXPIRED). Pending rows are always included. Defaults to the last 30 days.",
+    {
+      from_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe("Inclusive start date YYYY-MM-DD (default: 30 days ago)"),
+      to_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe("Inclusive end date YYYY-MM-DD (default: today)"),
+      status: z.enum(["ALL", "COMPLETED", "PENDING"]).optional().describe("Default ALL"),
+      filter: z
+        .string()
+        .optional()
+        .describe(
+          "Atlas category id: orders, o_buy, o_sell, journal, j_try, j_usd, exchange, e_usd, interest, i_try, dividend, instant_cash, other. " +
+            "get_transaction_filters lists all"
+        ),
+      details: z
+        .boolean()
+        .optional()
+        .describe("Also fetch each row's detail sheet (exact time, FX rate, commission, bank…); one extra request per row"),
+      limit: z.number().int().positive().max(500).optional().describe("Rows per page, default 100"),
+      offset: z.number().int().min(0).optional().describe("Rows to skip for paging"),
+    },
+    ({ from_date, to_date, status, filter, details, limit, offset }) =>
+      getTransactions({ fromDate: from_date, toDate: to_date, status, filter, details, limit, offset }),
+    READ_ONLY
+  );
+
+  tool(
+    "get_transaction_filters",
+    "List the Atlas transaction-history category tree (id, name, parentId) usable as get_transactions filter.",
+    {},
+    () => getTransactionFilters(),
     READ_ONLY
   );
 

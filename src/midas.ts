@@ -13,6 +13,7 @@ import {
 import { executeWithApproval, type ApprovalPreview } from "./order-approval.js";
 import { createOrderAuditLogger } from "./order-audit.js";
 import { session } from "./session.js";
+import { getAllPendingOrders } from "./history.js";
 import * as Q from "./queries.js";
 
 export type { Side } from "./order-domain.js";
@@ -172,19 +173,72 @@ export async function getAssetPrice(symbol: string, currency?: "TRY" | "USD") {
   };
 }
 
-/** Descriptive info plus current pricing for a symbol. */
+/** "Risk seviyesi" → "riskSeviyesi"-style keys would hide the Turkish labels, so keep them verbatim. */
+function statsObject(items: Array<{ key: string; value: string }> | null | undefined): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const item of items ?? []) if (item?.key) out[item.key] = item.value;
+  return out;
+}
+
+/**
+ * Descriptive info plus current pricing for a symbol. `stats` is the key/value block of the
+ * Atlas instrument page: for TEFAS funds risk level, value dates, tax, annual fee and
+ * investor count; for stocks price band, 52-week range and ratios. Search is fuzzy, so
+ * `exactMatch` says whether the resolved ticker equals the one asked for.
+ */
 export async function getAssetInfo(symbol: string) {
   const asset = await resolveSymbol(symbol);
-  const price = await getAssetPrice(asset.symbol);
+  const [price, overview, snapshot] = await Promise.all([
+    getAssetPrice(asset.symbol),
+    gql("getInstrumentOverview", Q.INSTRUMENT_OVERVIEW, { uid: asset.uid })
+      .then((d) => d.instrumentOverviewSection)
+      .catch(() => null),
+    gql("GetAssetSnapshot", Q.ASSET_SNAPSHOT, { uid: asset.uid, currency: null })
+      .then((d) => d.asset)
+      .catch(() => null),
+  ]);
+  const stats = statsObject(overview?.stats?.items);
+  const isFund = snapshot?.investmentType === "INVESTMENT_FUNDS";
   return {
     ...price,
-    market: asset.country === "TR" ? "BIST" : "US",
+    requestedSymbol: symbol,
+    exactMatch: asset.symbol.toUpperCase() === symbol.trim().toUpperCase(),
+    market: asset.country === "TR" ? (isFund ? "TEFAS" : "BIST") : "US",
+    investmentType: snapshot?.investmentType ?? null,
     description: asset.subtitle,
+    ...(isFund ? { riskLevel: stats["Risk seviyesi"] ?? null } : {}),
+    stats,
+    digest: overview?.digestDetail
+      ? {
+          direction: overview.digestDetail.direction ?? null,
+          comment: overview.digestDetail.comment ?? null,
+          completedAgo: overview.digestDetail.completedAgo ?? null,
+        }
+      : null,
   };
 }
 
-export async function getPendingOrders(symbol: string) {
-  const asset = await resolveSymbol(symbol);
+/**
+ * Pending orders. Without a symbol: every pending order on every account in one call.
+ * With a symbol: the per-instrument list when the ticker resolves exactly, otherwise the
+ * all-accounts list filtered by ticker (search misses some US ETFs).
+ */
+export async function getPendingOrders(symbol?: string) {
+  if (!symbol?.trim()) {
+    const orders = await getAllPendingOrders();
+    return { symbol: null, count: orders.length, orders };
+  }
+  const wanted = symbol.trim().toUpperCase();
+  let asset: ResolvedAsset | null = null;
+  try {
+    asset = await resolveSymbol(symbol);
+  } catch (error) {
+    if (!(error instanceof MidasApiError)) throw error;
+  }
+  if (!asset || asset.symbol.toUpperCase() !== wanted) {
+    const orders = (await getAllPendingOrders()).filter((o) => o.symbol?.toUpperCase() === wanted);
+    return { symbol: wanted, source: "all-accounts", count: orders.length, orders };
+  }
   const account = await accountFor(asset.country === "TR" ? "TR" : "US");
   const data = await gql("PendingOrders", Q.PENDING_ORDERS, {
     accountUid: account.accountUid,

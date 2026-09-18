@@ -279,3 +279,206 @@ export const PENDING_ORDERS = /* GraphQL */ `
     }
   }
 `;
+
+/**
+ * Account activity list behind Atlas' "İşlem geçmişi" screen: orders, money transfers,
+ * FX, fund interest, withholding tax, dividends. Rows are display-shaped (title, day and
+ * month without year, formatted amount); structure comes from RECENT_ORDERS and
+ * TRANSACTION_DETAIL. `selectedFilterPath` is the id chain from the filter tree root,
+ * e.g. ["orders", "o_buy"]; a leaf id alone is rejected.
+ */
+export const TRANSACTION_HISTORY = /* GraphQL */ `
+  query TempTransactionHistory(
+    $memberUid: String!
+    $status: TransactionStatus
+    $selectedFilterPath: [String!]
+    $page: Int
+    $size: Int
+  ) {
+    tempTransactionHistory(
+      memberUid: $memberUid
+      status: $status
+      selectedFilterPath: $selectedFilterPath
+      page: $page
+      size: $size
+    ) {
+      hasMore
+      page
+      pageSize
+      items {
+        uid
+        accountUid
+        type
+        typeV2
+        detail {
+          title
+          titleDescription {
+            description
+            subDescription {
+              text
+            }
+          }
+          trailing {
+            ... on ListDetailTrailingText {
+              text
+            }
+            ... on ListDetailTrailingTag {
+              tagText
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const TRANSACTION_FILTER_TREE = /* GraphQL */ `
+  query TransactionHistoryFilterTree {
+    transactionHistoryFilterTree {
+      filters {
+        id
+        name
+        parentId
+        leaf
+      }
+    }
+  }
+`;
+
+/** Detail sheet for one history row; `transactionDetailType` is the row's typeV2. */
+export const TRANSACTION_DETAIL = /* GraphQL */ `
+  query TempDetailPage(
+    $accountUid: String!
+    $memberUid: String!
+    $transactionDetailType: String!
+    $uid: String!
+  ) {
+    tempDetailPage(
+      accountUid: $accountUid
+      memberUid: $memberUid
+      transactionDetailType: $transactionDetailType
+      uid: $uid
+    ) {
+      subHeader {
+        title
+      }
+      timeline {
+        title
+        subTitle
+        state
+      }
+      items {
+        ...DetailPageItem
+      }
+      sectionItems {
+        title
+        items {
+          ...DetailPageItem
+        }
+      }
+    }
+  }
+
+  fragment DetailPageTrailing on TRDListInfoHorizontalTrailing {
+    ... on TRDListInfoHorizontalTrailingText {
+      text
+    }
+    ... on TRDListInfoHorizontalTrailingTag {
+      tagText
+    }
+  }
+
+  fragment DetailPageRow on TRDListInfoHorizontal {
+    title
+    trailing {
+      ...DetailPageTrailing
+    }
+  }
+
+  fragment DetailPageItem on GenericDetailPageV3Items {
+    ... on TRDListInfoHorizontal {
+      ...DetailPageRow
+    }
+    ... on ListInfoDropdown {
+      parent {
+        ...DetailPageRow
+      }
+      children {
+        title
+        trailing {
+          ...DetailPageTrailing
+        }
+      }
+    }
+  }
+`;
+
+const RECENT_ORDER_FIELDS = `
+  accountUid
+  description
+  status
+  subDescription
+  symbol
+  timestamp
+  title
+  trailingDetail
+  type
+  uid
+  transactionDetails {
+    __typename
+    ... on OrderDetails {
+      country
+      createdAt
+      currency
+      filledAveragePrice
+      filledQuantity
+      investmentType
+      clientOrderType
+      limitPrice
+      notional
+      quantity
+      side
+      stockUid
+      stopPrice
+      totalPrice
+      type
+    }
+  }
+`;
+
+/**
+ * Every pending order across all accounts plus the order history, with structured
+ * quantity/price/amount fields. Needs no symbol, unlike PENDING_ORDERS.
+ */
+export const RECENT_ORDERS = /* GraphQL */ `
+  query RecentOrdersV2($memberUid: String!, $page: Int!, $size: Int!) {
+    recentOrdersV2(memberUid: $memberUid, page: $page, size: $size) {
+      error
+      pendingOrders {
+        ${RECENT_ORDER_FIELDS}
+      }
+      orderHistory {
+        ${RECENT_ORDER_FIELDS}
+      }
+    }
+  }
+`;
+
+/** Key/value stats shown on an instrument page (fund risk level, fees; stock ratios). */
+export const INSTRUMENT_OVERVIEW = /* GraphQL */ `
+  query getInstrumentOverview($uid: String!) {
+    instrumentOverviewSection(uid: $uid) {
+      stats {
+        items {
+          key
+          value
+        }
+      }
+      digestDetail {
+        direction
+        comment
+        completedAgo
+      }
+    }
+  }
+`;

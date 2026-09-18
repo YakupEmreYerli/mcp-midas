@@ -32,8 +32,10 @@ confirmation. Attempts and results are appended to `.midas-orders.log.jsonl` wit
 | `get_portfolio` | – | Total value in TRY, today's P/L, and cash and buying power per account (TRY / USD / EUR) |
 | `get_assets` | – | Every open position: quantity, average cost, price, market value, P/L |
 | `get_asset_price` | `symbol`, optional `currency` | Last price, previous close, % change, session status |
-| `get_asset_info` | `symbol` | Instrument name, market and description, plus current price |
-| `get_pending_orders` | `symbol` | Orders still waiting to execute |
+| `get_asset_info` | `symbol` | Instrument name, market and description, current price, and the Atlas instrument-page stats (TEFAS funds: risk level, value dates, tax, management fee; stocks: daily band, 52-week range, ratios). `exactMatch` flags fuzzy symbol hits |
+| `get_pending_orders` | `symbol?` | Orders still waiting to execute; without `symbol`, every pending order on every account in one call |
+| `get_transactions` | `from_date?`, `to_date?`, `status?`, `filter?`, `details?`, `limit?`, `offset?` | Account activity (Atlas "İşlem geçmişi"): stock/ETF/fund trades, TL transfers, FX, fund interest, withholding tax, dividends; date, symbol, side, quantity, average price, amount, currency, status. Default: last 30 days |
+| `get_transaction_filters` | – | Category ids usable as `get_transactions` `filter` |
 | `get_technicals` | `symbol`, optional `interval` | RSI(14), SMA/EMA (20/50/200), MACD, Bollinger Bands, ATR, annualized volatility, 52-week range, swing pivots, volume vs average |
 | `get_chart` | `symbol`, optional `interval`, `limit` | Raw OHLCV candles (max 500) |
 | `place_order` | exact `symbol`, `side`, optional `order_type`, `quantity`, `amount_try`, `limit_price` | BIST stock MARKET/LIMIT orders and TEFAS DEMAND sell orders, after desktop confirmation |

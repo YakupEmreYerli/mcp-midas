@@ -23,6 +23,13 @@ ekranın olmaması ve pencere hataları reddedilir. Pencere hataları kullanıc�
 olarak değil, hata olarak bildirilir. MCP şemalarında onay ya da atlatma alanı yoktur;
 sunucu onaydan sonra enstrümanı ve fiyatı birebir yeniden doğrular.
 
+**Onay penceresi yalnız kendine dokunur.** Pencere çerçevesizdir; başlık çubuğu sayfanın
+künye şerididir. Şeritteki kapat düğmesi, Esc ve pencereyi kapatmak yalnız Hayır üretir;
+Evet'e giden tek yol düğmeyi basılı tutmaktır. Wayland'de KWin'e yüklenen geçici betik
+(`onay/onay.py`, `KWIN_SCRIPT`) yalnız onay sürecinin PID'ine ait pencereyi üstte tutar,
+ortalar ve öne alır; karar sonunda kaldırılır. `onay/masaustu-kur.sh` yalnız kullanıcı
+dizinine bir `.desktop` dosyası ve simge yazar (`~/.local/share/`), root istemez.
+
 **Kimlik bilgileri makineden çıkmaz.** `MIDAS_PHONE` ve `MIDAS_PASSWORD` ortamdan okunur ve
 tek bir yerde kullanılır: Midas'ın kendi SSO formunu doldurmak (`src/session.ts`).
 Loglanmaz, önbelleğe alınmaz, başka bir yere gönderilmez. Koddaki tek ağ hedefleri

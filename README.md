@@ -13,10 +13,13 @@ cookies are attached automatically.
 ## Order safety model
 
 Every write tool resolves the instrument and account from Midas, builds its preview from
-that trusted data, then asks the MCP server process itself to open `kdialog` (or `zenity`
-as a fallback). The default is **No** and the dialog times out as a rejection after 120
-seconds. Missing display, missing dialog programs, dialog errors and closed windows all
-reject the operation. Confirmations are serialized, so only one is visible at a time.
+that trusted data, then asks the MCP server process itself to open a confirmation window:
+a designed local window (`onay/onay.py`, PySide6 + QtWebEngine, preview passed on stdin,
+no network), falling back to `kdialog --menu` and then `zenity` only when the previous one
+could not open at all. The default is **No**; **Yes** must be pressed and held, Enter never
+approves, and Esc, closing the window or 120 seconds of silence answer No. Missing display,
+missing dialog programs and dialog errors reject the operation too, but are reported as
+"confirmation window could not open", never as a user rejection. Confirmations are serialized, so only one is visible at a time.
 
 There is no `confirmed`, `approve` or bypass argument, environment variable or config
 switch in the MCP interface. After approval the server re-resolves the exact symbol and

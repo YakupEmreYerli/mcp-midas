@@ -13,8 +13,9 @@ knowing before you run it.
 
 **Trades require a local human confirmation.** The server can place, update and cancel
 the supported order types, but it cannot send their mutations until its own process has
-shown a `kdialog`/`zenity` preview and the user has selected **Yes**. The default is No;
-timeouts, missing display and dialog failures reject. The MCP schemas have no confirmation
+shown its confirmation window (designed PySide6 window, falling back to `kdialog`/`zenity`)
+and the user has held **Yes**. The default is No; timeouts, missing display and dialog
+failures reject, and dialog failures are reported as errors, not as a user's No. The MCP schemas have no confirmation
 or bypass field, and the server revalidates the exact instrument and price after approval.
 
 **Credentials never leave your machine.** `MIDAS_PHONE` and `MIDAS_PASSWORD` are read

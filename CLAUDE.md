@@ -8,9 +8,14 @@ desteklenen emirleri yalnızca yerel insan onayından sonra gönderebilir.
 ## Bağlayıcı kurallar
 
 - **Onay kapısı atlanamaz.** Her emir oluşturma, güncelleme ve iptal işlemi mutation'dan
-  önce sunucu sürecinin açtığı `kdialog`/`zenity` penceresinde onay ister. Varsayılan Hayır;
-  120 sn zaman aşımı, ekran/pencere yokluğu ve hata rettir. Araç şemasına, ortama veya
-  yapılandırmaya `confirmed`, `approve`, test modu ya da başka bir atlama yolu eklenmez.
+  önce sunucu sürecinin açtığı onay penceresinde onay ister: tasarımlı pencere
+  (`onay/onay.py`, PySide6 + QtWebEngine, veri stdin'den) → açılamazsa `kdialog --menu`
+  → `zenity`. Varsayılan Hayır; Evet basılı tutularak verilir, Enter onaylamaz; Esc, kapatma
+  ve 120 sn zaman aşımı Hayır'dır. Araç hatası kullanıcı reddi sayılmaz: sonuç `error`
+  ("pencere açılamadı: …") olarak döner ve yine rettir; hangi pencerenin açıldığı denetim
+  günlüğüne yazılır. Bir sonraki pencereye yalnız önceki hiç açılamadıysa geçilir.
+  Araç şemasına, ortama veya yapılandırmaya `confirmed`, `approve`, test modu ya da
+  sayfanın/ajanın cevap verebileceği bir kanal (HTTP, dosya, env) eklenmez.
 - **Canlı emir testi yapılmaz.** Geliştirme, test ve inceleme sırasında mutation çalıştırma,
   Midas'a gerçek emir gönderme veya canlı `order-test` yazma/çalıştırma. Bir mutation 401
   alırsa oturumu yenile ama otomatik yeniden gönderme; yeni çağrı yeni onay ister.

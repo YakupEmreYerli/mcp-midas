@@ -33,9 +33,46 @@ export class ApprovalDeniedError extends Error {
   }
 }
 
-type ConfirmationFunction = (preview: ApprovalPreview) => Promise<ConfirmationDecision>;
+export interface DialogAttemptRecord {
+  tool: string;
+  outcome: string;
+  detail?: string;
+}
 
-export function createConfirmationQueue(confirm: ConfirmationFunction): ConfirmationFunction {
+// Kapının ayrıntılı sonucu: hangi pencere açıldı, neden. "error" ve "unavailable"
+// kullanıcı reddi değildir; araç hatasıdır ve öyle raporlanır.
+export interface ConfirmationOutcome {
+  decision: ConfirmationDecision;
+  dialog?: string | null;
+  detail?: string;
+  attempts?: DialogAttemptRecord[];
+}
+
+type ConfirmationFunction = (preview: ApprovalPreview) => Promise<ConfirmationDecision | ConfirmationOutcome>;
+
+function normalizeOutcome(value: ConfirmationDecision | ConfirmationOutcome): ConfirmationOutcome {
+  return typeof value === "string" ? { decision: value } : value;
+}
+
+export function denialMessage(outcome: ConfirmationOutcome): string {
+  const where = outcome.dialog ? ` (pencere: ${outcome.dialog})` : "";
+  switch (outcome.decision) {
+    case "rejected":
+      return `İşlem gönderilmedi: onay penceresinde Hayır seçildi${where}.`;
+    case "timeout":
+      return `İşlem gönderilmedi: onay penceresi 120 sn içinde cevaplanmadı${where}.`;
+    case "unavailable":
+      return `İşlem gönderilmedi: onay penceresi açılamadı: ${outcome.detail ?? "masaüstü oturumu ya da pencere aracı yok"}.`;
+    case "error":
+      return `İşlem gönderilmedi: onay penceresi açılamadı: ${outcome.detail ?? "bilinmeyen hata"}${where}.`;
+    default:
+      return `İşlem gönderilmedi: masaüstü onayı ${outcome.decision}.`;
+  }
+}
+
+export function createConfirmationQueue<R>(
+  confirm: (preview: ApprovalPreview) => Promise<R>
+): (preview: ApprovalPreview) => Promise<R> {
   let tail: Promise<void> = Promise.resolve();
 
   return (preview) => {
@@ -63,28 +100,33 @@ export async function executeWithApproval<T>({
 }): Promise<T> {
   await audit({ event: "preview", action: preview.action, symbol: preview.symbol, details: { preview } });
 
-  let decision: ConfirmationDecision;
+  let outcome: ConfirmationOutcome;
   try {
-    decision = await confirm(preview);
+    outcome = normalizeOutcome(await confirm(preview));
   } catch (error) {
-    decision = "error";
+    const detail = error instanceof Error ? error.message : String(error);
     await audit({
       event: "confirmation",
       action: preview.action,
       symbol: preview.symbol,
-      details: { decision, error: error instanceof Error ? error.message : String(error) },
+      details: { decision: "error", error: detail },
     });
-    throw new ApprovalDeniedError("Onay penceresi açılamadı; işlem güvenli biçimde reddedildi.");
+    throw new ApprovalDeniedError(denialMessage({ decision: "error", detail }));
   }
 
   await audit({
     event: "confirmation",
     action: preview.action,
     symbol: preview.symbol,
-    details: { decision },
+    details: {
+      decision: outcome.decision,
+      dialog: outcome.dialog ?? null,
+      ...(outcome.detail ? { detail: outcome.detail } : {}),
+      ...(outcome.attempts ? { attempts: outcome.attempts } : {}),
+    },
   });
-  if (decision !== "approved") {
-    throw new ApprovalDeniedError(`İşlem gönderilmedi: masaüstü onayı ${decision}.`);
+  if (outcome.decision !== "approved") {
+    throw new ApprovalDeniedError(denialMessage(outcome));
   }
 
   if (revalidate) {

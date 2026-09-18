@@ -16,3 +16,10 @@ discovery/
 # Scan output — belongs to a separate project, kept out of this repo
 scans/
 *-log.txt
+
+# Impeccable inceleme görüntüleri (yerel)
+.impeccable/review/
+
+# Python bayt kodu
+__pycache__/
+*.pyc

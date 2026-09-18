@@ -1,0 +1,275 @@
+/* Midas emir onayı — kapaklı emniyet anahtarı.
+   Tek güvenlik rengi bandı işlem tipini söyler; kırmızı yalnız tehlike (SATIŞ, İPTAL) içindir.
+   Fontlar sistemden gelir (Fira Sans ailesi); ağdan hiçbir şey yüklenmez. */
+
+:root {
+  --yazi: "Fira Sans", "Noto Sans", "DejaVu Sans", sans-serif;
+  --sinyal-yazi: "Fira Sans Condensed", "Fira Sans", "Noto Sans", sans-serif;
+  --kimlik-yazi: "Hack", "DejaVu Sans Mono", monospace;
+
+  --r: 6px;
+  --bosluk: 28px;
+
+  /* Açık tema: soğuk açık çelik panel. */
+  --zemin: oklch(0.972 0.004 250);
+  --yuzey: oklch(0.995 0.002 250);
+  --murekkep: oklch(0.2 0.012 255);
+  --ikincil: oklch(0.44 0.014 255);
+  --soluk: oklch(0.56 0.012 255);
+  --cizgi: oklch(0.86 0.008 255);
+  --cizgi-guclu: oklch(0.3 0.012 255);
+  --hayir-zemin: oklch(0.24 0.014 255);
+  --hayir-yazi: oklch(0.985 0.003 250);
+  --odak: oklch(0.2 0.012 255);
+
+  /* Güvenlik renkleri: bant dolgusu, bant yazısı, nötr zemindeki metin tonu. */
+  --tehlike: oklch(0.52 0.2 27);
+  --tehlike-yazi: oklch(0.99 0.005 27);
+  --tehlike-ton: oklch(0.5 0.19 27);
+  --alis: oklch(0.5 0.12 158);
+  --alis-yazi: oklch(0.99 0.005 158);
+  --alis-ton: oklch(0.46 0.11 158);
+  --dikkat: oklch(0.83 0.155 82);
+  --dikkat-yazi: oklch(0.2 0.03 70);
+  --dikkat-ton: oklch(0.5 0.11 70);
+}
+
+:root[data-theme="koyu"] {
+  /* Koyu tema: grafit panel. */
+  --zemin: oklch(0.2 0.008 255);
+  --yuzey: oklch(0.235 0.009 255);
+  --murekkep: oklch(0.95 0.004 250);
+  --ikincil: oklch(0.76 0.01 255);
+  --soluk: oklch(0.66 0.01 255);
+  --cizgi: oklch(0.34 0.01 255);
+  --cizgi-guclu: oklch(0.78 0.008 255);
+  --hayir-zemin: oklch(0.93 0.004 250);
+  --hayir-yazi: oklch(0.18 0.01 255);
+  --odak: oklch(0.95 0.004 250);
+
+  --tehlike: oklch(0.52 0.19 27);
+  --tehlike-ton: oklch(0.72 0.16 27);
+  --alis: oklch(0.47 0.11 158);
+  --alis-ton: oklch(0.76 0.12 158);
+  --dikkat: oklch(0.82 0.15 82);
+  --dikkat-ton: oklch(0.84 0.14 82);
+}
+
+.panel[data-ton="tehlike"] { --bant: var(--tehlike); --bant-yazi: var(--tehlike-yazi); --ton: var(--tehlike-ton); }
+.panel[data-ton="alis"]    { --bant: var(--alis);    --bant-yazi: var(--alis-yazi);    --ton: var(--alis-ton); }
+.panel[data-ton="dikkat"]  { --bant: var(--dikkat);  --bant-yazi: var(--dikkat-yazi);  --ton: var(--dikkat-ton); }
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--zemin);
+  color: var(--murekkep);
+  font-family: var(--yazi);
+  font-size: 15px;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums lining-nums;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+body { user-select: none; cursor: default; }
+::selection { background: var(--bant); color: var(--bant-yazi); }
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: var(--zemin); }
+::-webkit-scrollbar-thumb { background: var(--cizgi); border-radius: 5px; border: 2px solid var(--zemin); }
+
+p, h1 { margin: 0; }
+[hidden] { display: none !important; }
+.gorunmez { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ---------- Sinyal bandı ---------- */
+
+.bant {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 26px var(--bosluk) 28px;
+  background: var(--bant);
+  color: var(--bant-yazi);
+}
+
+.bant-sol { display: flex; align-items: center; gap: 14px; min-width: 0; }
+
+.piktogram { width: 40px; height: 40px; flex: none; }
+.piktogram-ucgen { fill: var(--bant-yazi); }
+.piktogram-isaret { fill: var(--bant); }
+
+.sinyal {
+  font-family: var(--sinyal-yazi);
+  font-weight: 800;
+  font-size: 54px;
+  line-height: 0.95;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.sayac { display: grid; justify-items: end; gap: 2px; flex: none; }
+.sayac-deger { font-size: 26px; font-weight: 600; line-height: 1; letter-spacing: 0.01em; }
+.sayac-not { font-size: 12.5px; font-weight: 500; opacity: 0.92; }
+
+.ray {
+  position: absolute;
+  left: var(--bosluk); right: var(--bosluk); bottom: 9px;
+  height: 3px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: color-mix(in oklch, var(--bant-yazi) 28%, var(--bant));
+}
+.ray-dolu {
+  display: block;
+  height: 100%;
+  background: var(--bant-yazi);
+  transform-origin: left center;
+  transform: scaleX(1);
+}
+
+/* ---------- İçerik ---------- */
+
+.icerik { padding: 22px var(--bosluk) 4px; display: grid; gap: 20px; }
+
+.ozet { font-size: 19px; font-weight: 500; line-height: 1.35; text-wrap: balance; }
+
+.enstruman { display: grid; gap: 2px; }
+.sembol { font-size: 30px; font-weight: 700; letter-spacing: 0.005em; line-height: 1.1; }
+.ad { font-size: 15px; color: var(--ikincil); text-wrap: balance; }
+.kunye { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+.etiket {
+  display: inline-flex; align-items: center;
+  height: 24px; padding: 0 9px;
+  border: 1px solid var(--cizgi);
+  border-radius: 4px;
+  font-size: 12.5px; font-weight: 500;
+  color: var(--ikincil);
+  background: var(--yuzey);
+  white-space: nowrap;
+}
+.etiket[data-yon="SATIŞ"], .etiket[data-yon="ALIŞ"] { color: var(--murekkep); font-weight: 600; }
+
+/* Cetvelli değer tablosu: tek cihaz pikseli çizgiler, sağa hizalı tablo rakamları. */
+.tablo, .degisim { width: 100%; border-collapse: collapse; }
+.tablo th, .tablo td { padding: 9px 0; border-bottom: 1px solid var(--cizgi); font-size: 15px; }
+.tablo th { text-align: left; font-weight: 400; color: var(--ikincil); }
+.tablo td { text-align: right; font-weight: 600; }
+.tablo tfoot th, .tablo tfoot td { border-bottom: 0; border-top: 2px solid var(--cizgi-guclu); padding-top: 12px; }
+.tablo tbody tr:last-child th, .tablo tbody tr:last-child td { border-bottom: 0; }
+.tablo tfoot th { color: var(--murekkep); font-weight: 600; }
+.tablo tfoot td { font-size: 24px; font-weight: 700; letter-spacing: 0.005em; }
+/* İptalde tutar harcanacak para değil, bilgidir: hafif çizgi, gövde boyu. */
+.tablo[data-hafif] tfoot th, .tablo[data-hafif] tfoot td { border-top: 1px solid var(--cizgi); padding-top: 9px; }
+.tablo[data-hafif] tfoot th { color: var(--ikincil); font-weight: 400; }
+.tablo[data-hafif] tfoot td { font-size: 15px; font-weight: 600; }
+
+/* Eski → yeni: ortada alan rayı, solda şimdiki, sağda sonraki değer. */
+.degisim thead th {
+  font-size: 12px; font-weight: 600; letter-spacing: 0.04em;
+  color: var(--soluk); text-transform: uppercase;
+  padding: 0 0 6px; border-bottom: 1px solid var(--cizgi);
+}
+.degisim .d-eski { text-align: right; width: 38%; }
+.degisim .d-alan { text-align: center; width: 24%; }
+.degisim .d-yeni { text-align: left; width: 38%; }
+.degisim td { padding: 9px 0; border-bottom: 1px solid var(--cizgi); font-size: 15px; }
+.degisim tbody tr:last-child td { border-bottom: 0; }
+.degisim td.d-eski { color: var(--ikincil); padding-right: 14px; }
+.degisim td.d-alan {
+  color: var(--soluk); font-size: 13px; font-weight: 500;
+  border-left: 1px solid var(--cizgi); border-right: 1px solid var(--cizgi);
+  padding: 9px 8px;
+}
+.degisim td.d-yeni { padding-left: 14px; font-weight: 600; }
+.degisim tr[data-degisti="evet"] td.d-alan { color: var(--murekkep); font-weight: 600; }
+.degisim tr[data-degisti="evet"] td.d-eski { text-decoration: line-through; text-decoration-thickness: 1px; text-decoration-color: var(--soluk); }
+.degisim tr[data-degisti="evet"] td.d-yeni { color: var(--ton); font-weight: 700; }
+.degisim tr[data-degisti="evet"] td.d-yeni::before {
+  content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 8px;
+  border-radius: 50%; background: var(--ton); vertical-align: 0.12em;
+}
+.degisim tr[data-degisti="hayir"] td.d-yeni { color: var(--ikincil); font-weight: 400; }
+
+.kimlik { font-size: 12px; color: var(--soluk); display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.kimlik code { font-family: var(--kimlik-yazi); font-size: 11.5px; color: var(--ikincil); user-select: text; }
+
+/* ---------- Eylem ---------- */
+
+.eylem {
+  margin-top: 22px;
+  padding: 18px var(--bosluk) 22px;
+  border-top: 1px solid var(--cizgi);
+  background: var(--yuzey);
+  display: grid; gap: 14px;
+}
+
+.soru { font-size: 16px; font-weight: 600; }
+
+.dugmeler { display: grid; grid-template-columns: 1fr 1.25fr; gap: 12px; }
+
+button {
+  font: inherit;
+  height: 52px;
+  border-radius: var(--r);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+button:focus { outline: none; }
+button:focus-visible, button.odakta {
+  outline: 3px solid var(--odak);
+  outline-offset: 3px;
+}
+
+.hayir {
+  border: 0;
+  background: var(--hayir-zemin);
+  color: var(--hayir-yazi);
+  font-size: 17px; font-weight: 700;
+  transition: filter 150ms ease-out;
+}
+.hayir:hover { filter: brightness(1.12); }
+.hayir:active { filter: brightness(0.94); }
+
+/* Kapaklı anahtar: basılı tutulunca dolgu soldan sağa kalkar; bırakılınca geri iner. */
+.evet {
+  position: relative;
+  overflow: hidden;
+  display: grid; place-content: center; justify-items: center;
+  gap: 0;
+  border: 2px solid var(--ton);
+  background: transparent;
+  color: var(--ton);
+  touch-action: none;
+}
+/* Kapak: dinlenirken taralı emniyet kapağı görünür; basılı tutunca dolgu onu örter. */
+.evet-kapak { position: absolute; inset: 0; width: 100%; height: 100%; }
+.tarama-cizgi { stroke: var(--ton); stroke-width: 2.2; opacity: 0.16; }
+.evet-dolgu {
+  position: absolute; inset: 0;
+  background: var(--bant);
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.evet.tutuluyor .evet-dolgu { transform: scaleX(1); transition: transform var(--tutma, 900ms) linear; }
+.evet-yazi, .evet-not { position: relative; line-height: 1.1; }
+.evet-yazi { font-size: 16px; font-weight: 700; }
+.evet-not { font-size: 12.5px; font-weight: 600; }
+.evet.tutuluyor .evet-yazi, .evet.tutuluyor .evet-not { color: var(--bant-yazi); transition: color 120ms 200ms; }
+.evet:hover { background: color-mix(in oklch, var(--ton) 8%, transparent); }
+.evet.kilitli { cursor: wait; opacity: 0.55; }
+.evet.itti { animation: itti 360ms cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes itti { 30% { transform: translateX(-4px); } 60% { transform: translateX(3px); } }
+
+.ipucu { font-size: 12.5px; color: var(--soluk); line-height: 1.4; }
+.ipucu strong { color: var(--ikincil); font-weight: 600; }
+
+@media (prefers-reduced-motion: reduce) {
+  .evet-dolgu, .evet.tutuluyor .evet-dolgu { transition-timing-function: steps(6, end); }
+  .evet.itti { animation: none; }
+}

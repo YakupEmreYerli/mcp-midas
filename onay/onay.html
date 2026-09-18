@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="tr" data-theme="__TEMA__">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-__NONCE__'; script-src 'nonce-__NONCE__'; img-src data:; font-src 'none'; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<title>Midas emir onayı</title>
+<style nonce="__NONCE__">__CSS__</style>
+</head>
+<body>
+<main class="panel" id="panel" data-ton="dikkat">
+  <header class="bant" aria-live="off">
+    <div class="bant-sol">
+      <svg class="piktogram" id="piktogram" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+        <path class="piktogram-ucgen" d="M24 4.5 45 42H3z"/>
+        <path class="piktogram-isaret" d="M21.6 17h4.8l-.8 13.5h-3.2zM24 33.2a2.6 2.6 0 1 1 0 5.2 2.6 2.6 0 0 1 0-5.2z"/>
+      </svg>
+      <h1 class="sinyal" id="islem">&nbsp;</h1>
+    </div>
+    <div class="sayac" role="timer" aria-label="Kalan süre">
+      <span class="sayac-deger" id="sayac">2:00</span>
+      <span class="sayac-not">sonra Hayır</span>
+    </div>
+    <div class="ray" aria-hidden="true"><span class="ray-dolu" id="ray"></span></div>
+  </header>
+
+  <section class="icerik">
+    <p class="ozet" id="ozet"></p>
+
+    <div class="enstruman">
+      <p class="sembol" id="sembol"></p>
+      <p class="ad" id="ad"></p>
+      <p class="kunye" id="kunye"></p>
+    </div>
+
+    <table class="degisim" id="degisim" hidden>
+      <thead>
+        <tr><th scope="col" class="d-eski">Şimdi</th><th scope="col" class="d-alan"><span class="gorunmez">Alan</span></th><th scope="col" class="d-yeni">Sonra</th></tr>
+      </thead>
+      <tbody id="degisim-govde"></tbody>
+    </table>
+
+    <table class="tablo" id="satirlar" hidden>
+      <tbody id="satirlar-govde"></tbody>
+      <tfoot>
+        <tr class="toplam">
+          <th scope="row" id="tutar-etiket"></th>
+          <td id="tutar"></td>
+        </tr>
+      </tfoot>
+    </table>
+
+
+    <p class="kimlik" id="kimlik"></p>
+  </section>
+
+  <footer class="eylem">
+    <p class="soru" id="soru"></p>
+    <div class="dugmeler">
+      <button type="button" class="evet" id="evet" aria-describedby="evet-not">
+        <svg class="evet-kapak" aria-hidden="true" focusable="false" preserveAspectRatio="none">
+          <defs>
+            <pattern id="tarama" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <line x1="0" y1="0" x2="0" y2="9" class="tarama-cizgi"/>
+            </pattern>
+          </defs>
+          <rect x="0" y="0" width="100%" height="100%" fill="url(#tarama)"/>
+        </svg>
+        <span class="evet-dolgu" aria-hidden="true"></span>
+        <span class="evet-yazi" id="evet-yazi"></span>
+        <span class="evet-not" id="evet-not">basılı tutun</span>
+      </button>
+      <button type="button" class="hayir" id="hayir"></button>
+    </div>
+    <p class="ipucu" id="ipucu">Esc, pencereyi kapatmak ya da süre dolması: <strong>Hayır</strong>. Evet için düğmeyi basılı tutun; Enter onaylamaz.</p>
+  </footer>
+</main>
+<script type="application/json" id="veri">__VERI__</script>
+<script nonce="__NONCE__">__JS__</script>
+</body>
+</html>

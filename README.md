@@ -1,5 +1,7 @@
 # mcp-midas
 
+[English](README.en.md)
+
 > [!WARNING]
 > **Resmî değildir.** Bu proje Midas Menkul Değerler A.Ş. ya da Midas Finansal Teknolojiler
 > A.Ş. ile bağlantılı değildir; onlar tarafından geliştirilmez, onaylanmaz, desteklenmez.
@@ -237,7 +239,7 @@ belgelerini küçültülmüş paketin gömülü AST'sinden çıkarır). Bu araç
 ### Deneysel: BIST tarama kodu
 
 Upstream'den gelen, BIST hisselerini puanlamak için nicel bir kural seti de depoda:
-[`docs/analiz-kurallari.md`](docs/analiz-kurallari.md) (ajan için tam kurallar, İngilizce)
+[`docs/analiz-kurallari.md`](docs/analiz-kurallari.md) (ajan için tam kurallar)
 ve özeti [`METHOD.md`](METHOD.md). `src/` altındaki tarama, geriye dönük test ve konumlama
 kodu (`backtest.ts`, `rescore.ts`, `positioning.ts`, `positions-scan.ts`, `snapshot.ts`,
 `vwap.ts`, `inflation.ts`) bu kural setini uygular. **Deneysel ve doğrulanmamıştır**; kendi
@@ -254,34 +256,15 @@ npm run build
 Geliştirme ve testte gerçek emir gönderilmez; kurallar [AGENTS.md](AGENTS.md) içinde.
 Güvenlik bildirimi için [SECURITY.md](SECURITY.md).
 
-## Atıf
+## Kaynak ve lisans
 
-Bu proje [ahmetdenizyilmaz/midas-mcp](https://github.com/ahmetdenizyilmaz/midas-mcp)
-üzerine kuruldu (MIT). Özgün telif bildirimi [LICENSE](LICENSE) içinde korunur.
+Bu proje, Ahmet Deniz Yılmaz'ın
+[ahmetdenizyilmaz/midas-mcp](https://github.com/ahmetdenizyilmaz/midas-mcp) deposundan
+çatallandı. Çatallanma noktası upstream'in `a1bf39c` commit'idir ("Keep scan output out of
+the repo", 3 Ağustos 2026); sonraki geliştirmeler bu depoda yapıldı.
 
-## Lisans
-
-MIT, bkz. [LICENSE](LICENSE).
-
----
-
-## English summary
-
-**Unofficial** MCP server for the Midas brokerage web app (Atlas). Not affiliated with,
-endorsed or supported by Midas Menkul Değerler A.Ş. or Midas Finansal Teknolojiler A.Ş.; no
-Midas logo or branding is used. **Not investment advice**; provided as is, without warranty.
-
-- **Your own account only, at your own risk.** The Midas framework agreement (art. 1.11)
-  forbids consenting to unauthorized third-party intervention in the trading platform and
-  expects the customer alone to use it. Do not use this to manage anyone else's account.
-- **Credentials stay local**, supplied through environment variables (`MIDAS_PHONE`,
-  `MIDAS_PASSWORD`) and sent only to Midas's own login form.
-- **Read tools** (portfolio, positions, prices, instrument info, pending orders, transaction
-  history, technicals, candles) are always available.
-- **Order tools** (`place_order`, `update_order`, `cancel_order`) are **off by default** and
-  only registered when `MIDAS_ORDERS_ENABLED=1`. Even then every order requires a local
-  desktop confirmation window: default No, press-and-hold Yes, Enter never approves,
-  Esc/close/120 s timeout mean No, and no argument or setting bypasses it.
-- Setup: Node.js 20+, `npm ci`, `npx playwright install chromium`, `npm run build`,
-  `npm run login` (approve the push notification on your phone).
-- Based on [ahmetdenizyilmaz/midas-mcp](https://github.com/ahmetdenizyilmaz/midas-mcp), MIT.
+Upstream deposunda ayrı bir `LICENSE` dosyası yoktur; lisans beyanı
+[`package.json`](https://github.com/ahmetdenizyilmaz/midas-mcp/blob/a1bf39c/package.json)
+içindeki `"license": "MIT"` alanı ve README'nin "License" bölümündedir. Bu depo aynı MIT
+lisansıyla dağıtılır. [LICENSE](LICENSE) iki telif satırı taşır: özgün kod için Ahmet Deniz
+Yılmaz, sonraki değişiklikler için Yakup Emre Yerli.

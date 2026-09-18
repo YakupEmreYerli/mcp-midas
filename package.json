@@ -1,7 +1,7 @@
 {
   "name": "mcp-midas",
   "version": "0.1.0",
-  "description": "MCP server for the Midas (getmidas.com) brokerage web app, driven by Playwright",
+  "description": "Midas aracı kurumunun Atlas web uygulaması için resmî olmayan MCP sunucusu (Playwright ile)",
   "type": "module",
   "bin": {
     "mcp-midas": "dist/index.js"
@@ -22,6 +22,18 @@
     "bist"
   ],
   "license": "MIT",
+  "author": "Yakup Emre Yerli",
+  "contributors": [
+    "Ahmet Deniz Yılmaz (https://github.com/ahmetdenizyilmaz)"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YakupEmreYerli/mcp-midas.git"
+  },
+  "homepage": "https://github.com/YakupEmreYerli/mcp-midas#readme",
+  "bugs": {
+    "url": "https://github.com/YakupEmreYerli/mcp-midas/issues"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
     "dotenv": "^16.4.5",

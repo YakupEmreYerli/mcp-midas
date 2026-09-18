@@ -1,21 +1,29 @@
 # mcp-midas
 
-Read-only [MCP](https://modelcontextprotocol.io) server for the **Midas** brokerage
+[MCP](https://modelcontextprotocol.io) server for the **Midas** brokerage
 ([atlas.getmidas.com](https://atlas.getmidas.com/)). It lets an AI assistant read your
-portfolio, positions, pending orders and price data — and nothing else. There is no
-tool that can place, modify or cancel an order.
+portfolio and market data, and prepare, update or cancel supported orders only after
+an independent confirmation on your local desktop.
 
 Midas has no public API. This server drives the Atlas web app with
 [Playwright](https://playwright.dev): it keeps one authenticated browser session and
 issues the same GraphQL calls the web app makes, from inside the page, so the session
 cookies are attached automatically.
 
-## Why read-only
+## Order safety model
 
-An assistant with a live brokerage session is one hallucinated tool call away from a
-real trade. A spending cap or a confirmation step is a *permission*; this server removes
-the *capability* instead. Ordering code is not disabled, it is absent — no `placeOrder`,
-no order mutations, nothing to re-enable by flipping a flag.
+Every write tool resolves the instrument and account from Midas, builds its preview from
+that trusted data, then asks the MCP server process itself to open `kdialog` (or `zenity`
+as a fallback). The default is **No** and the dialog times out as a rejection after 120
+seconds. Missing display, missing dialog programs, dialog errors and closed windows all
+reject the operation. Confirmations are serialized, so only one is visible at a time.
+
+There is no `confirmed`, `approve` or bypass argument, environment variable or config
+switch in the MCP interface. After approval the server re-resolves the exact symbol and
+current price; an instrument mismatch or a price move over 2% aborts the operation. A
+separate `MAX_ORDER_VALUE_TRY` ceiling defaults to ₺10,000 but never replaces desktop
+confirmation. Attempts and results are appended to `.midas-orders.log.jsonl` with mode
+0600 and credential-like fields redacted.
 
 ## Tools
 
@@ -28,14 +36,22 @@ no order mutations, nothing to re-enable by flipping a flag.
 | `get_pending_orders` | `symbol` | Orders still waiting to execute |
 | `get_technicals` | `symbol`, optional `interval` | RSI(14), SMA/EMA (20/50/200), MACD, Bollinger Bands, ATR, annualized volatility, 52-week range, swing pivots, volume vs average |
 | `get_chart` | `symbol`, optional `interval`, `limit` | Raw OHLCV candles (max 500) |
+| `place_order` | exact `symbol`, `side`, optional `order_type`, `quantity`, `amount_try`, `limit_price` | BIST stock MARKET/LIMIT orders and TEFAS DEMAND sell orders, after desktop confirmation |
+| `update_order` | `order_id`, exact `symbol`, changed quantity/prices | Update supported pending LIMIT/STOP/TP/SL orders, after desktop confirmation |
+| `cancel_order` | `order_id`, exact `symbol` | Cancel an eligible pending order, after desktop confirmation |
 
 BIST stocks, US stocks and ETFs, and Turkish mutual funds are all readable, including
 instruments you do not hold.
 
-> **Symbol resolution is fuzzy.** Symbols are looked up by search, and an unknown ticker
+> **Read symbol resolution is fuzzy.** Symbols are looked up by search, and an unknown ticker
 > silently resolves to the closest match rather than failing: asking for `VOO` can return
 > the fund `IOO`, and `TTE` can return TotalEnergies instead of the Turkish fund of the
-> same code. Always check the `name` and `currency` in the response before trusting a price.
+> same code. Always check the `name` and `currency` in a read response. Write tools add an
+> exact returned-symbol check and reject a fuzzy mismatch.
+
+TEFAS fund sells are supported with a `DEMAND` order and quantity. Fund buys currently
+fail closed: the captured Atlas bundle did not prove whether the request must contain a
+TRY amount or a quantity, so the server does not guess.
 
 ## Setup
 
@@ -56,6 +72,7 @@ npm run build
 MIDAS_PHONE=5XXXXXXXXX      # Turkish mobile number, no country code
 MIDAS_PASSWORD=your-password
 HEADLESS=true
+MAX_ORDER_VALUE_TRY=10000  # Additional ceiling; desktop confirmation is always required
 ```
 
 Any secret manager that can inject environment variables works instead of `.env` — the
@@ -80,7 +97,9 @@ therefore snapshotted with Playwright's `storageState()` into `.midas-state.json
 Each use refreshes the token. If the server goes unused for longer than the refresh
 token's lifetime, it logs in again on its own: a headless process briefly reopens the
 browser visibly to complete the SSO form, then returns to headless. That relogin may
-ask for a push approval again.
+ask for a push approval again. A read request rejected with HTTP 401/403 is retried once
+after this shared relogin flow. A mutation is never retried automatically: it fails and
+a new tool call must pass through a fresh desktop confirmation.
 
 ### Register with an MCP client
 

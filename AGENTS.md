@@ -1,17 +1,27 @@
 # mcp-midas — ajan kuralları
 
-Midas Atlas API'sine **salt okuma** erişimi veren MCP sunucusu. BIST portföyünü,
-pozisyonları ve işlem geçmişini okur; hiçbir emir göndermez.
+Midas Atlas API'sine erişen MCP sunucusu. Portföy, pozisyon ve işlem geçmişini okur;
+desteklenen emirleri yalnızca yerel insan onayından sonra gönderebilir.
 
 > **İkiz dosya:** bu dosyanın eşi `CLAUDE.md`. Birini değiştirirsen diğerini de değiştir.
 
 ## Bağlayıcı kurallar
 
-- **Salt okuma.** Alım, satım, emir iptali gibi yazma yetenekleri sunucuya
-  eklenmez. Yetenek sökülür; "izin verilmez" yeterli değildir.
+- **Onay kapısı atlanamaz.** Her emir oluşturma, güncelleme ve iptal işlemi mutation'dan
+  önce sunucu sürecinin açtığı `kdialog`/`zenity` penceresinde onay ister. Varsayılan Hayır;
+  120 sn zaman aşımı, ekran/pencere yokluğu ve hata rettir. Araç şemasına, ortama veya
+  yapılandırmaya `confirmed`, `approve`, test modu ya da başka bir atlama yolu eklenmez.
+- **Canlı emir testi yapılmaz.** Geliştirme, test ve inceleme sırasında mutation çalıştırma,
+  Midas'a gerçek emir gönderme veya canlı `order-test` yazma/çalıştırma. Bir mutation 401
+  alırsa oturumu yenile ama otomatik yeniden gönderme; yeni çağrı yeni onay ister.
+- **Emir verisi doğrulanır.** Yazma araçlarında sembol birebir eşleşir; önizleme Midas'tan
+  çözümlenen ad, piyasa, hesap ve fiyatla kurulur. Onay sonrası anlamlı değişiklik reddedilir.
+  Her deneme `.midas-orders.log.jsonl` dosyasına 0600 izinle ve kimlik bilgileri ayıklanarak
+  yazılır.
 - **Kimlik bilgisi yalnız ortamda.** `MIDAS_PHONE` ve `MIDAS_PASSWORD` ortam değişkeniyle
   (sır yöneticisi ya da gitignore'lu `.env`) verilir; koda, loga, commit'e yazılmaz.
-- **Oturum `storageState` ile açılır** — onaysız ve başsız çalışır.
+- **Oturum `storageState` ile açılır.** Okumada 401 sonrası sunucu içinde tek paylaşılan
+  görünür giriş akışı çalışır ve istek bir kez yinelenir; mutation otomatik yinelenmez.
 
 ## BIST analiz kuralları
 

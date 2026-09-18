@@ -1,40 +1,44 @@
-# Security
+# Güvenlik
 
-## Reporting
+## Bildirim
 
-Please do not open a public issue for a security problem. Use GitHub's
-[private vulnerability reporting](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability)
-on this repository instead.
+Güvenlik sorunlarını herkese açık issue olarak açma. Bunun yerine bu depodaki GitHub
+[özel güvenlik açığı bildirimini](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability)
+kullan.
 
-## What this software touches
+## Bu yazılım neye dokunuyor
 
-It holds a logged-in session to a brokerage account. That makes three things worth
-knowing before you run it.
+Bir aracı kurum hesabına açılmış oturumu tutar. Çalıştırmadan önce bilinmesi gereken
+noktalar:
 
-**Order tools are off by default.** `place_order`, `update_order` and `cancel_order` are
-only registered when `MIDAS_ORDERS_ENABLED=1` is set; otherwise they do not appear in the
-MCP tool list at all.
+**Emir araçları varsayılan kapalıdır.** `place_order`, `update_order` ve `cancel_order`
+yalnızca `MIDAS_ORDERS_ENABLED=1` verildiğinde kaydedilir; aksi hâlde MCP araç listesinde
+hiç görünmez.
 
-**Trades require a local human confirmation.** When enabled, the server can place, update and cancel
-the supported order types, but it cannot send their mutations until its own process has
-shown its confirmation window (designed PySide6 window, falling back to `kdialog`/`zenity`)
-and the user has held **Yes**. The default is No; timeouts, missing display and dialog
-failures reject, and dialog failures are reported as errors, not as a user's No. The MCP schemas have no confirmation
-or bypass field, and the server revalidates the exact instrument and price after approval.
+**İşlemler yerel insan onayı ister.** Emir araçları açıkken sunucu desteklenen emir
+tiplerini verebilir, güncelleyebilir ve iptal edebilir; ama kendi süreci onay penceresini
+göstermeden (tasarımlı PySide6 penceresi; açılamazsa `kdialog`/`zenity`) ve kullanıcı
+**Evet**'i basılı tutmadan bu mutation'ları gönderemez. Varsayılan Hayır'dır; zaman aşımı,
+ekranın olmaması ve pencere hataları reddedilir. Pencere hataları kullanıcının Hayır'ı
+olarak değil, hata olarak bildirilir. MCP şemalarında onay ya da atlatma alanı yoktur;
+sunucu onaydan sonra enstrümanı ve fiyatı birebir yeniden doğrular.
 
-**Credentials never leave your machine.** `MIDAS_PHONE` and `MIDAS_PASSWORD` are read
-from the environment and used in exactly one place: filling Midas's own SSO form
-(`src/session.ts`). They are not logged, cached or sent anywhere else. The only network
-destinations in the code are `atlas.getmidas.com` and `api.atlas.getmidas.com`.
+**Kimlik bilgileri makineden çıkmaz.** `MIDAS_PHONE` ve `MIDAS_PASSWORD` ortamdan okunur ve
+tek bir yerde kullanılır: Midas'ın kendi SSO formunu doldurmak (`src/session.ts`).
+Loglanmaz, önbelleğe alınmaz, başka bir yere gönderilmez. Koddaki tek ağ hedefleri
+`atlas.getmidas.com` ve `api.atlas.getmidas.com`'dur.
 
-**Three files are sensitive.** `.env` holds your password, `.midas-state.json` holds
-live session tokens — anyone with that file can read your account until the tokens
-expire — and `.midas-orders.log.jsonl` contains local order audit records. All are
-gitignored; state and audit files use mode 0600. The browser profile in `.midas-session/`
-is likewise local. Do not commit or copy them.
+**Üç dosya hassastır.** `.env` şifreni, `.midas-state.json` canlı oturum token'larını
+tutar (bu dosyaya sahip olan herkes token'ların süresi dolana kadar hesabını okuyabilir),
+`.midas-orders.log.jsonl` ise yerel emir denetim kayıtlarını içerir. Hepsi gitignore'ludur;
+oturum ve denetim dosyaları 0600 izinle yazılır. `.midas-session/` altındaki tarayıcı
+profili de yereldir. Bunları commit'leme ya da kopyalama.
 
-## Scope
+**HTTP servisi yalnız yerelde dinler.** `dist/http.js` yalnızca `127.0.0.1` üzerinde açılır
+ve `/mcp` isteklerini `~/.config/mcp-midas/token` dosyasındaki bearer token ile doğrular.
 
-Reports about the scanning, backtest and scoring code (`docs/analiz-kurallari.md`,
-`METHOD.md`, `src/backtest.ts`, `src/rescore.ts`, `src/positioning.ts`) are welcome but
-that code is explicitly experimental and produces no financial advice.
+## Kapsam
+
+Tarama, geriye dönük test ve puanlama koduyla (`docs/analiz-kurallari.md`, `METHOD.md`,
+`src/backtest.ts`, `src/rescore.ts`, `src/positioning.ts`) ilgili bildirimler de kabul
+edilir; ancak bu kod açıkça deneyseldir ve yatırım tavsiyesi üretmez.

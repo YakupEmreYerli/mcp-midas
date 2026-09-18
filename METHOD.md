@@ -1,102 +1,102 @@
-# BIST Scan Method — Quick Reference (v3.1)
+# BIST Tarama Yöntemi — Hızlı Başvuru (v3.1)
 
-> Compact summary of the scoring methodology. The full binding ruleset the scans follow
-> is `docs/analiz-kurallari.md`; this card is for checking the logic at a glance.
+> Puanlama yönteminin kısa özeti. Taramaların uyduğu bağlayıcı kural setinin tamamı
+> `docs/analiz-kurallari.md` içindedir; bu kart mantığı bir bakışta kontrol etmek içindir.
 
-## Pipeline
+## İşlem hattı
 
 ```
-gather 6 data blocks  →  score Q, P, R  →  FINAL = 100·(Q/100)^0.45·(P/100)^0.55·R ± Tape  →  stance
+6 veri bloğunu topla  →  Q, P, R puanla  →  FINAL = 100·(Q/100)^0.45·(P/100)^0.55·R ± Tape  →  duruş
 ```
 
-## 1. Data gathered every scan
+## 1. Her taramada toplanan veri
 
-| Block | Source | Feeds |
+| Blok | Kaynak | Beslediği |
 |---|---|---|
-| Macro (TCMB rate, inflation, TRY, flows) | web, dated | Quality 10% |
-| Sector (demand, regulation, FX exposure, vs XU100) | web | Quality 20% |
-| Fundamentals — **Health** (margins, ROE, real growth, debt, cash) | web/KAP | Quality 45% |
-| Fundamentals — **Valuation** (discount to intrinsic FV, peer multiples) | web + price | Price 45% |
-| Connections (end-market trend, value chain, themes) | web | Quality 15% |
-| News & governance (KAP, contracts, dilution, insiders) | web | Quality 10% + Risk; catalysts → Price 15% |
-| Technicals (RSI, MAs, MACD, ATR, S/R, volume, 52w) | `get_technicals` tool | Price 40% |
+| Makro (TCMB faizi, enflasyon, TL, fon akışları) | web, tarihli | Kalite %10 |
+| Sektör (talep, düzenleme, döviz maruziyeti, XU100'e göre) | web | Kalite %20 |
+| Temel veriler — **Sağlık** (marjlar, özsermaye kârlılığı (ROE), reel büyüme, borç, nakit) | web/KAP | Kalite %45 |
+| Temel veriler — **Değerleme** (içsel gerçeğe uygun değere (intrinsic fair value) göre iskonto, emsal çarpanları) | web + fiyat | Fiyat %45 |
+| Bağlantılar (son pazar eğilimi, değer zinciri, temalar) | web | Kalite %15 |
+| Haberler ve yönetişim (KAP, sözleşmeler, sulandırma (dilution), içeridekiler (insiders)) | web | Kalite %10 + Risk; katalizörler → Fiyat %15 |
+| Teknik göstergeler (RSI, hareketli ortalamalar (MA), MACD, ATR, destek/direnç, hacim, 52 hafta) | `get_technicals` aracı | Fiyat %40 |
 
-## 2. The three scores
+## 2. Üç puan
 
-**QUALITY — "is the business worth owning?"** (valuation excluded)
+**KALİTE — "bu işletmeye sahip olmaya değer mi?"** (değerleme hariç)
 
 ```
 Q = 0.45·Health + 0.20·Sector + 0.15·Connections + 0.10·News + 0.10·Macro
-    capped at Health + 20      (environment can't carry a sick company)
+    üst sınır Health + 20      (çevre koşulları hasta bir şirketi taşıyamaz)
 ```
 
-**PRICE — "are the price and moment attractive?"** (the majority axis)
+**FİYAT — "fiyat ve zamanlama cazip mi?"** (çoğunluk ekseni)
 
 ```
 P = 0.45·Valuation + 0.40·Technicals + 0.15·Catalysts
 ```
 
-- Valuation = discount to **intrinsic** fair value only (peer F/K × normalized EPS,
-  justified PD/DD × book, FD/FAVÖK; haircut book for loss-makers). Never derived from
-  support/resistance — that would be circular. Honesty deduction when intrinsic value is
-  declining (−10) or burning (−20).
-- Technicals codified in `src/backtest.ts`: freefall penalty −13, parabolic-extension
-  penalty −10, **no penalty for oversold alone** (backtest: RSI<30 was mildly positive
-  on BIST).
+- Değerleme = yalnızca **içsel** gerçeğe uygun değere göre iskonto (emsal F/K × normalize
+  HBK, gerekçeli PD/DD × defter değeri, FD/FAVÖK; zarar edenlerde defter değerine kesinti
+  uygulanır). Asla destek/dirençten türetilmez — bu döngüsel olurdu. İçsel değer
+  düşüyorsa (−10) ya da eriyorsa (−20) dürüstlük kesintisi uygulanır.
+- Teknik puan `src/backtest.ts` içinde kodlanmıştır: serbest düşüş (freefall) cezası −13,
+  parabolik uzama cezası −10, **yalnızca aşırı satım (oversold) için ceza yok** (geriye
+  dönük test (backtest): BIST'te RSI<30 hafif olumluydu).
 
-**RISK — graduated deductions, no kill-switches** (R = 1.00 down to 0.55)
+**RİSK — kademeli kesintiler, ani eleme (kill-switch) yok** (R = 1.00'dan 0.55'e kadar)
 
-Bedelli <12m: −0.05…−0.15 · sustained losses: −0.05…−0.15 · SPK/VBTS: −0.10…−0.20 ·
-going-concern: −0.20 · thin liquidity: −0.05 · governance: −0.05…−0.15
+12 ay içinde bedelli: −0.05…−0.15 · süregelen zararlar: −0.05…−0.15 · SPK/VBTS: −0.10…−0.20 ·
+işletmenin sürekliliği (going-concern) şüphesi: −0.20 · sığ likidite: −0.05 · yönetişim: −0.05…−0.15
 
-## 3. The formula
+## 3. Formül
 
 ```
 FINAL = 100 × (Q/100)^0.45 × (P/100)^0.55 × R  + TapeAdjustment
 ```
 
-- **TapeAdjustment (reflexivity term):** +7 when the move is confirmed (technical score
-  ≥ 70, volume ≥ 20-day average, not parabolic) · −7 when freefall is active · else 0.
-- **Speculative ceiling:** Q < 45 → FINAL capped at **55**. Price and flows can make a
-  weak name *interesting* — never a rated *Buy*.
+- **TapeAdjustment (dönüşlülük (reflexivity) terimi):** hareket teyitliyse +7 (teknik puan
+  ≥ 70, hacim ≥ 20 günlük ortalama, parabolik değil) · serbest düşüş etkinse −7 · aksi hâlde 0.
+- **Spekülatif tavan:** Q < 45 → FINAL en fazla **55**. Fiyat ve akışlar zayıf bir hisseyi
+  *ilginç* kılabilir — asla *Al* notlu yapamaz.
 
-## 4. Stances
+## 4. Duruşlar
 
-| FINAL | Stance |
+| FINAL | Duruş |
 |---|---|
-| 75–100 | Strong Buy |
-| 60–74 | Buy / Accumulate |
-| 45–59 | Hold / Neutral |
-| 32–44 | Speculative / Weak Hold (+ mandatory recovery conditions) |
-| < 32 | Unattractive / reduce-into-strength — never a sell command |
+| 75–100 | Güçlü Al (Strong Buy) |
+| 60–74 | Al / Biriktir (Buy / Accumulate) |
+| 45–59 | Tut / Nötr (Hold / Neutral) |
+| 32–44 | Spekülatif / Zayıf Tut (Speculative / Weak Hold) (+ zorunlu toparlanma koşulları) |
+| < 32 | Cazip Değil / yükselişte azalt (Unattractive / reduce-into-strength) — asla satış komutu değildir |
 
-Every scan also outputs: intrinsic fair-value band (low/base/high), entry, ATR-based
-stop, T1/T2 targets, risk/reward, bull & bear cases.
+Her tarama ayrıca şunları verir: içsel gerçeğe uygun değer bandı (düşük/baz/yüksek), giriş,
+ATR tabanlı zarar durdur (stop), T1/T2 hedefleri, risk/getiri oranı, boğa ve ayı senaryoları.
 
-## 5. Standing rules
+## 5. Kalıcı kurallar
 
-- **Scans never place orders.** Trading only on a separate explicit instruction;
-  every order still needs the desktop confirmation and the `MAX_ORDER_VALUE_TRY` ceiling.
-- Every figure dated; growth inflation-adjusted; missing data → neutral 50 +
-  low-confidence flag.
-- Backtest evidence (29 names, Nov 2023 → Apr 2026, 3,479 point-in-time observations):
-  technical scores ≥65 beat same-date peers by **+1.7%** over 63 trading days; scores
-  <35 lagged by **−2.3%**; mean cross-sectional IC ≈ **0.06**. Freefall pattern
-  underperformed (−1.4%); plain oversold did not. The two calibrations (oversold
-  de-penalized, parabolic penalty) are in-sample — re-validate quarterly with
-  `npm run backtest`.
+- **Taramalar asla emir vermez.** İşlem yalnızca ayrı ve açık bir talimatla yapılır;
+  her emir yine de masaüstü onayından ve `MAX_ORDER_VALUE_TRY` tavanından geçer.
+- Her rakam tarihli; büyüme enflasyondan arındırılmış; eksik veri → nötr 50 +
+  düşük güven işareti.
+- Geriye dönük test kanıtı (29 hisse, Kas 2023 → Nis 2026, 3.479 zaman noktası (point-in-time)
+  gözlem): ≥65 teknik puanlar 63 işlem gününde aynı tarihli emsallerini **+%1,7** geçti;
+  <35 puanlar **−%2,3** geride kaldı; ortalama kesitsel bilgi katsayısı (IC) ≈ **0,06**.
+  Serbest düşüş örüntüsü düşük performans gösterdi (−%1,4); düz aşırı satım göstermedi.
+  İki kalibrasyon (aşırı satım cezasının kaldırılması, parabolik ceza) örneklem içidir
+  (in-sample) — `npm run backtest` ile üç ayda bir yeniden doğrulanmalı.
 
-**Philosophy in one line:** price is the majority partner (reflexivity — and it is the
-only backtest-validated edge), but quality multiplies, so what price can buy is capped
-by what the business is.
+**Tek satırda felsefe:** fiyat çoğunluk ortağıdır (dönüşlülük — ve geriye dönük testle
+doğrulanmış tek üstünlüktür), ama kalite çarpan olarak girer; dolayısıyla fiyatın
+satın alabileceği şey, işletmenin ne olduğuyla sınırlıdır.
 
-## Version history
+## Sürüm geçmişi
 
-- **v1** — weighted average of six blocks. Flaw: compensatory (cheapness rescued
-  broken businesses).
-- **v2** — hard gates + quality/entry matrix. Flaw: binary kill-switches ignored price
-  entirely.
-- **v3** — continuous multiplicative blend Q^0.55·P^0.45 with graduated risk overlay.
-- **v3.1 (current)** — price made the majority axis (Q^0.45·P^0.55), technicals raised
-  to 40% of P, ±7 tape-confirmation term, speculative ceiling (Q<45 → FINAL ≤ 55);
-  backtest-calibrated technical penalties.
+- **v1** — altı bloğun ağırlıklı ortalaması. Kusur: telafi edici (ucuzluk bozuk
+  işletmeleri kurtarıyordu).
+- **v2** — katı kapılar + kalite/giriş matrisi. Kusur: ikili elemeler fiyatı tamamen
+  yok sayıyordu.
+- **v3** — kademeli risk katmanıyla sürekli çarpımsal karışım Q^0.55·P^0.45.
+- **v3.1 (güncel)** — fiyat çoğunluk ekseni yapıldı (Q^0.45·P^0.55), teknik göstergeler
+  P'nin %40'ına çıkarıldı, ±7 bant teyidi (tape-confirmation) terimi, spekülatif tavan
+  (Q<45 → FINAL ≤ 55); geriye dönük testle kalibre edilmiş teknik cezalar.

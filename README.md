@@ -253,7 +253,8 @@ npm test         # birim testleri (gerçek emir göndermez, Midas'a bağlanmaz)
 npm run build
 ```
 
-Geliştirme ve testte gerçek emir gönderilmez; kurallar [AGENTS.md](AGENTS.md) içinde.
+Geliştirme ve testte gerçek emir gönderilmez; kurallar [AGENTS.md](AGENTS.md), katkı
+rehberi [CONTRIBUTING.md](CONTRIBUTING.md) içinde.
 Güvenlik bildirimi için [SECURITY.md](SECURITY.md).
 
 ## Kaynak ve lisans

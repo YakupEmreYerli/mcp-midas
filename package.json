@@ -1,6 +1,6 @@
 {
   "name": "mcp-midas",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Midas aracı kurumunun Atlas web uygulaması için resmî olmayan MCP sunucusu (Playwright ile)",
   "type": "module",
   "bin": {

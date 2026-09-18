@@ -13,7 +13,7 @@
   let sira = 0;
 
   function bildir(tur, deger) {
-    const bilgi = tur === "hazir" || tur === "boyut";
+    const bilgi = tur === "hazir" || tur === "boyut" || tur === "tasi";
     if (bildirildi && !bilgi) return;
     if (!bilgi) bildirildi = true;
     sira += 1; // aynı başlık iki kez yazılırsa da sinyal gelsin
@@ -122,6 +122,16 @@
   };
   yaz();
 
+  // ---------- Başlık şeridi: taşıma ve kapat (= Hayır) ----------
+  // Şeritte basılı sürükleme pencereyi taşır; bu olay yalnız taşıma ister, karar üretmez.
+  $("serit").addEventListener("pointerdown", (olay) => {
+    if (olay.button !== 0 || olay.target.closest("#kapat")) return;
+    olay.preventDefault();
+    bildir("tasi");
+  });
+  // Kapat düğmesi yalnız Hayır üretebilir.
+  $("kapat").addEventListener("click", () => bildir("hayir"));
+
   // ---------- Hayır ----------
   const hayir = $("hayir");
   hayir.addEventListener("click", () => bildir("hayir"));
@@ -216,7 +226,11 @@
   };
 
   // ---------- Hazır: Python pencereyi içerik yüksekliğinde gösterir ----------
-  const olc = () => Math.ceil(panel.getBoundingClientRect().height);
+  // Pencere yüksekliği = panel + üst ve alt gölge payı.
+  const olc = () => {
+    const pay = parseFloat(getComputedStyle(document.body).paddingTop) || 0;
+    return Math.ceil(panel.getBoundingClientRect().height + 2 * pay);
+  };
   window.addEventListener("resize", () => bildir("boyut", olc()));
   // Pencere henüz gizli: requestAnimationFrame çalışmaz, düzen yine de hesaplanır.
   (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => {

@@ -1,58 +1,82 @@
-/* Midas emir onayı — kapaklı emniyet anahtarı.
-   Tek güvenlik rengi bandı işlem tipini söyler; kırmızı yalnız tehlike (SATIŞ, İPTAL) içindir.
-   Fontlar sistemden gelir (Fira Sans ailesi); ağdan hiçbir şey yüklenmez. */
+/* Midas-MCP emir onayı — tahtanın gece ekranında kapaklı emniyet anahtarı.
+   Marka: Midas mavisi (Hayır, odak, künye şeridi), gece zemin, Martian Mono başlık ve rakamlar.
+   İşlem tipi tek bir güvenlik rengi bandıyla okunur; kırmızı yalnız tehlike (SATIŞ, İPTAL) içindir.
+   Martian Mono onay/fontlar/ altından data: URL olarak gömülür (onay.py); ağdan hiçbir şey yüklenmez. */
+
+@font-face {
+  font-family: "Martian Mono";
+  src: url(data:font/woff2;base64,__MARTIAN__) format("woff2");
+  font-weight: 100 800;
+  font-stretch: 75% 112.5%;
+  font-display: block;
+}
+
+/* ₺ Martian Mono'da yok: o tek glif sistemdeki Fira Sans'tan, rakam boyuna büyütülerek gelir. */
+@font-face {
+  font-family: "Midas TL";
+  src: local("Fira Sans SemiBold"), local("FiraSans-SemiBold"), local("Fira Sans");
+  unicode-range: U+20BA;
+  size-adjust: 116%;
+}
 
 :root {
   --yazi: "Fira Sans", "Noto Sans", "DejaVu Sans", sans-serif;
-  --sinyal-yazi: "Fira Sans Condensed", "Fira Sans", "Noto Sans", sans-serif;
-  --kimlik-yazi: "Hack", "DejaVu Sans Mono", monospace;
+  --rakam: "Midas TL", "Martian Mono", "Fira Sans", "DejaVu Sans Mono", monospace;
 
   --r: 6px;
   --bosluk: 28px;
+  --pencere-r: 10px;        /* çerçevesiz pencerenin köşesi */
+  --golge-pay: 12px;        /* pencere gölgesi için şeffaf pay (onay.py genişliğe ekler) */
 
-  /* Açık tema: soğuk açık çelik panel. */
-  --zemin: oklch(0.972 0.004 250);
-  --yuzey: oklch(0.995 0.002 250);
-  --murekkep: oklch(0.2 0.012 255);
-  --ikincil: oklch(0.44 0.014 255);
-  --soluk: oklch(0.5 0.012 255);
-  --cizgi: oklch(0.86 0.008 255);
-  --cizgi-guclu: oklch(0.3 0.012 255);
-  --hayir-zemin: oklch(0.24 0.014 255);
-  --hayir-yazi: oklch(0.985 0.003 250);
-  --odak: oklch(0.2 0.012 255);
+  --midas: #4959EA;         /* Midas mavisi: Hayır dolgusu */
+  --midas-yazi: #FFFFFF;    /* 5,4:1 */
 
-  /* Güvenlik renkleri: bant dolgusu, bant yazısı, nötr zemindeki metin tonu. */
-  --tehlike: oklch(0.52 0.2 27);
-  --tehlike-yazi: oklch(0.99 0.005 27);
-  --tehlike-ton: oklch(0.5 0.19 27);
-  --alis: oklch(0.5 0.12 158);
-  --alis-yazi: oklch(0.99 0.005 158);
-  --alis-ton: oklch(0.46 0.11 158);
-  --dikkat: oklch(0.83 0.155 82);
-  --dikkat-yazi: oklch(0.2 0.03 70);
-  --dikkat-ton: oklch(0.5 0.11 70);
+  /* Açık tema: kâğıt beyazı tahta, gece mürekkep. */
+  --zemin: #F5F6FC;
+  --yuzey: #FFFFFF;
+  --murekkep: #0A0D2A;
+  --ikincil: #3D4372;
+  --soluk: #5B6194;
+  --cizgi: #DCDFF2;
+  --cizgi-guclu: #0A0D2A;
+  --odak: #0A0D2A;
+  --serit-zemin: #0A0D2A;   /* künye şeridi açık temada da gece kalır (logo karosu gibi) */
+  --serit-yazi: #E1E4FF;
+  --serit-vurgu: #8C96F6;
+  --serit-soluk: #8E95C8;
+  --serit-ok: #22D67E;
+  --pencere-kenar: rgb(10 13 42 / 0.30);
+  --pencere-ic-kenar: rgb(255 255 255 / 0.06);
+
+  /* Güvenlik renkleri (marka paletinden): bant dolgusu, bant yazısı, nötr zemindeki metin tonu. */
+  --tehlike: #D32F4A;
+  --tehlike-yazi: #FFFFFF;
+  --tehlike-ton: #C2253F;
+  --alis: #22D67E;
+  --alis-yazi: #0A0D2A;
+  --alis-ton: #087A4B;
+  --dikkat: #F4C24D;
+  --dikkat-yazi: #0A0D2A;
+  --dikkat-ton: #8A6200;
 }
 
 :root[data-theme="koyu"] {
-  /* Koyu tema: grafit panel. */
-  --zemin: oklch(0.2 0.008 255);
-  --yuzey: oklch(0.235 0.009 255);
-  --murekkep: oklch(0.95 0.004 250);
-  --ikincil: oklch(0.76 0.01 255);
-  --soluk: oklch(0.66 0.01 255);
-  --cizgi: oklch(0.34 0.01 255);
-  --cizgi-guclu: oklch(0.78 0.008 255);
-  --hayir-zemin: oklch(0.93 0.004 250);
-  --hayir-yazi: oklch(0.18 0.01 255);
-  --odak: oklch(0.95 0.004 250);
+  /* Koyu tema: tahtanın gece ekranı. */
+  --zemin: #0A0D2A;
+  --yuzey: #151A45;
+  --murekkep: #E1E4FF;
+  --ikincil: #B6BBE3;
+  --soluk: #8E95C8;
+  --cizgi: #262C63;
+  --cizgi-guclu: #C4C9EE;
+  --odak: #8C96F6;
+  --serit-zemin: #151A45;
+  --pencere-kenar: rgb(0 0 0 / 0.55);
+  --pencere-ic-kenar: rgb(140 150 246 / 0.16);
 
-  --tehlike: oklch(0.52 0.19 27);
-  --tehlike-ton: oklch(0.72 0.16 27);
-  --alis: oklch(0.47 0.11 158);
-  --alis-ton: oklch(0.76 0.12 158);
-  --dikkat: oklch(0.82 0.15 82);
-  --dikkat-ton: oklch(0.84 0.14 82);
+  --tehlike-ton: #FF5468;
+  --alis-ton: #22D67E;
+  --dikkat-ton: #F4C24D;
 }
 
 .panel[data-ton="tehlike"] { --bant: var(--tehlike); --bant-yazi: var(--tehlike-yazi); --ton: var(--tehlike-ton); }
@@ -63,7 +87,7 @@
 
 html, body {
   margin: 0;
-  background: var(--zemin);
+  background: transparent;  /* pencere şeffaf; zemin panelde */
   color: var(--murekkep);
   font-family: var(--yazi);
   font-size: 15px;
@@ -73,8 +97,25 @@ html, body {
   overflow-x: hidden;
 }
 
-body { user-select: none; cursor: default; }
-::selection { background: var(--bant); color: var(--bant-yazi); }
+body { user-select: none; cursor: default; padding: var(--golge-pay); }
+
+/* Çerçevesiz pencere: yuvarlak köşe, tek piksel kenar ve payın içinde kalan yumuşak gölge. */
+.panel {
+  position: relative;
+  overflow: hidden;
+  background: var(--zemin);
+  border-radius: var(--pencere-r);
+  box-shadow:
+    0 0 0 1px var(--pencere-kenar),
+    0 4px 10px -2px rgb(4 6 24 / 0.28);
+}
+.panel::after {
+  /* Kenar çizgisi içerikte (bant, şerit) de görünsün: panelin üstünde ince bir iç çizgi. */
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px var(--pencere-ic-kenar);
+}
+::selection { background: var(--midas); color: var(--midas-yazi); }
 ::-webkit-scrollbar { width: 10px; }
 ::-webkit-scrollbar-track { background: var(--zemin); }
 ::-webkit-scrollbar-thumb { background: var(--cizgi); border-radius: 5px; border: 2px solid var(--zemin); }
@@ -82,6 +123,48 @@ body { user-select: none; cursor: default; }
 p, h1 { margin: 0; }
 [hidden] { display: none !important; }
 .gorunmez { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ---------- Künye şeridi: pencereyi kimin açtığını söyler ---------- */
+
+.serit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 28px;
+  padding: 0 var(--bosluk);
+  background: var(--serit-zemin);
+  color: var(--serit-soluk);
+  font-family: var(--rakam);
+  font-size: 11px;
+  font-stretch: 87.5%;
+  line-height: 1;
+}
+.marka {
+  display: inline-flex; align-items: baseline; gap: 0;
+  color: var(--serit-yazi);
+  font-weight: 700;
+  font-size: 12px;
+  font-stretch: 112.5%;
+  letter-spacing: -0.01em;
+}
+.marka b { color: var(--serit-vurgu); font-weight: 700; }
+.marka-ok { width: 8px; height: 7px; margin-left: 5px; fill: var(--serit-ok); align-self: center; }
+.serit-not { letter-spacing: 0.01em; }
+
+/* Şerit pencerenin başlık çubuğudur: basılı sürükleme pencereyi taşır (onay.py startSystemMove). */
+.serit { padding-right: 6px; }
+.serit-sag { display: inline-flex; align-items: center; gap: 10px; height: 100%; }
+.kapat {
+  display: grid; place-items: center;
+  width: 28px; height: 22px;
+  padding: 0; border: 0; border-radius: 4px;
+  background: transparent;
+  color: var(--serit-soluk);
+  transition: background-color 120ms ease-out, color 120ms ease-out;
+}
+.kapat svg { width: 10px; height: 10px; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; fill: none; }
+.kapat:hover { background: color-mix(in srgb, var(--serit-yazi) 14%, transparent); color: var(--serit-yazi); }
+.kapat:active { background: color-mix(in srgb, var(--serit-yazi) 22%, transparent); }
 
 /* ---------- Sinyal bandı ---------- */
 
@@ -91,43 +174,45 @@ p, h1 { margin: 0; }
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 26px var(--bosluk) 28px;
+  padding: 20px var(--bosluk) 30px;
   background: var(--bant);
   color: var(--bant-yazi);
 }
 
 .bant-sol { display: flex; align-items: center; gap: 14px; min-width: 0; }
 
-.piktogram { width: 40px; height: 40px; flex: none; }
+.piktogram { width: 38px; height: 38px; flex: none; }
 .piktogram-ucgen { fill: var(--bant-yazi); }
 .piktogram-isaret { fill: var(--bant); }
 
 .sinyal {
-  font-family: var(--sinyal-yazi);
+  font-family: var(--rakam);
   font-weight: 800;
-  font-size: 54px;
-  line-height: 0.95;
-  letter-spacing: 0.01em;
-  text-transform: none;
+  font-stretch: 100%;
+  font-size: 46px;
+  line-height: 1;
+  letter-spacing: -0.02em;
   white-space: nowrap;
 }
 
-.sayac { display: grid; justify-items: end; gap: 2px; flex: none; }
-.sayac-deger { font-size: 26px; font-weight: 600; line-height: 1; letter-spacing: 0.01em; }
-.sayac-not { font-size: 12.5px; font-weight: 500; opacity: 0.92; }
+.sayac { display: grid; justify-items: end; gap: 4px; flex: none; }
+.sayac-deger { font-family: var(--rakam); font-size: 24px; font-weight: 600; line-height: 1; letter-spacing: -0.01em; }
+.sayac-not { font-size: 12.5px; font-weight: 600; }
 
+/* Geri sayım: bandın dibinde ince, düz bir çubuk; süre aktıkça soldan sağa doğru kısalır.
+   Dolu kısım bant yazısı rengindedir, yolu aynı rengin bant üzerindeki soluk izidir. */
 .ray {
   position: absolute;
-  left: var(--bosluk); right: var(--bosluk); bottom: 9px;
+  left: var(--bosluk); right: var(--bosluk); bottom: 12px;
   height: 3px;
   border-radius: 2px;
   overflow: hidden;
-  background: color-mix(in oklch, var(--bant-yazi) 28%, var(--bant));
+  background: color-mix(in srgb, var(--bant-yazi) 24%, var(--bant));
 }
 .ray-dolu {
   display: block;
   height: 100%;
-  background: var(--bant-yazi);
+  background: color-mix(in srgb, var(--bant-yazi) 92%, var(--bant));
   transform-origin: left center;
   transform: scaleX(1);
 }
@@ -136,10 +221,14 @@ p, h1 { margin: 0; }
 
 .icerik { padding: 22px var(--bosluk) 4px; display: grid; gap: 20px; }
 
-.ozet { font-size: 19px; font-weight: 500; line-height: 1.35; text-wrap: balance; }
+.ozet { font-size: 18px; font-weight: 500; line-height: 1.38; text-wrap: balance; }
 
-.enstruman { display: grid; gap: 2px; }
-.sembol { font-size: 30px; font-weight: 700; letter-spacing: 0.005em; line-height: 1.1; }
+.enstruman { display: grid; gap: 4px; }
+.sembol {
+  font-family: var(--rakam);
+  font-size: 28px; font-weight: 700; font-stretch: 100%;
+  letter-spacing: -0.01em; line-height: 1.1;
+}
 .ad { font-size: 15px; color: var(--ikincil); text-wrap: balance; }
 .kunye { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
 .etiket {
@@ -154,19 +243,19 @@ p, h1 { margin: 0; }
 }
 .etiket[data-yon="SATIŞ"], .etiket[data-yon="ALIŞ"] { color: var(--murekkep); font-weight: 600; }
 
-/* Cetvelli değer tablosu: tek cihaz pikseli çizgiler, sağa hizalı tablo rakamları. */
+/* Cetvelli değer tablosu: tek cihaz pikseli çizgiler, sağa hizalı Martian Mono rakamlar. */
 .tablo, .degisim { width: 100%; border-collapse: collapse; }
 .tablo th, .tablo td { padding: 9px 0; border-bottom: 1px solid var(--cizgi); font-size: 15px; }
 .tablo th { text-align: left; font-weight: 400; color: var(--ikincil); }
-.tablo td { text-align: right; font-weight: 600; }
+.tablo td { text-align: right; font-family: var(--rakam); font-size: 14px; font-weight: 500; }
 .tablo tfoot th, .tablo tfoot td { border-bottom: 0; border-top: 2px solid var(--cizgi-guclu); padding-top: 12px; }
 .tablo tbody tr:last-child th, .tablo tbody tr:last-child td { border-bottom: 0; }
 .tablo tfoot th { color: var(--murekkep); font-weight: 600; }
-.tablo tfoot td { font-size: 24px; font-weight: 700; letter-spacing: 0.005em; }
+.tablo tfoot td { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
 /* İptalde tutar harcanacak para değil, bilgidir: hafif çizgi, gövde boyu. */
 .tablo[data-hafif] tfoot th, .tablo[data-hafif] tfoot td { border-top: 1px solid var(--cizgi); padding-top: 9px; }
 .tablo[data-hafif] tfoot th { color: var(--ikincil); font-weight: 400; }
-.tablo[data-hafif] tfoot td { font-size: 15px; font-weight: 600; }
+.tablo[data-hafif] tfoot td { font-size: 14px; font-weight: 500; letter-spacing: 0; }
 
 /* Eski → yeni: ortada alan rayı, solda şimdiki, sağda sonraki değer. */
 .degisim thead th {
@@ -177,26 +266,26 @@ p, h1 { margin: 0; }
 .degisim .d-eski { text-align: right; width: 38%; }
 .degisim .d-alan { text-align: center; width: 24%; }
 .degisim .d-yeni { text-align: left; width: 38%; }
-.degisim td { padding: 9px 0; border-bottom: 1px solid var(--cizgi); font-size: 15px; }
+.degisim td { padding: 9px 0; border-bottom: 1px solid var(--cizgi); font-size: 14px; }
 .degisim tbody tr:last-child td { border-bottom: 0; }
-.degisim td.d-eski { color: var(--ikincil); padding-right: 14px; }
+.degisim td.d-eski { font-family: var(--rakam); color: var(--ikincil); padding-right: 14px; }
 .degisim td.d-alan {
   color: var(--soluk); font-size: 13px; font-weight: 500;
   border-left: 1px solid var(--cizgi); border-right: 1px solid var(--cizgi);
   padding: 9px 8px;
 }
-.degisim td.d-yeni { padding-left: 14px; font-weight: 600; }
+.degisim td.d-yeni { font-family: var(--rakam); padding-left: 14px; font-weight: 600; }
 .degisim tr[data-degisti="evet"] td.d-alan { color: var(--murekkep); font-weight: 600; }
 .degisim tr[data-degisti="evet"] td.d-eski { text-decoration: line-through; text-decoration-thickness: 1px; text-decoration-color: var(--soluk); }
 .degisim tr[data-degisti="evet"] td.d-yeni { color: var(--ton); font-weight: 700; }
 .degisim tr[data-degisti="evet"] td.d-yeni::before {
   content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 8px;
-  border-radius: 50%; background: var(--ton); vertical-align: 0.12em;
+  border-radius: 50%; background: var(--ton); vertical-align: 0.1em;
 }
-.degisim tr[data-degisti="hayir"] td.d-yeni { color: var(--ikincil); font-weight: 400; }
+.degisim tr[data-degisti="hayir"] td.d-yeni { font-family: var(--yazi); color: var(--ikincil); font-weight: 400; }
 
 .kimlik { font-size: 12px; color: var(--soluk); display: flex; flex-wrap: wrap; gap: 4px 16px; }
-.kimlik code { font-family: var(--kimlik-yazi); font-size: 11.5px; color: var(--ikincil); user-select: text; }
+.kimlik code { font-family: var(--rakam); font-size: 11px; font-stretch: 87.5%; color: var(--ikincil); user-select: text; }
 
 /* ---------- Eylem ---------- */
 
@@ -225,22 +314,23 @@ button:focus-visible, button.odakta {
   outline-offset: 3px;
 }
 
+/* Hayır: Midas mavisi, dolu, geniş ve baştan odaklı. */
 .hayir {
   border: 0;
-  background: var(--hayir-zemin);
-  color: var(--hayir-yazi);
+  background: var(--midas);
+  color: var(--midas-yazi);
   font-size: 17px; font-weight: 700;
   transition: filter 150ms ease-out;
 }
-.hayir:hover { filter: brightness(1.12); }
-.hayir:active { filter: brightness(0.94); }
+.hayir:hover { filter: brightness(1.1); }
+.hayir:active { filter: brightness(0.92); }
 
 /* Kapaklı anahtar: basılı tutulunca dolgu soldan sağa kalkar; bırakılınca geri iner. */
 .evet {
   position: relative;
   overflow: hidden;
   display: grid; place-content: center; justify-items: center;
-  gap: 0;
+  gap: 1px;
   border: 2px solid var(--ton);
   background: transparent;
   color: var(--ton);
@@ -261,7 +351,7 @@ button:focus-visible, button.odakta {
 .evet-yazi { font-size: 16px; font-weight: 700; }
 .evet-not { font-size: 12.5px; font-weight: 600; }
 .evet.tutuluyor .evet-yazi, .evet.tutuluyor .evet-not { color: var(--bant-yazi); transition: color 120ms 200ms; }
-.evet:hover { background: color-mix(in oklch, var(--ton) 8%, transparent); }
+.evet:hover { background: color-mix(in srgb, var(--ton) 8%, transparent); }
 .evet.kilitli { cursor: wait; opacity: 0.55; }
 .evet.itti { animation: itti 360ms cubic-bezier(0.16, 1, 0.3, 1); }
 @keyframes itti { 30% { transform: translateX(-4px); } 60% { transform: translateX(3px); } }

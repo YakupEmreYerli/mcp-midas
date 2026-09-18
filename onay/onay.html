@@ -2,12 +2,21 @@
 <html lang="tr" data-theme="__TEMA__">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-__NONCE__'; script-src 'nonce-__NONCE__'; img-src data:; font-src 'none'; connect-src 'none'; form-action 'none'; base-uri 'none'">
-<title>Midas emir onayı</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-__NONCE__'; script-src 'nonce-__NONCE__'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<title>Midas-MCP emir onayı</title>
 <style nonce="__NONCE__">__CSS__</style>
 </head>
 <body>
 <main class="panel" id="panel" data-ton="dikkat">
+  <div class="serit" id="serit">
+    <span class="marka">Midas-<b>MCP</b><svg class="marka-ok" viewBox="0 0 10 8.6" aria-hidden="true" focusable="false"><path d="M0 8.6h10L5 0z"/></svg></span>
+    <span class="serit-sag">
+      <span class="serit-not">ajanın isteği · senin kararın</span>
+      <button type="button" class="kapat" id="kapat" tabindex="-1" aria-label="Kapat: Hayır" title="Kapat: Hayır">
+        <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7"/></svg>
+      </button>
+    </span>
+  </div>
   <header class="bant" aria-live="off">
     <div class="bant-sol">
       <svg class="piktogram" id="piktogram" viewBox="0 0 48 48" aria-hidden="true" focusable="false">

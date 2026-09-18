@@ -45,7 +45,7 @@ export interface GateOptions {
   onayScript: string;
 }
 
-const TITLE = "Midas emir onayı";
+const TITLE = "Midas-MCP emir onayı";
 const TIMEOUT_MS = CONFIRMATION_TIMEOUT_SECONDS * 1000;
 
 /** `kdialog --help-all` (KDE Frameworks 6) çıktısında bulunan, kullandığımız seçenekler. */

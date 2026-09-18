@@ -1,0 +1,713 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-18T21:48:22+03:00",
+  "title": "Design System: Midas emir onayı",
+  "extensions": {
+    "colorMeta": {
+      "zemin-acik": {
+        "role": "neutral",
+        "displayName": "Çelik Zemin (açık tema)",
+        "canonical": "oklch(0.972 0.004 250)",
+        "tonalRamp": [
+          "oklch(0.15 0.004 250)",
+          "oklch(0.26 0.004 250)",
+          "oklch(0.37 0.004 250)",
+          "oklch(0.48 0.004 250)",
+          "oklch(0.60 0.004 250)",
+          "oklch(0.72 0.004 250)",
+          "oklch(0.84 0.004 250)",
+          "oklch(0.95 0.004 250)"
+        ]
+      },
+      "yuzey-acik": {
+        "role": "neutral",
+        "displayName": "Panel Yüzeyi (açık tema)",
+        "canonical": "oklch(0.995 0.002 250)",
+        "tonalRamp": [
+          "oklch(0.15 0.002 250)",
+          "oklch(0.26 0.002 250)",
+          "oklch(0.37 0.002 250)",
+          "oklch(0.48 0.002 250)",
+          "oklch(0.60 0.002 250)",
+          "oklch(0.72 0.002 250)",
+          "oklch(0.84 0.002 250)",
+          "oklch(0.95 0.002 250)"
+        ]
+      },
+      "murekkep-acik": {
+        "role": "neutral",
+        "displayName": "Mürekkep (açık tema)",
+        "canonical": "oklch(0.2 0.012 255)",
+        "tonalRamp": [
+          "oklch(0.15 0.012 255)",
+          "oklch(0.26 0.012 255)",
+          "oklch(0.37 0.012 255)",
+          "oklch(0.48 0.012 255)",
+          "oklch(0.60 0.012 255)",
+          "oklch(0.72 0.012 255)",
+          "oklch(0.84 0.012 255)",
+          "oklch(0.95 0.012 255)"
+        ]
+      },
+      "ikincil-acik": {
+        "role": "neutral",
+        "displayName": "İkincil Metin (açık tema)",
+        "canonical": "oklch(0.44 0.014 255)",
+        "tonalRamp": [
+          "oklch(0.15 0.014 255)",
+          "oklch(0.26 0.014 255)",
+          "oklch(0.37 0.014 255)",
+          "oklch(0.48 0.014 255)",
+          "oklch(0.60 0.014 255)",
+          "oklch(0.72 0.014 255)",
+          "oklch(0.84 0.014 255)",
+          "oklch(0.95 0.014 255)"
+        ]
+      },
+      "soluk-acik": {
+        "role": "neutral",
+        "displayName": "Soluk Metin (açık tema)",
+        "canonical": "oklch(0.5 0.012 255)",
+        "tonalRamp": [
+          "oklch(0.15 0.012 255)",
+          "oklch(0.26 0.012 255)",
+          "oklch(0.37 0.012 255)",
+          "oklch(0.48 0.012 255)",
+          "oklch(0.60 0.012 255)",
+          "oklch(0.72 0.012 255)",
+          "oklch(0.84 0.012 255)",
+          "oklch(0.95 0.012 255)"
+        ]
+      },
+      "cizgi-acik": {
+        "role": "neutral",
+        "displayName": "İnce Çizgi (açık tema)",
+        "canonical": "oklch(0.86 0.008 255)",
+        "tonalRamp": [
+          "oklch(0.15 0.008 255)",
+          "oklch(0.26 0.008 255)",
+          "oklch(0.37 0.008 255)",
+          "oklch(0.48 0.008 255)",
+          "oklch(0.60 0.008 255)",
+          "oklch(0.72 0.008 255)",
+          "oklch(0.84 0.008 255)",
+          "oklch(0.95 0.008 255)"
+        ]
+      },
+      "cizgi-guclu-acik": {
+        "role": "neutral",
+        "displayName": "Güçlü Çizgi (açık tema)",
+        "canonical": "oklch(0.3 0.012 255)",
+        "tonalRamp": [
+          "oklch(0.15 0.012 255)",
+          "oklch(0.26 0.012 255)",
+          "oklch(0.37 0.012 255)",
+          "oklch(0.48 0.012 255)",
+          "oklch(0.60 0.012 255)",
+          "oklch(0.72 0.012 255)",
+          "oklch(0.84 0.012 255)",
+          "oklch(0.95 0.012 255)"
+        ]
+      },
+      "hayir-zemin-acik": {
+        "role": "neutral",
+        "displayName": "Hayır Dolgusu (açık tema)",
+        "canonical": "oklch(0.24 0.014 255)",
+        "tonalRamp": [
+          "oklch(0.15 0.014 255)",
+          "oklch(0.26 0.014 255)",
+          "oklch(0.37 0.014 255)",
+          "oklch(0.48 0.014 255)",
+          "oklch(0.60 0.014 255)",
+          "oklch(0.72 0.014 255)",
+          "oklch(0.84 0.014 255)",
+          "oklch(0.95 0.014 255)"
+        ]
+      },
+      "hayir-yazi-acik": {
+        "role": "neutral",
+        "displayName": "Hayır Yazısı (açık tema)",
+        "canonical": "oklch(0.985 0.003 250)",
+        "tonalRamp": [
+          "oklch(0.15 0.003 250)",
+          "oklch(0.26 0.003 250)",
+          "oklch(0.37 0.003 250)",
+          "oklch(0.48 0.003 250)",
+          "oklch(0.60 0.003 250)",
+          "oklch(0.72 0.003 250)",
+          "oklch(0.84 0.003 250)",
+          "oklch(0.95 0.003 250)"
+        ]
+      },
+      "zemin-koyu": {
+        "role": "neutral",
+        "displayName": "Grafit Zemin (koyu tema)",
+        "canonical": "oklch(0.2 0.008 255)",
+        "tonalRamp": [
+          "oklch(0.15 0.008 255)",
+          "oklch(0.26 0.008 255)",
+          "oklch(0.37 0.008 255)",
+          "oklch(0.48 0.008 255)",
+          "oklch(0.60 0.008 255)",
+          "oklch(0.72 0.008 255)",
+          "oklch(0.84 0.008 255)",
+          "oklch(0.95 0.008 255)"
+        ]
+      },
+      "yuzey-koyu": {
+        "role": "neutral",
+        "displayName": "Panel Yüzeyi (koyu tema)",
+        "canonical": "oklch(0.235 0.009 255)",
+        "tonalRamp": [
+          "oklch(0.15 0.009 255)",
+          "oklch(0.26 0.009 255)",
+          "oklch(0.37 0.009 255)",
+          "oklch(0.48 0.009 255)",
+          "oklch(0.60 0.009 255)",
+          "oklch(0.72 0.009 255)",
+          "oklch(0.84 0.009 255)",
+          "oklch(0.95 0.009 255)"
+        ]
+      },
+      "murekkep-koyu": {
+        "role": "neutral",
+        "displayName": "Mürekkep (koyu tema)",
+        "canonical": "oklch(0.95 0.004 250)",
+        "tonalRamp": [
+          "oklch(0.15 0.004 250)",
+          "oklch(0.26 0.004 250)",
+          "oklch(0.37 0.004 250)",
+          "oklch(0.48 0.004 250)",
+          "oklch(0.60 0.004 250)",
+          "oklch(0.72 0.004 250)",
+          "oklch(0.84 0.004 250)",
+          "oklch(0.95 0.004 250)"
+        ]
+      },
+      "ikincil-koyu": {
+        "role": "neutral",
+        "displayName": "İkincil Metin (koyu tema)",
+        "canonical": "oklch(0.76 0.01 255)",
+        "tonalRamp": [
+          "oklch(0.15 0.010 255)",
+          "oklch(0.26 0.010 255)",
+          "oklch(0.37 0.010 255)",
+          "oklch(0.48 0.010 255)",
+          "oklch(0.60 0.010 255)",
+          "oklch(0.72 0.010 255)",
+          "oklch(0.84 0.010 255)",
+          "oklch(0.95 0.010 255)"
+        ]
+      },
+      "soluk-koyu": {
+        "role": "neutral",
+        "displayName": "Soluk Metin (koyu tema)",
+        "canonical": "oklch(0.66 0.01 255)",
+        "tonalRamp": [
+          "oklch(0.15 0.010 255)",
+          "oklch(0.26 0.010 255)",
+          "oklch(0.37 0.010 255)",
+          "oklch(0.48 0.010 255)",
+          "oklch(0.60 0.010 255)",
+          "oklch(0.72 0.010 255)",
+          "oklch(0.84 0.010 255)",
+          "oklch(0.95 0.010 255)"
+        ]
+      },
+      "cizgi-koyu": {
+        "role": "neutral",
+        "displayName": "İnce Çizgi (koyu tema)",
+        "canonical": "oklch(0.34 0.01 255)",
+        "tonalRamp": [
+          "oklch(0.15 0.010 255)",
+          "oklch(0.26 0.010 255)",
+          "oklch(0.37 0.010 255)",
+          "oklch(0.48 0.010 255)",
+          "oklch(0.60 0.010 255)",
+          "oklch(0.72 0.010 255)",
+          "oklch(0.84 0.010 255)",
+          "oklch(0.95 0.010 255)"
+        ]
+      },
+      "cizgi-guclu-koyu": {
+        "role": "neutral",
+        "displayName": "Güçlü Çizgi (koyu tema)",
+        "canonical": "oklch(0.78 0.008 255)",
+        "tonalRamp": [
+          "oklch(0.15 0.008 255)",
+          "oklch(0.26 0.008 255)",
+          "oklch(0.37 0.008 255)",
+          "oklch(0.48 0.008 255)",
+          "oklch(0.60 0.008 255)",
+          "oklch(0.72 0.008 255)",
+          "oklch(0.84 0.008 255)",
+          "oklch(0.95 0.008 255)"
+        ]
+      },
+      "hayir-zemin-koyu": {
+        "role": "neutral",
+        "displayName": "Hayır Dolgusu (koyu tema)",
+        "canonical": "oklch(0.93 0.004 250)",
+        "tonalRamp": [
+          "oklch(0.15 0.004 250)",
+          "oklch(0.26 0.004 250)",
+          "oklch(0.37 0.004 250)",
+          "oklch(0.48 0.004 250)",
+          "oklch(0.60 0.004 250)",
+          "oklch(0.72 0.004 250)",
+          "oklch(0.84 0.004 250)",
+          "oklch(0.95 0.004 250)"
+        ]
+      },
+      "hayir-yazi-koyu": {
+        "role": "neutral",
+        "displayName": "Hayır Yazısı (koyu tema)",
+        "canonical": "oklch(0.18 0.01 255)",
+        "tonalRamp": [
+          "oklch(0.15 0.010 255)",
+          "oklch(0.26 0.010 255)",
+          "oklch(0.37 0.010 255)",
+          "oklch(0.48 0.010 255)",
+          "oklch(0.60 0.010 255)",
+          "oklch(0.72 0.010 255)",
+          "oklch(0.84 0.010 255)",
+          "oklch(0.95 0.010 255)"
+        ]
+      },
+      "tehlike-acik": {
+        "role": "primary",
+        "displayName": "Emniyet Kırmızısı (açık tema)",
+        "canonical": "oklch(0.52 0.2 27)",
+        "tonalRamp": [
+          "oklch(0.15 0.080 27)",
+          "oklch(0.26 0.080 27)",
+          "oklch(0.37 0.200 27)",
+          "oklch(0.48 0.200 27)",
+          "oklch(0.60 0.200 27)",
+          "oklch(0.72 0.200 27)",
+          "oklch(0.84 0.200 27)",
+          "oklch(0.95 0.080 27)"
+        ]
+      },
+      "tehlike-koyu": {
+        "role": "primary",
+        "displayName": "Emniyet Kırmızısı (koyu tema)",
+        "canonical": "oklch(0.52 0.19 27)",
+        "tonalRamp": [
+          "oklch(0.15 0.080 27)",
+          "oklch(0.26 0.080 27)",
+          "oklch(0.37 0.190 27)",
+          "oklch(0.48 0.190 27)",
+          "oklch(0.60 0.190 27)",
+          "oklch(0.72 0.190 27)",
+          "oklch(0.84 0.190 27)",
+          "oklch(0.95 0.080 27)"
+        ]
+      },
+      "tehlike-yazi": {
+        "role": "primary",
+        "displayName": "Emniyet Kırmızısı üstü yazı",
+        "canonical": "oklch(0.99 0.005 27)",
+        "tonalRamp": [
+          "oklch(0.15 0.005 27)",
+          "oklch(0.26 0.005 27)",
+          "oklch(0.37 0.005 27)",
+          "oklch(0.48 0.005 27)",
+          "oklch(0.60 0.005 27)",
+          "oklch(0.72 0.005 27)",
+          "oklch(0.84 0.005 27)",
+          "oklch(0.95 0.005 27)"
+        ]
+      },
+      "tehlike-ton-acik": {
+        "role": "primary",
+        "displayName": "Emniyet Kırmızısı metin tonu (açık tema)",
+        "canonical": "oklch(0.5 0.19 27)",
+        "tonalRamp": [
+          "oklch(0.15 0.080 27)",
+          "oklch(0.26 0.080 27)",
+          "oklch(0.37 0.190 27)",
+          "oklch(0.48 0.190 27)",
+          "oklch(0.60 0.190 27)",
+          "oklch(0.72 0.190 27)",
+          "oklch(0.84 0.190 27)",
+          "oklch(0.95 0.080 27)"
+        ]
+      },
+      "tehlike-ton-koyu": {
+        "role": "primary",
+        "displayName": "Emniyet Kırmızısı metin tonu (koyu tema)",
+        "canonical": "oklch(0.72 0.16 27)",
+        "tonalRamp": [
+          "oklch(0.15 0.080 27)",
+          "oklch(0.26 0.080 27)",
+          "oklch(0.37 0.160 27)",
+          "oklch(0.48 0.160 27)",
+          "oklch(0.60 0.160 27)",
+          "oklch(0.72 0.160 27)",
+          "oklch(0.84 0.160 27)",
+          "oklch(0.95 0.080 27)"
+        ]
+      },
+      "alis-acik": {
+        "role": "primary",
+        "displayName": "Piyasa Yeşili (açık tema)",
+        "canonical": "oklch(0.5 0.12 158)",
+        "tonalRamp": [
+          "oklch(0.15 0.080 158)",
+          "oklch(0.26 0.080 158)",
+          "oklch(0.37 0.120 158)",
+          "oklch(0.48 0.120 158)",
+          "oklch(0.60 0.120 158)",
+          "oklch(0.72 0.120 158)",
+          "oklch(0.84 0.120 158)",
+          "oklch(0.95 0.080 158)"
+        ]
+      },
+      "alis-koyu": {
+        "role": "primary",
+        "displayName": "Piyasa Yeşili (koyu tema)",
+        "canonical": "oklch(0.47 0.11 158)",
+        "tonalRamp": [
+          "oklch(0.15 0.080 158)",
+          "oklch(0.26 0.080 158)",
+          "oklch(0.37 0.110 158)",
+          "oklch(0.48 0.110 158)",
+          "oklch(0.60 0.110 158)",
+          "oklch(0.72 0.110 158)",
+          "oklch(0.84 0.110 158)",
+          "oklch(0.95 0.080 158)"
+        ]
+      },
+      "alis-yazi": {
+        "role": "primary",
+        "displayName": "Piyasa Yeşili üstü yazı",
+        "canonical": "oklch(0.99 0.005 158)",
+        "tonalRamp": [
+          "oklch(0.15 0.005 158)",
+          "oklch(0.26 0.005 158)",
+          "oklch(0.37 0.005 158)",
+          "oklch(0.48 0.005 158)",
+          "oklch(0.60 0.005 158)",
+          "oklch(0.72 0.005 158)",
+          "oklch(0.84 0.005 158)",
+          "oklch(0.95 0.005 158)"
+        ]
+      },
+      "alis-ton-acik": {
+        "role": "primary",
+        "displayName": "Piyasa Yeşili metin tonu (açık tema)",
+        "canonical": "oklch(0.46 0.11 158)",
+        "tonalRamp": [
+          "oklch(0.15 0.080 158)",
+          "oklch(0.26 0.080 158)",
+          "oklch(0.37 0.110 158)",
+          "oklch(0.48 0.110 158)",
+          "oklch(0.60 0.110 158)",
+          "oklch(0.72 0.110 158)",
+          "oklch(0.84 0.110 158)",
+          "oklch(0.95 0.080 158)"
+        ]
+      },
+      "alis-ton-koyu": {
+        "role": "primary",
+        "displayName": "Piyasa Yeşili metin tonu (koyu tema)",
+        "canonical": "oklch(0.76 0.12 158)",
+        "tonalRamp": [
+          "oklch(0.15 0.080 158)",
+          "oklch(0.26 0.080 158)",
+          "oklch(0.37 0.120 158)",
+          "oklch(0.48 0.120 158)",
+          "oklch(0.60 0.120 158)",
+          "oklch(0.72 0.120 158)",
+          "oklch(0.84 0.120 158)",
+          "oklch(0.95 0.080 158)"
+        ]
+      },
+      "dikkat-acik": {
+        "role": "primary",
+        "displayName": "Emniyet Sarısı (açık tema)",
+        "canonical": "oklch(0.83 0.155 82)",
+        "tonalRamp": [
+          "oklch(0.15 0.080 82)",
+          "oklch(0.26 0.080 82)",
+          "oklch(0.37 0.155 82)",
+          "oklch(0.48 0.155 82)",
+          "oklch(0.60 0.155 82)",
+          "oklch(0.72 0.155 82)",
+          "oklch(0.84 0.155 82)",
+          "oklch(0.95 0.080 82)"
+        ]
+      },
+      "dikkat-koyu": {
+        "role": "primary",
+        "displayName": "Emniyet Sarısı (koyu tema)",
+        "canonical": "oklch(0.82 0.15 82)",
+        "tonalRamp": [
+          "oklch(0.15 0.080 82)",
+          "oklch(0.26 0.080 82)",
+          "oklch(0.37 0.150 82)",
+          "oklch(0.48 0.150 82)",
+          "oklch(0.60 0.150 82)",
+          "oklch(0.72 0.150 82)",
+          "oklch(0.84 0.150 82)",
+          "oklch(0.95 0.080 82)"
+        ]
+      },
+      "dikkat-yazi": {
+        "role": "primary",
+        "displayName": "Emniyet Sarısı üstü yazı",
+        "canonical": "oklch(0.2 0.03 70)",
+        "tonalRamp": [
+          "oklch(0.15 0.030 70)",
+          "oklch(0.26 0.030 70)",
+          "oklch(0.37 0.030 70)",
+          "oklch(0.48 0.030 70)",
+          "oklch(0.60 0.030 70)",
+          "oklch(0.72 0.030 70)",
+          "oklch(0.84 0.030 70)",
+          "oklch(0.95 0.030 70)"
+        ]
+      },
+      "dikkat-ton-acik": {
+        "role": "primary",
+        "displayName": "Emniyet Sarısı metin tonu (açık tema)",
+        "canonical": "oklch(0.5 0.11 70)",
+        "tonalRamp": [
+          "oklch(0.15 0.080 70)",
+          "oklch(0.26 0.080 70)",
+          "oklch(0.37 0.110 70)",
+          "oklch(0.48 0.110 70)",
+          "oklch(0.60 0.110 70)",
+          "oklch(0.72 0.110 70)",
+          "oklch(0.84 0.110 70)",
+          "oklch(0.95 0.080 70)"
+        ]
+      },
+      "dikkat-ton-koyu": {
+        "role": "primary",
+        "displayName": "Emniyet Sarısı metin tonu (koyu tema)",
+        "canonical": "oklch(0.84 0.14 82)",
+        "tonalRamp": [
+          "oklch(0.15 0.080 82)",
+          "oklch(0.26 0.080 82)",
+          "oklch(0.37 0.140 82)",
+          "oklch(0.48 0.140 82)",
+          "oklch(0.60 0.140 82)",
+          "oklch(0.72 0.140 82)",
+          "oklch(0.84 0.140 82)",
+          "oklch(0.95 0.080 82)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Sinyal sözcüğü",
+        "purpose": "Yalnız bandın işlem sözcüğü; tek satır."
+      },
+      "headline": {
+        "displayName": "Sembol",
+        "purpose": "Enstrüman sembolü."
+      },
+      "figure": {
+        "displayName": "Tutar",
+        "purpose": "Tahmini tutar, toplam satırında sağa hizalı."
+      },
+      "title": {
+        "displayName": "Özet",
+        "purpose": "Tek cümlelik işlem özeti."
+      },
+      "body": {
+        "displayName": "Gövde",
+        "purpose": "Tablo satırları, tam ad; değerler 600."
+      },
+      "label": {
+        "displayName": "Etiket",
+        "purpose": "Etiketler, ipucu, sayaç notu, Evet notu."
+      },
+      "column-head": {
+        "displayName": "Sütun başlığı",
+        "purpose": "Yalnız değişim tablosunun Şimdi / Sonra başlıkları; büyük harf."
+      },
+      "mono": {
+        "displayName": "Kimlik",
+        "purpose": "Emir numarası ve hesap kimliği."
+      }
+    },
+    "shadows": [],
+    "focus": [
+      {
+        "name": "odak-halkasi",
+        "value": "outline: 3px solid var(--odak); outline-offset: 3px",
+        "purpose": "Her iki düğmede görünür odak; Hayır açılışta bu halkayla gelir."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ray-geri-sayim",
+        "value": "transform scaleX(1→0), sure (120 s), linear",
+        "purpose": "Tek sürekli hareket: bandın altındaki rayın boşalması."
+      },
+      {
+        "name": "evet-tutma",
+        "value": "transform 900ms linear",
+        "purpose": "Basılı tutulunca Evet dolgusunun soldan sağa kalkması."
+      },
+      {
+        "name": "evet-birakma",
+        "value": "transform 220ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Bırakılınca dolgunun geri inmesi."
+      },
+      {
+        "name": "evet-yazi",
+        "value": "color 120ms 200ms",
+        "purpose": "Dolgu kalkarken Evet yazısının bant yazısı rengine dönmesi."
+      },
+      {
+        "name": "evet-itti",
+        "value": "360ms cubic-bezier(0.16, 1, 0.3, 1); translateX -4px / +3px",
+        "purpose": "Tek tıklama ya da Enter onaylamaz; düğme silkelenir."
+      },
+      {
+        "name": "hayir-filtre",
+        "value": "filter 150ms ease-out",
+        "purpose": "Hayır hover / active parlaklık değişimi."
+      },
+      {
+        "name": "azaltilmis-hareket",
+        "value": "steps(6, end); itti kapalı",
+        "purpose": "prefers-reduced-motion: reduce altında dolgu basamaklı ilerler."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "pencere",
+        "value": "560px (sabit genişlik, yükseklik içeriğe göre)"
+      }
+    ],
+    "themes": {
+      "selector": "html[data-theme=\"acik\"|\"koyu\"]",
+      "tonSelector": ".panel[data-ton=\"tehlike\"|\"alis\"|\"dikkat\"]",
+      "tonSlots": [
+        "--bant",
+        "--bant-yazi",
+        "--ton"
+      ]
+    },
+    "rootTokensCss": ":root{--r:6px;--zemin:oklch(0.972 0.004 250);--yuzey:oklch(0.995 0.002 250);--murekkep:oklch(0.2 0.012 255);--ikincil:oklch(0.44 0.014 255);--soluk:oklch(0.5 0.012 255);--cizgi:oklch(0.86 0.008 255);--cizgi-guclu:oklch(0.3 0.012 255);--hayir-zemin:oklch(0.24 0.014 255);--hayir-yazi:oklch(0.985 0.003 250);--odak:oklch(0.2 0.012 255);--bant:oklch(0.52 0.2 27);--bant-yazi:oklch(0.99 0.005 27);--ton:oklch(0.5 0.19 27);}"
+  },
+  "components": [
+    {
+      "name": "Hayır düğmesi",
+      "kind": "button",
+      "refersTo": "button-hayir",
+      "description": "Varsayılan, dolu, geniş ret düğmesi; açılışta odaklı.",
+      "html": "<button type=\"button\" class=\"ds-hayir\">Hayır</button>",
+      "css": ".ds-hayir{font-family:'Fira Sans','Noto Sans','DejaVu Sans',sans-serif;font-variant-numeric:tabular-nums lining-nums;height:52px;min-width:260px;border:0;border-radius:6px;background:oklch(0.24 0.014 255);color:oklch(0.985 0.003 250);font-size:17px;font-weight:700;cursor:pointer;transition:filter 150ms ease-out;}.ds-hayir:hover{filter:brightness(1.12);}.ds-hayir:active{filter:brightness(0.94);}.ds-hayir:focus{outline:none;}.ds-hayir:focus-visible{outline:3px solid oklch(0.2 0.012 255);outline-offset:3px;}"
+    },
+    {
+      "name": "Kapaklı anahtar (Evet)",
+      "kind": "button",
+      "refersTo": "button-evet-tehlike",
+      "description": "Basılı tutunca dolgusu soldan sağa kalkan, taralı kapaklı onay anahtarı; tek tıklama onaylamaz.",
+      "html": "<button type=\"button\" class=\"ds-evet\"><svg class=\"ds-evet-kapak\" aria-hidden=\"true\" preserveAspectRatio=\"none\"><defs><pattern id=\"ds-tarama\" width=\"9\" height=\"9\" patternUnits=\"userSpaceOnUse\" patternTransform=\"rotate(45)\"><line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"9\" class=\"ds-tarama\"/></pattern></defs><rect width=\"100%\" height=\"100%\" fill=\"url(#ds-tarama)\"/></svg><span class=\"ds-evet-dolgu\"></span><span class=\"ds-evet-yazi\">Evet, sat</span><span class=\"ds-evet-not\">basılı tutun</span></button>",
+      "css": ".ds-evet{font-family:'Fira Sans','Noto Sans','DejaVu Sans',sans-serif;font-variant-numeric:tabular-nums lining-nums;position:relative;overflow:hidden;display:grid;place-content:center;justify-items:center;height:52px;min-width:210px;border-radius:6px;border:2px solid oklch(0.5 0.19 27);background:transparent;color:oklch(0.5 0.19 27);cursor:pointer;}.ds-evet-kapak{position:absolute;inset:0;width:100%;height:100%;}.ds-tarama{stroke:oklch(0.5 0.19 27);stroke-width:2.2;opacity:0.16;}.ds-evet-dolgu{position:absolute;inset:0;background:oklch(0.52 0.2 27);transform-origin:left center;transform:scaleX(0);transition:transform 220ms cubic-bezier(0.16,1,0.3,1);}.ds-evet:active .ds-evet-dolgu{transform:scaleX(1);transition:transform 900ms linear;}.ds-evet-yazi,.ds-evet-not{position:relative;line-height:1.1;}.ds-evet-yazi{font-size:16px;font-weight:700;}.ds-evet-not{font-size:12.5px;font-weight:600;}.ds-evet:active .ds-evet-yazi,.ds-evet:active .ds-evet-not{color:oklch(0.99 0.005 27);transition:color 120ms 200ms;}.ds-evet:hover{background:color-mix(in oklch,oklch(0.5 0.19 27) 8%,transparent);}.ds-evet:focus{outline:none;}.ds-evet:focus-visible{outline:3px solid oklch(0.2 0.012 255);outline-offset:3px;}"
+    },
+    {
+      "name": "Sinyal bandı",
+      "kind": "custom",
+      "refersTo": "sinyal-bandi-tehlike",
+      "description": "Tam genişlik güvenlik rengi bandı: piktogram, sinyal sözcüğü, geri sayım ve boşalan ray.",
+      "html": "<header class=\"ds-bant\"><div class=\"ds-bant-sol\"><svg class=\"ds-pikto\" viewBox=\"0 0 48 48\" aria-hidden=\"true\"><path class=\"ds-pikto-u\" d=\"M24 4.5 45 42H3z\"/><path class=\"ds-pikto-i\" d=\"M21.6 17h4.8l-.8 13.5h-3.2zM24 33.2a2.6 2.6 0 1 1 0 5.2 2.6 2.6 0 0 1 0-5.2z\"/></svg><h1 class=\"ds-sinyal\">SATIŞ</h1></div><div class=\"ds-sayac\"><span class=\"ds-sayac-d\">1:59</span><span class=\"ds-sayac-n\">sonra Hayır</span></div><div class=\"ds-ray\"><span class=\"ds-ray-dolu\"></span></div></header>",
+      "css": ".ds-bant{font-family:'Fira Sans','Noto Sans','DejaVu Sans',sans-serif;font-variant-numeric:tabular-nums lining-nums;position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:26px 28px 28px;background:oklch(0.52 0.2 27);color:oklch(0.99 0.005 27);width:560px;box-sizing:border-box;}.ds-bant-sol{display:flex;align-items:center;gap:14px;}.ds-pikto{width:40px;height:40px;}.ds-pikto-u{fill:oklch(0.99 0.005 27);}.ds-pikto-i{fill:oklch(0.52 0.2 27);}.ds-sinyal{margin:0;font-family:'Fira Sans Condensed','Fira Sans','Noto Sans',sans-serif;font-weight:800;font-size:54px;line-height:0.95;letter-spacing:0.01em;white-space:nowrap;}.ds-sayac{display:grid;justify-items:end;gap:2px;}.ds-sayac-d{font-size:26px;font-weight:600;line-height:1;}.ds-sayac-n{font-size:12.5px;font-weight:500;opacity:0.92;}.ds-ray{position:absolute;left:28px;right:28px;bottom:9px;height:3px;border-radius:2px;overflow:hidden;background:color-mix(in oklch,oklch(0.99 0.005 27) 28%,oklch(0.52 0.2 27));}.ds-ray-dolu{display:block;height:100%;width:100%;background:oklch(0.99 0.005 27);transform-origin:left center;transform:scaleX(0.98);}"
+    },
+    {
+      "name": "Etiket",
+      "kind": "chip",
+      "refersTo": "etiket",
+      "description": "Pazar, yön ve emir tipi künyesi; yön etiketi mürekkep ve 600 ile öne çıkar, renk almaz.",
+      "html": "<span class=\"ds-etiket\">TR HİSSE (BIST)</span> <span class=\"ds-etiket ds-etiket-yon\">Satış</span> <span class=\"ds-etiket\">Limit</span>",
+      "css": ".ds-etiket{font-family:'Fira Sans','Noto Sans','DejaVu Sans',sans-serif;font-variant-numeric:tabular-nums lining-nums;display:inline-flex;align-items:center;height:24px;padding:0 9px;border:1px solid oklch(0.86 0.008 255);border-radius:4px;font-size:12.5px;font-weight:500;color:oklch(0.44 0.014 255);background:oklch(0.995 0.002 250);white-space:nowrap;}.ds-etiket-yon{color:oklch(0.2 0.012 255);font-weight:600;}"
+    },
+    {
+      "name": "Cetvelli değer tablosu",
+      "kind": "card",
+      "description": "1 px cetvelli satırlar, sağa hizalı tablo rakamları, 2 px güçlü çizgili tahmini tutar.",
+      "html": "<table class=\"ds-tablo\"><tbody><tr><th>Adet</th><td>25</td></tr><tr><th>Limit fiyatı</th><td>₺122,50</td></tr><tr><th>Güncel fiyat</th><td>₺118,30</td></tr></tbody><tfoot><tr><th>Tahmini tutar</th><td>₺3.062,50</td></tr></tfoot></table>",
+      "css": ".ds-tablo{font-family:'Fira Sans','Noto Sans','DejaVu Sans',sans-serif;font-variant-numeric:tabular-nums lining-nums;width:504px;border-collapse:collapse;color:oklch(0.2 0.012 255);}.ds-tablo th,.ds-tablo td{padding:9px 0;border-bottom:1px solid oklch(0.86 0.008 255);font-size:15px;}.ds-tablo th{text-align:left;font-weight:400;color:oklch(0.44 0.014 255);}.ds-tablo td{text-align:right;font-weight:600;}.ds-tablo tbody tr:last-child th,.ds-tablo tbody tr:last-child td{border-bottom:0;}.ds-tablo tfoot th,.ds-tablo tfoot td{border-bottom:0;border-top:2px solid oklch(0.3 0.012 255);padding-top:12px;}.ds-tablo tfoot th{color:oklch(0.2 0.012 255);font-weight:600;}.ds-tablo tfoot td{font-size:24px;font-weight:700;letter-spacing:0.005em;}"
+    },
+    {
+      "name": "Değişim tablosu",
+      "kind": "custom",
+      "description": "Eski → yeni: ortada alan rayı; yalnız değişen satırlar güvenlik tonu ve nokta alır.",
+      "html": "<table class=\"ds-degisim\"><thead><tr><th class=\"e\">Şimdi</th><th class=\"a\"></th><th class=\"y\">Sonra</th></tr></thead><tbody><tr><td class=\"e\">5</td><td class=\"a\">Adet</td><td class=\"y ayni\">aynı</td></tr><tr class=\"degisti\"><td class=\"e\">₺122,50</td><td class=\"a\">Kâr al</td><td class=\"y\">₺126,00</td></tr></tbody></table>",
+      "css": ".ds-degisim{font-family:'Fira Sans','Noto Sans','DejaVu Sans',sans-serif;font-variant-numeric:tabular-nums lining-nums;width:504px;border-collapse:collapse;color:oklch(0.2 0.012 255);}.ds-degisim thead th{font-size:12px;font-weight:600;letter-spacing:0.04em;color:oklch(0.5 0.012 255);text-transform:uppercase;padding:0 0 6px;border-bottom:1px solid oklch(0.86 0.008 255);}.ds-degisim .e{text-align:right;width:38%;}.ds-degisim .a{text-align:center;width:24%;}.ds-degisim .y{text-align:left;width:38%;}.ds-degisim td{padding:9px 0;border-bottom:1px solid oklch(0.86 0.008 255);font-size:15px;}.ds-degisim tbody tr:last-child td{border-bottom:0;}.ds-degisim td.e{color:oklch(0.44 0.014 255);padding-right:14px;}.ds-degisim td.a{color:oklch(0.5 0.012 255);font-size:13px;font-weight:500;border-left:1px solid oklch(0.86 0.008 255);border-right:1px solid oklch(0.86 0.008 255);padding:9px 8px;}.ds-degisim td.y{padding-left:14px;font-weight:600;}.ds-degisim td.ayni{color:oklch(0.44 0.014 255);font-weight:400;}.ds-degisim tr.degisti td.a{color:oklch(0.2 0.012 255);font-weight:600;}.ds-degisim tr.degisti td.e{text-decoration:line-through;text-decoration-thickness:1px;text-decoration-color:oklch(0.5 0.012 255);}.ds-degisim tr.degisti td.y{color:oklch(0.5 0.11 70);font-weight:700;}.ds-degisim tr.degisti td.y::before{content:'';display:inline-block;width:7px;height:7px;margin-right:8px;border-radius:50%;background:oklch(0.5 0.11 70);vertical-align:0.12em;}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Kapaklı Emniyet Anahtarı",
+    "overview": "**Creative North Star: \"Kapaklı Emniyet Anahtarı\"**\n\nOnay penceresi bir diyalog kutusu değil, endüstriyel bir kumanda panelidir. İşlem tipi, ISO 3864 / ANSI Z535 sinyal sözcüğü gibi tam genişlikte renkli bir bantta okunur; altında sakin, nötr bir çelik ya da grafit panel rakamları cetvelli bir tabloda verir; en altta Evet, taralı kapağın altındaki anahtardır ve ancak basılı tutulunca kalkar. Hayır ise dolu, geniş ve baştan odaklıdır.\n\nYoğunluk sıkı ama ferah: 560 px sabit genişlik, içerik kadar yükseklik, tek yatay kenar boşluğu (28 px). Panel düzdür, gölge yoktur; derinlik yalnız ton farkıyla (zemin ve bir basamak açık yüzey) ve tek cihaz pikseli çizgilerle kurulur. Hareket azdır ve işlevseldir: tek sürekli hareket geri sayım rayıdır, geri kalan her şey el hareketine cevaptır.\n\nRenk az ve anlamlıdır. Ekranda bir anda yalnız bir güvenlik rengi yaşar; o renk bantta, Evet anahtarında ve değişen değerlerde görünür, başka hiçbir yerde görünmez. Kırmızı yalnız tehlike içindir.",
+    "keyCharacteristics": [
+      "Tek güvenlik rengi bandı işlem tipini söz, piktogram ve renkle birlikte söyler.",
+      "Nötr, soğuk tonlu panel (ton 250-255); açık tema çelik, koyu tema grafit.",
+      "Tablo rakamları (tabular, lining), sağa hizalı tutarlar, cetvelli satırlar.",
+      "Küçük ve tek köşe yarıçapı; gölgesiz, ton ve çizgiyle katmanlanan yüzey.",
+      "Onay basılı tutma ister; ret dolu, geniş ve varsayılandır."
+    ],
+    "rules": [
+      {
+        "name": "The Tek Bant Rule",
+        "body": "Bir ekranda yalnız bir güvenlik rengi yaşar ve yalnız üç yerde görünür: sinyal bandı, Evet anahtarı, değişen değer. Nötr panelin geri kalanına renk girmez.",
+        "section": "colors"
+      },
+      {
+        "name": "The Kırmızı Yalnız Tehlike Rule",
+        "body": "Emniyet kırmızısı yalnız geri dönüşü zor ya da para çıkaran yön (SATIŞ, İPTAL) içindir; hata, uyarı ya da vurgu için kullanılmaz.",
+        "section": "colors"
+      },
+      {
+        "name": "The Renk Tek Sinyal Değil Rule",
+        "body": "Güvenlik rengi her zaman sinyal sözcüğü ve piktogramla birlikte gelir: tehlike ve dikkat için üçgen uyarı işareti, alış için daire içinde artı.",
+        "section": "colors"
+      },
+      {
+        "name": "The Rakam Izgarası Rule",
+        "body": "Tüm sayfa `font-variant-numeric: tabular-nums lining-nums` ile dizilir; tutarlar ve değerler sağa hizalanır, rakamlar alt alta tek ızgarada durur.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tek Bağıran Söz Rule",
+        "body": "Dar ExtraBold yüz yalnız sinyal sözcüğüne aittir; başka başlık, düğme ya da vurgu için kullanılmaz.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tek Cihaz Pikseli Rule",
+        "body": "Cetveller 1 px'tir. Tek istisna, harcanacak paranın üstündeki 2 px güçlü toplam çizgisidir; iptalde tutar yalnız bilgi olduğu için o çizgi de 1 px'e iner.",
+        "section": "layout"
+      },
+      {
+        "name": "The Gölgesiz Panel Rule",
+        "body": "Yüzeyler gölge almaz; bir katmanı ayırmak gerekiyorsa ton basamağı ya da 1 px çizgi kullanılır.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do güvenlik rengini yalnız panelin `data-ton` yuvasından (`--bant`, `--bant-yazi`, `--ton`) okuyun; yeni bir yüzey tonu değiştirmek için yuvayı değiştirir, rengi elle yazmaz.",
+      "Do her sinyal sözcüğünü piktogramıyla birlikte verin (tehlike ve dikkat: üçgen; alış: daire içinde artı).",
+      "Do tüm rakamları tabular ve lining dizin, tutarları sağa hizalayın.",
+      "Do tabloları 1 px cetvelle ayırın; 2 px çizgiyi yalnız harcanacak toplamın üstünde kullanın.",
+      "Do onaylayıcı ve geri dönüşü zor eylemi basılı tutmalı kapaklı anahtar olarak, reddi dolu ve varsayılan odaklı düğme olarak kurun.",
+      "Do 28 px yatay kenar boşluğunu her blokta koruyun."
+    ],
+    "donts": [
+      "Don't emniyet kırmızısını tehlike dışı (hata, uyarı, dekor) bir anlam için kullanmayın.",
+      "Don't bir ekrana ikinci bir güvenlik rengi ya da bant dışında renkli yüzey eklemeyin.",
+      "Don't yüzeylere gölge vermeyin; ayrım ton basamağı ve çizgiyle yapılır.",
+      "Don't dar ExtraBold yüzü sinyal sözcüğü dışında kullanmayın.",
+      "Don't Evet ile Hayır'ı eş ağırlıkta iki dolu düğme olarak dizmeyin; Enter hiçbir zaman onaylamaz.",
+      "Don't çapraz taramayı dekor olarak yaymayın; o yalnız Evet kapağının malzemesidir.",
+      "Don't büyük harfli küçük etiketi başlık üstü süs olarak kullanmayın; büyük harf yalnız değişim tablosu sütun başlıklarındadır.",
+      "Don't ağdan font ya da kaynak yüklemeyin; aile sistemden gelir."
+    ]
+  }
+}

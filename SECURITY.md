@@ -11,7 +11,11 @@ on this repository instead.
 It holds a logged-in session to a brokerage account. That makes three things worth
 knowing before you run it.
 
-**Trades require a local human confirmation.** The server can place, update and cancel
+**Order tools are off by default.** `place_order`, `update_order` and `cancel_order` are
+only registered when `MIDAS_ORDERS_ENABLED=1` is set; otherwise they do not appear in the
+MCP tool list at all.
+
+**Trades require a local human confirmation.** When enabled, the server can place, update and cancel
 the supported order types, but it cannot send their mutations until its own process has
 shown its confirmation window (designed PySide6 window, falling back to `kdialog`/`zenity`)
 and the user has held **Yes**. The default is No; timeouts, missing display and dialog
@@ -31,6 +35,6 @@ is likewise local. Do not commit or copy them.
 
 ## Scope
 
-Reports about the scanning, backtest and scoring code (`CLAUDE.md`, `METHOD.md`,
-`src/backtest.ts`, `src/rescore.ts`, `src/positioning.ts`) are welcome but that code is
-explicitly experimental and produces no financial advice.
+Reports about the scanning, backtest and scoring code (`docs/analiz-kurallari.md`,
+`METHOD.md`, `src/backtest.ts`, `src/rescore.ts`, `src/positioning.ts`) are welcome but
+that code is explicitly experimental and produces no financial advice.

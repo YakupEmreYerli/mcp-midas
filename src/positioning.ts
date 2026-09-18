@@ -1,5 +1,5 @@
 /**
- * Real-VWAP positioning term (CLAUDE.md v3.2).
+ * Real-VWAP positioning term (docs/analiz-kurallari.md v3.2).
  *
  * A bounded adjustment applied AFTER the Q/P blend, like the tape term. It asks where
  * price sits relative to what holders actually paid in today's lira — a flow/positioning

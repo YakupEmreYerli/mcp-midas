@@ -285,7 +285,8 @@ Multiple symbols → ranked table: symbol · Q · P · R · FINAL · stance · d
 - **Scans never trade. Never.** A scan must not call `buy_asset` or `sell_asset` — not
   even for a stock rated Unattractive, not even if the user holds it. Ratings are
   information. Trading happens only on a separate, explicit user instruction naming
-  symbol, side, and quantity — and the server's ₺5,000 per-order cap still applies.
+  symbol, side, and quantity — and every order still needs the desktop confirmation and
+  the `MAX_ORDER_VALUE_TRY` ceiling.
 - Facts (tool outputs, dated figures) vs judgment (scores) — keep them visibly distinct.
 - Market closed → say so; technicals reflect the last session.
 - If the user holds the stock (check `get_assets` when relevant), frame weak stances as

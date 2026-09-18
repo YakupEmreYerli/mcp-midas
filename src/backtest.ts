@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Backtest of the CLAUDE.md v3 TechnicalTiming sub-score (the mechanical part of the
+ * Backtest of the docs/analiz-kurallari.md v3 TechnicalTiming sub-score (the mechanical part of the
  * Price axis). For each symbol and each historical date (weekly steps), the score is
  * computed using ONLY data up to that date, then compared with the realized forward
  * return 5/21/63 trading days later.
@@ -57,7 +57,7 @@ async function fetchHistory(uid: string, targetBars: number): Promise<Candle[]> 
   return all.filter((c) => (seen.has(c.t) ? false : (seen.add(c.t), true)));
 }
 
-// ---- codified TechnicalTiming score (reference implementation of CLAUDE.md v3) ----
+// ---- codified TechnicalTiming score (reference implementation of docs/analiz-kurallari.md v3) ----
 
 function localRsi(closes: number[], period = 14): number | null {
   if (closes.length < period + 1) return null;

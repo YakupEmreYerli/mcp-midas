@@ -23,6 +23,10 @@ desteklenen emirleri yalnızca yerel insan onayından sonra gönderebilir.
   çözümlenen ad, piyasa, hesap ve fiyatla kurulur. Onay sonrası anlamlı değişiklik reddedilir.
   Her deneme `.midas-orders.log.jsonl` dosyasına 0600 izinle ve kimlik bilgileri ayıklanarak
   yazılır.
+- **Emir araçları varsayılan kapalı.** `place_order`, `update_order`, `cancel_order` yalnız
+  `MIDAS_ORDERS_ENABLED=1` verildiğinde kaydedilir (`src/tool-flags.ts`); yoksa araç
+  listesinde hiç görünmez. Bayrak yalnız aracın var olup olmadığını belirler, onay kapısını
+  gevşetmez. Bayrağı açan başka bir değer ya da yol eklenmez.
 - **Kimlik bilgisi yalnız ortamda.** `MIDAS_PHONE` ve `MIDAS_PASSWORD` ortam değişkeniyle
   (sır yöneticisi ya da gitignore'lu `.env`) verilir; koda, loga, commit'e yazılmaz.
 - **Oturum `storageState` ile açılır.** Okumada 401 sonrası sunucu içinde tek paylaşılan
@@ -30,7 +34,9 @@ desteklenen emirleri yalnızca yerel insan onayından sonra gönderebilir.
 
 ## BIST analiz kuralları
 
-Hisse tarama ve puanlama çerçevesi **`docs/analiz-kurallari.md`** içinde. Bu dosya
-17 KB'tı ve her oturumda bağlama giriyordu; analiz yapılmayan oturumlarda
-karşılığı olmayan ~5.700 token demekti. Tarama, analiz veya puanlama istendiğinde
-o dosyayı aç ve harfiyen uygula.
+Hisse tarama ve puanlama çerçevesi `docs/analiz-kurallari.md` içinde (özeti `METHOD.md`;
+ikisi de upstream `ahmetdenizyilmaz/midas-mcp`'den gelir). Tarama, analiz ya da puanlama
+istendiğinde o dosyayı aç ve uygula. `src/backtest.ts`, `rescore.ts`, `positioning.ts`,
+`positions-scan.ts`, `snapshot.ts`, `vwap.ts`, `inflation.ts` bu çerçevenin deneysel
+kodudur; MCP sunucusu bunlara bağlı değildir. Yatırım tavsiyesi değildir. Kişisel portföy
+verisi ya da kişisel strateji depoya girmez.

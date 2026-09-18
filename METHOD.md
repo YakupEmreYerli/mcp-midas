@@ -1,7 +1,7 @@
 # BIST Scan Method — Quick Reference (v3.1)
 
 > Compact summary of the scoring methodology. The full binding ruleset the scans follow
-> is `CLAUDE.md`; this card is for checking the logic at a glance.
+> is `docs/analiz-kurallari.md`; this card is for checking the logic at a glance.
 
 ## Pipeline
 
@@ -76,7 +76,7 @@ stop, T1/T2 targets, risk/reward, bull & bear cases.
 ## 5. Standing rules
 
 - **Scans never place orders.** Trading only on a separate explicit instruction;
-  the server's ₺5,000/order cap always applies.
+  every order still needs the desktop confirmation and the `MAX_ORDER_VALUE_TRY` ceiling.
 - Every figure dated; growth inflation-adjusted; missing data → neutral 50 +
   low-confidence flag.
 - Backtest evidence (29 names, Nov 2023 → Apr 2026, 3,479 point-in-time observations):

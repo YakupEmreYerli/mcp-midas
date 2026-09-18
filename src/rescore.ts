@@ -100,7 +100,7 @@ lines.push("");
 lines.push(
   `Re-scored ${out.length} completed scans. The positioning term is a bounded post-blend ` +
     "adjustment, so Q, P and R are unchanged from each stock's v3.1 scorecard — only the " +
-    "additive part moves. Term shape and evidence: see `CLAUDE.md` §PositioningTerm."
+    "additive part moves. Term shape and evidence: see `docs/analiz-kurallari.md` §PositioningTerm."
 );
 lines.push("");
 lines.push("| # | Symbol | v3.2 | v3.1 | Δ | Term | z | Bucket | Stance (v3.2) |");

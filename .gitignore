@@ -3,7 +3,8 @@
 
 # Playwright persistent browser profile (contains session cookies)
 .midas-session/
-.midas-state.json
+.midas-state*.json*
+.midas-orders.log.jsonl
 
 # Build & deps
 node_modules/

@@ -3,13 +3,23 @@ import { z } from "zod";
 import * as midas from "./midas.js";
 import { getTechnicals, getCandles } from "./technicals.js";
 import { getTransactions, getTransactionFilters } from "./history.js";
+import { ordersEnabled } from "./tool-flags.js";
+
+export interface ServerOptions {
+  /**
+   * Registers place_order, update_order and cancel_order. Defaults to
+   * `MIDAS_ORDERS_ENABLED=1`; without it the order tools do not exist at all.
+   */
+  ordersEnabled?: boolean;
+}
 
 /**
- * Builds a fresh MCP server with every Midas tool registered. The browser session is a
+ * Builds a fresh MCP server with the read tools, plus the order tools when enabled. The browser session is a
  * module singleton, so stdio (one client) and the HTTP daemon (a server per request)
  * all share the same logged-in Chromium.
  */
-export function createServer(): McpServer {
+export function createServer(options: ServerOptions = {}): McpServer {
+  const withOrders = options.ordersEnabled ?? ordersEnabled();
   const server = new McpServer({ name: "midas-mcp", version: "0.1.0" });
 
   /** Tools return JSON text so the model gets structured, unambiguous data. */
@@ -86,7 +96,7 @@ export function createServer(): McpServer {
     "Compute a full technical-analysis snapshot for a symbol from its daily price history: " +
       "RSI(14), SMA/EMA (20/50/200), MACD, Bollinger Bands, ATR and annualized volatility, " +
       "52-week range, swing-pivot support/resistance levels, and volume-vs-average. " +
-      "Feed this into the scan scoring formula in CLAUDE.md.",
+      "Use these as inputs for your own analysis; nothing here is investment advice.",
     {
       symbol: z.string().describe("Ticker to analyze, e.g. TUCLK, ASELS, THYAO"),
       interval: z
@@ -163,6 +173,8 @@ export function createServer(): McpServer {
     () => getTransactionFilters(),
     READ_ONLY
   );
+
+  if (!withOrders) return server;
 
   tool(
     "place_order",

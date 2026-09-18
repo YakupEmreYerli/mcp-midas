@@ -2,7 +2,7 @@ import { gql } from "./api.js";
 import { resolveSymbol } from "./midas.js";
 import { realVwapBundle, type RealVwapBundle } from "./vwap.js";
 
-/** One OHLCV bar as returned by the Midas chart endpoint. */
+/** Midas grafik uç noktasının döndürdüğü tek bir OHLCV mumu. */
 export interface Candle {
   o: number;
   h: number;
@@ -39,12 +39,12 @@ export async function getCandles(
   return (data.chart?.candles ?? []) as Candle[];
 }
 
-// Date.now() is fine here (the server is not a resumable workflow); isolated for clarity.
+// Date.now() burada sorun değil (sunucu devam ettirilebilir bir iş akışı değil); okunurluk için ayrıldı.
 function nowMs(): number {
   return Date.now();
 }
 
-// ---- indicator math -------------------------------------------------------
+// ---- gösterge hesapları ---------------------------------------------------
 
 function sma(values: number[], period: number): number | null {
   if (values.length < period) return null;
@@ -56,7 +56,7 @@ function emaSeries(values: number[], period: number): number[] {
   if (values.length < period) return [];
   const k = 2 / (period + 1);
   const out: number[] = [];
-  // seed with the SMA of the first `period` values
+  // ilk `period` değerin SMA'sıyla başlat
   let prev = values.slice(0, period).reduce((a, b) => a + b, 0) / period;
   out.push(prev);
   for (let i = period; i < values.length; i++) {
@@ -71,7 +71,7 @@ function ema(values: number[], period: number): number | null {
   return series.length ? series[series.length - 1] : null;
 }
 
-/** Wilder's RSI over `period` (default 14). Returns 0-100, or null if too few bars. */
+/** `period` (varsayılan 14) üzerinden Wilder RSI. 0-100 döner; mum yetersizse null. */
 function rsi(closes: number[], period = 14): number | null {
   if (closes.length < period + 1) return null;
   let gain = 0;
@@ -95,12 +95,12 @@ function rsi(closes: number[], period = 14): number | null {
   return 100 - 100 / (1 + rs);
 }
 
-/** MACD(12,26,9): line, signal and histogram from the closing series. */
+/** MACD(12,26,9): kapanış serisinden çizgi, sinyal ve histogram. */
 function macd(closes: number[]): { macd: number; signal: number; histogram: number } | null {
   if (closes.length < 26 + 9) return null;
   const ema12 = emaSeries(closes, 12);
   const ema26 = emaSeries(closes, 26);
-  // align the two EMA series on their common tail
+  // iki EMA serisini ortak kuyruklarında hizala
   const offset = ema12.length - ema26.length;
   const macdLine = ema26.map((v, i) => ema12[i + offset] - v);
   const signalSeries = emaSeries(macdLine, 9);
@@ -110,7 +110,7 @@ function macd(closes: number[]): { macd: number; signal: number; histogram: numb
   return { macd: round(line), signal: round(signal), histogram: round(line - signal) };
 }
 
-/** Average True Range over `period` — an absolute (currency) volatility measure. */
+/** `period` üzerinden ortalama gerçek aralık (Average True Range) — mutlak (para birimi cinsinden) oynaklık ölçüsü. */
 function atr(candles: Candle[], period = 14): number | null {
   if (candles.length < period + 1) return null;
   const trs: number[] = [];
@@ -122,7 +122,7 @@ function atr(candles: Candle[], period = 14): number | null {
   return sma(trs, period);
 }
 
-/** Annualized volatility from daily log returns (≈252 trading days). */
+/** Günlük logaritmik getirilerden yıllıklandırılmış oynaklık (≈252 işlem günü). */
 function annualizedVolatility(closes: number[], lookback = 30): number | null {
   if (closes.length < lookback + 1) return null;
   const returns: number[] = [];
@@ -144,9 +144,9 @@ function bollinger(closes: number[], period = 20, mult = 2) {
 }
 
 /**
- * Support/resistance from fractal swing pivots: a bar is a swing high if its high
- * exceeds `span` bars on each side (mirror for swing low). Levels are clustered so
- * near-equal touches collapse into one, and ranked by how often price respected them.
+ * Fraktal salınım pivotlarından destek/direnç: bir mumun yükseği her iki yandaki `span`
+ * mumu aşıyorsa salınım tepesidir (dip için tersi). Neredeyse eşit temaslar tek seviyede
+ * birleşsin diye seviyeler kümelenir; fiyatın onlara ne sıklıkla uyduğuna göre sıralanır.
  */
 function supportResistance(candles: Candle[], last: number, span = 3) {
   const highs: number[] = [];
@@ -163,7 +163,7 @@ function supportResistance(candles: Candle[], last: number, span = 3) {
     if (isLow) lows.push(candles[i].l);
   }
 
-  const tol = last * 0.02; // cluster pivots within 2% of each other
+  const tol = last * 0.02; // birbirine %2 yakın pivotları kümele
   const cluster = (points: number[]) => {
     const sorted = [...points].sort((a, b) => a - b);
     const groups: { level: number; touches: number }[] = [];
@@ -248,21 +248,21 @@ export interface Technicals {
     avg20RelativePct: number | null;
   };
   /**
-   * Inflation-adjusted VWAP: what the average traded lira actually paid, in today's
-   * money. `premiumPct` negative means the current price is below the real average
-   * cost of everyone who traded over the window.
+   * Enflasyondan arındırılmış VWAP: işlem gören ortalama liranın bugünün parasıyla
+   * gerçekte ödediği fiyat. `premiumPct` negatifse güncel fiyat, pencere boyunca işlem
+   * yapan herkesin reel ortalama maliyetinin altındadır.
    */
   realVwap: RealVwapBundle;
 }
 
-/** Compute the full technical snapshot for a resolved instrument's candles. */
+/** Çözümlenmiş bir enstrümanın mumlarından tam teknik görünümü hesaplar. */
 export function computeTechnicals(
   symbol: string,
   candles: Candle[],
   interval: string
 ): Technicals {
   if (candles.length < 30) {
-    throw new Error(`Not enough price history for ${symbol} (${candles.length} bars) to compute technicals`);
+    throw new Error(`${symbol} için teknik göstergeleri hesaplamaya yetecek fiyat geçmişi yok (${candles.length} mum)`);
   }
   const closes = candles.map((c) => c.c);
   const highs = candles.map((c) => c.h);
@@ -348,7 +348,7 @@ export function computeTechnicals(
   };
 }
 
-/** Resolve a symbol, fetch its candles and compute the technical snapshot. */
+/** Sembolü çözer, mumlarını çeker ve teknik görünümü hesaplar. */
 export async function getTechnicals(
   symbol: string,
   interval = "1d",

@@ -1,46 +1,46 @@
 /**
- * Inflation-adjusted (real) VWAP.
+ * Enflasyondan arındırılmış (reel) VWAP — hacim ağırlıklı ortalama fiyat.
  *
- * Mirrors the TradingView VWAP indicator — source `hlc3`, value `Σ(volume·src)/Σ(volume)`,
- * bands at N volume-weighted standard deviations — with one change: every bar's price is
- * first converted into today's lira via the TÜFE deflator.
+ * TradingView VWAP göstergesini izler — kaynak `hlc3`, değer `Σ(hacim·kaynak)/Σ(hacim)`,
+ * bantlar N hacim ağırlıklı standart sapmada — tek farkla: her mumun fiyatı önce TÜFE
+ * deflatörüyle bugünün lirasına çevrilir.
  *
- * The nominal VWAP of a Turkish stock is close to meaningless over a multi-year window:
- * a lira paid in early 2025 bought ~35% more than a lira today, so nominal VWAP
- * systematically understates what holders really paid. Real VWAP answers the honest
- * question — "in today's money, what did the average traded lira pay for this share?"
+ * Bir Türk hissesinin nominal VWAP'ı çok yıllık bir pencerede neredeyse anlamsızdır:
+ * 2025 başında ödenen bir lira bugünkünden ~%35 daha fazla şey alıyordu, bu yüzden nominal
+ * VWAP sahiplerin gerçekte ödediğini sistematik olarak olduğundan düşük gösterir. Reel VWAP
+ * dürüst soruyu yanıtlar — "bugünün parasıyla, işlem gören ortalama lira bu hisse için ne ödedi?"
  */
 import type { Candle } from "./technicals.js";
 import { cpiAt, currentCpi } from "./inflation.js";
 
 export interface VwapResult {
-  /** Bars actually used. */
+  /** Gerçekte kullanılan mum sayısı. */
   bars: number;
   from: string;
   to: string;
-  /** Volume-weighted average of inflation-adjusted hlc3, in today's TRY. */
+  /** Enflasyondan arındırılmış hlc3'ün hacim ağırlıklı ortalaması, bugünün TL'siyle. */
   realVwap: number;
-  /** Same calculation without deflating — what TradingView would show. */
+  /** Aynı hesap, deflate etmeden — TradingView'un göstereceği değer. */
   nominalVwap: number;
-  /** Volume-weighted standard deviation of the real series. */
+  /** Reel serinin hacim ağırlıklı standart sapması. */
   realStdev: number;
   bands: { upper1: number; lower1: number; upper2: number; lower2: number; upper3: number; lower3: number };
-  /** Current price relative to real VWAP. Negative = trading below the real average cost. */
+  /** Güncel fiyatın reel VWAP'a göre farkı. Negatif = reel ortalama maliyetin altında işlem görüyor. */
   premiumPct: number;
-  /** How many volume-weighted σ the current price sits from real VWAP. */
+  /** Güncel fiyatın reel VWAP'tan kaç hacim ağırlıklı σ uzakta olduğu. */
   zScore: number;
-  /** Share of total volume that traded ABOVE the current price, in real terms. */
+  /** Toplam hacmin reel olarak güncel fiyatın ÜSTÜNDE işlem gören payı. */
   volumeAbovePricePct: number;
 }
 
 const hlc3 = (c: Candle) => (c.h + c.l + c.c) / 3;
 
 /**
- * @param candles chronological daily bars
- * @param lookback how many trailing bars to anchor on (undefined = all history)
- * @param asOfMs value everything in the purchasing power of this date instead of today.
- *   Required for point-in-time backtesting — using today's CPI on a 2024 window would
- *   leak future inflation into a historical score.
+ * @param candles kronolojik günlük mumlar
+ * @param lookback sondan kaç muma çapalanacağı (undefined = tüm geçmiş)
+ * @param asOfMs her şeyi bugünün yerine bu tarihin satın alma gücüyle değerle.
+ *   Zamanda noktasal geriye dönük test (point-in-time backtest) için gerekir — 2024
+ *   penceresinde bugünün TÜFE'sini kullanmak geleceğin enflasyonunu geçmiş puana sızdırır.
  */
 export function realVwap(
   candles: Candle[],
@@ -71,7 +71,7 @@ export function realVwap(
   const realVwapValue = sumRealPV / sumVol;
   const nominalVwapValue = sumNomPV / sumVol;
 
-  // volume-weighted variance, matching ta.vwap's stdev band construction
+  // hacim ağırlıklı varyans; ta.vwap'ın standart sapma bandı kurgusuyla aynı
   let weightedSqDev = 0;
   for (let i = 0; i < bars.length; i++) {
     const vol = bars[i].v > 0 ? bars[i].v : 0;
@@ -109,11 +109,11 @@ export function realVwap(
 
 export interface RealVwapBundle {
   price: number;
-  /** Anchored on the trailing year, two years, and all available history. */
+  /** Son bir yıla, son iki yıla ve mevcut tüm geçmişe çapalanmış. */
   year1: VwapResult | null;
   year2: VwapResult | null;
   all: VwapResult | null;
-  /** Real (today's-TRY) price one year ago, for a like-for-like comparison. */
+  /** Bir yıl önceki reel (bugünün TL'siyle) fiyat; eşdeğer karşılaştırma için. */
   realPriceOneYearAgo: number | null;
   realChange1yPct: number | null;
   nominalChange1yPct: number | null;

@@ -1,4 +1,4 @@
-/** List all GraphQL operation names (query+mutation) embedded in a bundle. */
+/** Bir pakete gömülü tüm GraphQL işlem adlarını (query+mutation) listeler. */
 import * as fs from "node:fs";
 
 const src = fs.readFileSync(process.argv[2], "utf8");

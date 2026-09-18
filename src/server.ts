@@ -7,29 +7,29 @@ import { ordersEnabled } from "./tool-flags.js";
 
 export interface ServerOptions {
   /**
-   * Registers place_order, update_order and cancel_order. Defaults to
-   * `MIDAS_ORDERS_ENABLED=1`; without it the order tools do not exist at all.
+   * place_order, update_order ve cancel_order araçlarını kaydeder. Varsayılanı
+   * `MIDAS_ORDERS_ENABLED=1`'dir; bu bayrak yoksa emir araçları hiç var olmaz.
    */
   ordersEnabled?: boolean;
 }
 
 /**
- * Builds a fresh MCP server with the read tools, plus the order tools when enabled. The browser session is a
- * module singleton, so stdio (one client) and the HTTP daemon (a server per request)
- * all share the same logged-in Chromium.
+ * Okuma araçlarıyla, açıksa emir araçlarıyla birlikte yeni bir MCP sunucusu kurar. Tarayıcı
+ * oturumu modül düzeyinde tektir; stdio (tek istemci) ve HTTP servisi (istek başına bir
+ * sunucu) aynı oturumlu Chromium'u paylaşır.
  */
 export function createServer(options: ServerOptions = {}): McpServer {
   const withOrders = options.ordersEnabled ?? ordersEnabled();
   const server = new McpServer({ name: "midas-mcp", version: "0.1.0" });
 
-  /** Tools return JSON text so the model gets structured, unambiguous data. */
+  /** Araçlar JSON metni döner; model yapılandırılmış, belirsizliği olmayan veri alır. */
   function json(value: unknown) {
     return { content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }] };
   }
 
   function failure(error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    return { content: [{ type: "text" as const, text: `Error: ${message}` }], isError: true };
+    return { content: [{ type: "text" as const, text: `Hata: ${message}` }], isError: true };
   }
 
   function tool<S extends z.ZodRawShape>(
@@ -53,7 +53,7 @@ export function createServer(options: ServerOptions = {}): McpServer {
 
   tool(
     "get_portfolio",
-    "Get overall portfolio value in TRY, today's profit/loss, and cash balances and buying power for the Turkish (BIST/TRY) and US (USD) accounts.",
+    "Portföyün TL cinsinden toplam değerini, günlük kâr/zararı ve Türkiye (BIST/TRY) ile ABD (USD) hesaplarının nakit bakiyesini ve alım gücünü döner.",
     {},
     () => midas.getPortfolio(),
     READ_ONLY
@@ -61,7 +61,7 @@ export function createServer(options: ServerOptions = {}): McpServer {
 
   tool(
     "get_assets",
-    "List all open positions (BIST stocks, US stocks, Turkish funds, US options) with quantity, average cost, current price, market value and profit/loss.",
+    "Tüm açık pozisyonları (BIST hisseleri, ABD hisseleri, TEFAS fonları, ABD opsiyonları) adet, ortalama maliyet, güncel fiyat, piyasa değeri ve kâr/zararla listeler.",
     {},
     () => midas.getPositions(),
     READ_ONLY
@@ -69,13 +69,13 @@ export function createServer(options: ServerOptions = {}): McpServer {
 
   tool(
     "get_asset_price",
-    "Get the current trade price for a symbol, with previous close, percent change and whether the market session is open.",
+    "Bir sembolün son işlem fiyatını önceki kapanış, yüzde değişim ve seansın açık olup olmadığıyla birlikte döner.",
     {
-      symbol: z.string().describe("Ticker, e.g. TUCLK, THYAO, AAPL"),
+      symbol: z.string().describe("Sembol, ör. TUCLK, THYAO, AAPL"),
       currency: z
         .enum(["TRY", "USD"])
         .optional()
-        .describe("Convert the price to this currency instead of the instrument's native one"),
+        .describe("Fiyatı enstrümanın kendi para birimi yerine bu para birimine çevir"),
     },
     ({ symbol, currency }) => midas.getAssetPrice(symbol, currency),
     READ_ONLY
@@ -83,26 +83,26 @@ export function createServer(options: ServerOptions = {}): McpServer {
 
   tool(
     "get_asset_info",
-    "Get descriptive information about an instrument (full name, market, description) together with its current price, " +
-      "plus the Atlas instrument-page stats: for TEFAS funds risk level (riskLevel), value dates, tax, annual management fee " +
-      "and investor count; for stocks daily band, 52-week range and ratios. Symbol search is fuzzy: check exactMatch and name.",
-    { symbol: z.string().describe("Ticker or company name to look up") },
+    "Bir enstrümanın tanıtıcı bilgilerini (tam ad, pazar, açıklama) güncel fiyatıyla ve Atlas enstrüman sayfası " +
+      "istatistikleriyle döner: TEFAS fonlarında risk seviyesi (riskLevel), valör, vergi, yıllık yönetim ücreti ve yatırımcı " +
+      "sayısı; hisselerde günlük fiyat bandı, 52 haftalık aralık ve oranlar. Sembol araması bulanıktır: exactMatch ve name alanlarını kontrol et.",
+    { symbol: z.string().describe("Aranacak sembol ya da şirket adı") },
     ({ symbol }) => midas.getAssetInfo(symbol),
     READ_ONLY
   );
 
   tool(
     "get_technicals",
-    "Compute a full technical-analysis snapshot for a symbol from its daily price history: " +
-      "RSI(14), SMA/EMA (20/50/200), MACD, Bollinger Bands, ATR and annualized volatility, " +
-      "52-week range, swing-pivot support/resistance levels, and volume-vs-average. " +
-      "Use these as inputs for your own analysis; nothing here is investment advice.",
+    "Bir sembolün fiyat geçmişinden tam bir teknik analiz özeti hesaplar: " +
+      "RSI(14), SMA/EMA (20/50/200), MACD, Bollinger bantları, ATR ve yıllıklandırılmış oynaklık, " +
+      "52 haftalık aralık, dönüş noktalarından (swing pivot) destek/direnç seviyeleri ve hacmin ortalamaya oranı. " +
+      "Bunları kendi analizinde girdi olarak kullan; hiçbiri yatırım tavsiyesi değildir.",
     {
-      symbol: z.string().describe("Ticker to analyze, e.g. TUCLK, ASELS, THYAO"),
+      symbol: z.string().describe("Analiz edilecek sembol, ör. TUCLK, ASELS, THYAO"),
       interval: z
         .enum(["1d", "1w"])
         .optional()
-        .describe("Candle interval; defaults to daily (1d)"),
+        .describe("Mum aralığı; varsayılan günlük (1d)"),
     },
     ({ symbol, interval }) => getTechnicals(symbol, interval ?? "1d"),
     READ_ONLY
@@ -110,15 +110,15 @@ export function createServer(options: ServerOptions = {}): McpServer {
 
   tool(
     "get_chart",
-    "Get raw OHLCV candles for a symbol (open, high, low, close, volume, timestamp). " +
-      "Use get_technicals for computed indicators; use this only when you need the raw series.",
+    "Bir sembolün ham OHLCV mumlarını döner (açılış, en yüksek, en düşük, kapanış, hacim, zaman damgası). " +
+      "Hesaplanmış göstergeler için get_technicals kullan; bunu yalnız ham seri gerektiğinde kullan.",
     {
-      symbol: z.string().describe("Ticker to fetch candles for"),
+      symbol: z.string().describe("Mumları alınacak sembol"),
       interval: z
         .enum(["1m", "5m", "15m", "30m", "1h", "4h", "1d", "1w"])
         .optional()
-        .describe("Candle interval; defaults to daily (1d)"),
-      limit: z.number().int().positive().max(500).optional().describe("Number of candles (max 500)"),
+        .describe("Mum aralığı; varsayılan günlük (1d)"),
+      limit: z.number().int().positive().max(500).optional().describe("Mum sayısı (en çok 500)"),
     },
     async ({ symbol, interval, limit }) => {
       const asset = await midas.resolveSymbol(symbol);
@@ -130,36 +130,36 @@ export function createServer(options: ServerOptions = {}): McpServer {
 
   tool(
     "get_pending_orders",
-    "List orders still waiting to execute, with their order ids. Omit symbol to get every pending order on every " +
-      "account (BIST, TEFAS, US) in one call; with a symbol only that instrument's orders.",
-    { symbol: z.string().optional().describe("Optional ticker; omit for all pending orders") },
+    "Henüz gerçekleşmemiş emirleri emir kimlikleriyle listeler. symbol verilmezse tüm hesaplardaki (BIST, TEFAS, ABD) " +
+      "bekleyen emirler tek çağrıda döner; symbol verilirse yalnız o enstrümanın emirleri.",
+    { symbol: z.string().optional().describe("İsteğe bağlı sembol; tüm bekleyen emirler için boş bırak") },
     ({ symbol }) => midas.getPendingOrders(symbol),
     READ_ONLY
   );
 
   tool(
     "get_transactions",
-    "Account activity history (Atlas 'İşlem geçmişi'), newest first: stock/ETF/TEFAS fund buys and sells, TL deposits " +
-      "and withdrawals, FX buys/sells, fund interest (nema), withholding tax (stopaj), dividends, instant cash. Each row has " +
-      "date/time, category, symbol, side, order type, quantity, average price, amount, currency and status " +
-      "(COMPLETED, PENDING, CANCELLED, REJECTED, EXPIRED). Pending rows are always included. Defaults to the last 30 days.",
+    "Hesap hareketleri geçmişi (Atlas 'İşlem geçmişi'), en yeni önce: hisse/ETF/TEFAS fonu alış ve satışları, TL yatırma " +
+      "ve çekme, döviz alış/satış, nema, stopaj, temettü, anında nakit. Her satırda tarih/saat, kategori, sembol, yön, emir " +
+      "tipi, adet, ortalama fiyat, tutar, para birimi ve durum (COMPLETED, PENDING, CANCELLED, REJECTED, EXPIRED) bulunur. " +
+      "Bekleyen satırlar her zaman dahildir. Varsayılan: son 30 gün.",
     {
-      from_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe("Inclusive start date YYYY-MM-DD (default: 30 days ago)"),
-      to_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe("Inclusive end date YYYY-MM-DD (default: today)"),
-      status: z.enum(["ALL", "COMPLETED", "PENDING"]).optional().describe("Default ALL"),
+      from_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe("Başlangıç tarihi (dahil), YYYY-AA-GG (varsayılan: 30 gün önce)"),
+      to_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe("Bitiş tarihi (dahil), YYYY-AA-GG (varsayılan: bugün)"),
+      status: z.enum(["ALL", "COMPLETED", "PENDING"]).optional().describe("Varsayılan ALL"),
       filter: z
         .string()
         .optional()
         .describe(
-          "Atlas category id: orders, o_buy, o_sell, journal, j_try, j_usd, exchange, e_usd, interest, i_try, dividend, instant_cash, other. " +
-            "get_transaction_filters lists all"
+          "Atlas kategori kimliği: orders, o_buy, o_sell, journal, j_try, j_usd, exchange, e_usd, interest, i_try, dividend, instant_cash, other. " +
+            "Tam liste için get_transaction_filters"
         ),
       details: z
         .boolean()
         .optional()
-        .describe("Also fetch each row's detail sheet (exact time, FX rate, commission, bank…); one extra request per row"),
-      limit: z.number().int().positive().max(500).optional().describe("Rows per page, default 100"),
-      offset: z.number().int().min(0).optional().describe("Rows to skip for paging"),
+        .describe("Her satırın ayrıntı sayfasını da getir (tam saat, kur, komisyon, banka…); satır başına bir ek istek"),
+      limit: z.number().int().positive().max(500).optional().describe("Sayfa başına satır, varsayılan 100"),
+      offset: z.number().int().min(0).optional().describe("Sayfalama için atlanacak satır sayısı"),
     },
     ({ from_date, to_date, status, filter, details, limit, offset }) =>
       getTransactions({ fromDate: from_date, toDate: to_date, status, filter, details, limit, offset }),
@@ -168,7 +168,7 @@ export function createServer(options: ServerOptions = {}): McpServer {
 
   tool(
     "get_transaction_filters",
-    "List the Atlas transaction-history category tree (id, name, parentId) usable as get_transactions filter.",
+    "get_transactions filtresi olarak kullanılabilecek Atlas işlem geçmişi kategori ağacını (id, name, parentId) listeler.",
     {},
     () => getTransactionFilters(),
     READ_ONLY
@@ -178,16 +178,16 @@ export function createServer(options: ServerOptions = {}): McpServer {
 
   tool(
     "place_order",
-    "Place a BIST stock MARKET/LIMIT order or a TEFAS fund DEMAND sell order. " +
-      "Every accepted request opens a local desktop confirmation window; no schema argument can bypass it. " +
-      "TEFAS buys are currently rejected because the Atlas bundle did not prove whether PlaceOrderRequest expects amount or quantity.",
+    "BIST hissesi için MARKET/LIMIT emri ya da TEFAS fonu için DEMAND satış emri verir. " +
+      "Kabul edilen her istek yerel bir masaüstü onay penceresi açar; hiçbir şema argümanı onayı atlatamaz. " +
+      "TEFAS alışı şimdilik reddedilir: Atlas paketinden PlaceOrderRequest'in tutar mı adet mi beklediği kanıtlanamadı.",
     {
-      symbol: z.string().min(1).describe("Exact Midas ticker; fuzzy matches are rejected"),
+      symbol: z.string().min(1).describe("Birebir Midas sembolü; bulanık eşleşme reddedilir"),
       side: z.enum(["BUY", "SELL"]),
       order_type: z.enum(["MARKET", "LIMIT", "DEMAND"]).optional(),
-      quantity: z.number().positive().optional().describe("Share/fund-unit count"),
-      amount_try: z.number().positive().optional().describe("TRY amount; reserved for TEFAS buy once its request field is proven"),
-      limit_price: z.number().positive().optional().describe("Required for LIMIT stock orders"),
+      quantity: z.number().positive().optional().describe("Hisse ya da fon payı adedi"),
+      amount_try: z.number().positive().optional().describe("TL tutarı; istek alanı kanıtlandığında TEFAS alışı için ayrıldı"),
+      limit_price: z.number().positive().optional().describe("LIMIT hisse emirlerinde zorunlu"),
     },
     ({ symbol, side, order_type, quantity, amount_try, limit_price }) =>
       midas.placeOrder({
@@ -203,11 +203,11 @@ export function createServer(options: ServerOptions = {}): McpServer {
 
   tool(
     "update_order",
-    "Update a pending order after a mandatory local desktop confirmation. Supports LIMIT, STOP, STOP_LIMIT, " +
-      "TAKE_PROFIT, STOP_LOSS and TAKE_PROFIT_AND_STOP_LOSS; for TP/SL use take_profit_price and stop_loss_price.",
+    "Bekleyen bir emri zorunlu yerel masaüstü onayından sonra günceller. LIMIT, STOP, STOP_LIMIT, TAKE_PROFIT, " +
+      "STOP_LOSS ve TAKE_PROFIT_AND_STOP_LOSS desteklenir; kâr al/zarar durdur için take_profit_price ve stop_loss_price kullan.",
     {
-      order_id: z.string().min(1).describe("Pending order uid"),
-      symbol: z.string().min(1).describe("Exact ticker belonging to the order"),
+      order_id: z.string().min(1).describe("Bekleyen emrin uid değeri"),
+      symbol: z.string().min(1).describe("Emre ait birebir sembol"),
       new_quantity: z.number().positive().optional(),
       new_limit_price: z.number().positive().optional(),
       new_stop_price: z.number().positive().optional(),
@@ -229,10 +229,10 @@ export function createServer(options: ServerOptions = {}): McpServer {
 
   tool(
     "cancel_order",
-    "Cancel a pending order after showing its current Midas OrderDetail in a mandatory local desktop confirmation window.",
+    "Bekleyen bir emri, Midas'taki güncel OrderDetail bilgisini zorunlu yerel masaüstü onay penceresinde gösterdikten sonra iptal eder.",
     {
-      order_id: z.string().min(1).describe("Pending order uid"),
-      symbol: z.string().min(1).describe("Exact ticker belonging to the order"),
+      order_id: z.string().min(1).describe("Bekleyen emrin uid değeri"),
+      symbol: z.string().min(1).describe("Emre ait birebir sembol"),
     },
     ({ order_id, symbol }) => midas.cancelOrder(order_id, symbol),
     WRITING

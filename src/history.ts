@@ -1,6 +1,7 @@
 /**
- * Read-only account history: the "İşlem geçmişi" list merged with the structured order
- * feed, plus every pending order in one call. Nothing here sends a mutation.
+ * Salt okunur hesap geçmişi: "İşlem geçmişi" listesi yapılandırılmış emir akışıyla
+ * birleştirilir; ayrıca tüm bekleyen emirler tek çağrıda alınır. Buradan hiçbir mutation
+ * gönderilmez.
  */
 import { gql, MidasApiError } from "./api.js";
 import { session } from "./session.js";
@@ -69,12 +70,12 @@ interface RecentOrder {
 export interface Transaction {
   uid: string;
   accountUid: string;
-  /** Atlas row kind: ORDER, JOURNAL_DEPOSIT, JOURNAL_WITHDRAWAL, EXCHANGE, FUND_INTEREST, DIVIDEND, INSTANT_CASH, OTHER… */
+  /** Atlas satır türü: ORDER, JOURNAL_DEPOSIT, JOURNAL_WITHDRAWAL, EXCHANGE, FUND_INTEREST, DIVIDEND, INSTANT_CASH, OTHER… */
   category: string;
-  /** Istanbul-local calendar date, YYYY-MM-DD; null only when Atlas shows no date at all. */
+  /** İstanbul yerel takvim tarihi, YYYY-AA-GG; yalnız Atlas hiç tarih göstermiyorsa null. */
   date: string | null;
   time: string | null;
-  /** "exact" when taken from a timestamp or detail sheet, "inferred" when the year was inferred from the list. */
+  /** Zaman damgasından ya da ayrıntı sayfasından alındıysa "exact", yıl listeden çıkarıldıysa "inferred". */
   dateSource: "exact" | "inferred" | null;
   title: string;
   symbol: string | null;
@@ -83,9 +84,9 @@ export interface Transaction {
   investmentType: string | null;
   quantity: number | null;
   price: number | null;
-  /** Executed value for filled orders, otherwise the amount Atlas shows on the row. */
+  /** Gerçekleşen emirlerde gerçekleşen tutar, diğerlerinde Atlas'ın satırda gösterdiği tutar. */
   amount: number | null;
-  /** Amount entered on amount-based orders (TEFAS buys); leftover cash is refunded. */
+  /** Tutar bazlı emirlerde (TEFAS alışları) girilen tutar; artan nakit iade edilir. */
   requestedAmount: number | null;
   currency: Currency | null;
   limitPrice: number | null;
@@ -100,7 +101,7 @@ export interface TransactionQuery {
   fromDate?: string;
   toDate?: string;
   status?: "ALL" | "COMPLETED" | "PENDING";
-  /** One id from the Atlas filter tree, e.g. "orders", "o_buy", "journal", "interest", "dividend". */
+  /** Atlas filtre ağacından bir kimlik, ör. "orders", "o_buy", "journal", "interest", "dividend". */
   filter?: string;
   details?: boolean;
   limit?: number;
@@ -148,7 +149,7 @@ async function historyRows(
     rows.push(...items);
     if (!h?.hasMore || !items.length) break;
     if (stopBefore) {
-      // Year inference needs the whole prefix, so re-run it on what we have so far.
+      // Yıl çıkarımı baştan tüm satırları ister; eldeki satırlar üzerinde yeniden çalıştırılır.
       const dates = assignYears(rows.map((r) => parseTurkishDate(r.detail.titleDescription?.description)));
       const last = dates.filter(Boolean).at(-1);
       if (last && last < stopBefore) break;
@@ -281,7 +282,7 @@ function fromRow(row: HistoryRow, listStatus: "COMPLETED" | "PENDING", inferredD
   return tx;
 }
 
-/** Account activity newest first, filtered by Istanbul-local date. */
+/** Hesap hareketleri, en yeni önce, İstanbul yerel tarihine göre süzülmüş. */
 export async function getTransactions(query: TransactionQuery = {}) {
   const memberUid = await session.getMemberUid();
   const today = new Date();
@@ -308,14 +309,14 @@ export async function getTransactions(query: TransactionQuery = {}) {
   };
   const all = [...build(pendingRows, "PENDING"), ...build(completedRows, "COMPLETED")];
 
-  // Pending rows are current state and always kept; completed rows are cut by date.
+  // Bekleyen satırlar güncel durumdur ve hep tutulur; tamamlanan satırlar tarihe göre kesilir.
   const inRange = (tx: Transaction) =>
     tx.status === "PENDING" ||
     (tx.date !== null && tx.date >= fromDate && (!toDate || tx.date <= toDate));
   const candidates = all.filter(inRange);
 
-  // Rows without an order timestamp get their detail sheet when asked, or when Atlas
-  // shows no date at all: the sheet carries the full date with year and the breakdown.
+  // Emir zaman damgası olmayan satırların ayrıntı sayfası istenirse ya da Atlas hiç tarih
+  // göstermiyorsa alınır: sayfada yıllı tam tarih ve döküm bulunur.
   for (const tx of candidates) {
     if (!query.details && tx.date !== null) continue;
     const rows = await detailRows(memberUid, { uid: tx.uid, accountUid: tx.accountUid, typeV2: tx.category });
@@ -351,7 +352,7 @@ export async function getTransactions(query: TransactionQuery = {}) {
   };
 }
 
-/** Available category filters for get_transactions. */
+/** get_transactions için kullanılabilir kategori filtreleri. */
 export async function getTransactionFilters() {
   const data = await gql("TransactionHistoryFilterTree", Q.TRANSACTION_FILTER_TREE);
   return data.transactionHistoryFilterTree?.filters ?? [];
@@ -377,7 +378,7 @@ export interface PendingOrderSummary {
   note: string | null;
 }
 
-/** Every pending order on every account (BIST, TEFAS, US) in one call; no symbol needed. */
+/** Tüm hesaplardaki (BIST, TEFAS, ABD) bekleyen emirler tek çağrıda; sembol gerekmez. */
 export async function getAllPendingOrders(): Promise<PendingOrderSummary[]> {
   const memberUid = await session.getMemberUid();
   const data = await gql("RecentOrdersV2", Q.RECENT_ORDERS, { memberUid, page: 0, size: ORDER_PAGE });

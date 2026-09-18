@@ -47,6 +47,6 @@ const onayScript = fileURLToPath(new URL("../onay/onay.py", import.meta.url));
 // Sistem Python'u PySide6 + QtWebEngine taşır; systemd servisinin PATH'ine güvenmeyiz.
 const pythonPath = existsSync("/usr/bin/python3") ? "/usr/bin/python3" : "python3";
 
-// The production path is permanently wired to the real desktop runner. Only the pure
-// core factory is injectable for unit tests; MCP tools cannot supply a confirmer.
+// Üretim yolu kalıcı olarak gerçek masaüstü çalıştırıcısına bağlıdır. Birim testlerde
+// yalnız saf çekirdek fabrikası enjekte edilebilir; MCP araçları onaylayıcı sağlayamaz.
 export const confirmOrderOnDesktop = createDesktopConfirmationGate(runProcess, process.env, { pythonPath, onayScript });

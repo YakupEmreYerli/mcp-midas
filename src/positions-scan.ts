@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Compute the v3.2 positioning term for every symbol in the BIST-100 batch.
- * Reuses any cached candles; fetches the rest with throttling.
- * Writes scans/_positioning.json.
+ * BIST-100 kümesindeki her sembol için v3.2 konumlanma terimini hesaplar.
+ * Önbellekteki mumları yeniden kullanır; geri kalanını hız sınırlamasıyla çeker.
+ * scans/_positioning.json dosyasını yazar.
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -49,17 +49,17 @@ for (const sym of symbols) {
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         if (msg.includes("429") && attempt < 2) {
-          console.error(`${sym} rate-limited, waiting ${(attempt + 1) * 45}s`);
+          console.error(`${sym} hız sınırına takıldı, ${(attempt + 1) * 45} sn bekleniyor`);
           await sleep((attempt + 1) * 45_000);
         } else {
-          console.error(`${sym} FAILED: ${msg}`);
+          console.error(`${sym} BAŞARISIZ: ${msg}`);
           break;
         }
       }
     }
   }
   if (!candles || candles.length < 260) {
-    out[sym] = { error: "insufficient history", term: 0 };
+    out[sym] = { error: "yetersiz geçmiş", term: 0 };
     continue;
   }
   const p = computePositioning(candles);

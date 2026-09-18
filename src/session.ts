@@ -6,12 +6,12 @@ const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36";
 
 /**
- * Owns the single authenticated Playwright session.
+ * Tek oturumlu Playwright oturumunun sahibi.
  *
- * Auth is entirely cookie-based, so GraphQL calls are issued from inside the page
- * context (see api.ts). The API additionally requires an `x-midas-rid` header — a
- * per-profile request id the web app generates — which we observe on the app's own
- * requests rather than trying to recompute.
+ * Kimlik doğrulama tamamen çerezle yapılır; bu yüzden GraphQL çağrıları sayfa bağlamının
+ * içinden yapılır (bkz. api.ts). API ayrıca `x-midas-rid` başlığı ister: web uygulamasının
+ * profil başına ürettiği bir istek kimliği. Yeniden hesaplamaya çalışmak yerine
+ * uygulamanın kendi isteklerinden gözlenir.
  */
 export class MidasSession {
   private context: BrowserContext | null = null;
@@ -35,8 +35,8 @@ export class MidasSession {
   }
 
   /**
-   * Recreate an expired session inside the running MCP process. Concurrent callers share
-   * this one visible login flow through `starting`.
+   * Süresi dolan oturumu çalışan MCP süreci içinde yeniden kurar. Eşzamanlı çağıranlar
+   * `starting` üzerinden bu tek görünür giriş akışını paylaşır.
    */
   async reauthenticate(): Promise<void> {
     if (this.starting) return this.starting;
@@ -53,12 +53,12 @@ export class MidasSession {
     await this.launch(this.headless);
 
     if (this.needsLogin() || !(await this.isAuthenticated())) {
-      // The saved state is stale (refresh_token lives ~24h), and a headless browser cannot
-      // show the SSO form or the push prompt. Relaunch visibly just long enough to log in,
-      // snapshot the fresh tokens, then go back to the mode the caller asked for.
-      // The stale snapshot is dropped first: its localStorage is replayed by an init script
-      // on every navigation, which would overwrite the fresh tokens right after the callback
-      // and bounce the app from /dashboard back to /login.
+      // Kayıtlı durum bayat (refresh_token ~24 sa yaşar) ve başsız tarayıcı SSO formunu ya
+      // da bildirim onayını gösteremez. Giriş yapacak kadar görünür aç, taze token'ların
+      // anlık görüntüsünü al, sonra çağıranın istediği moda dön.
+      // Önce bayat anlık görüntü silinir: localStorage'ı her gezinmede bir init betiğiyle
+      // yeniden yüklenir; bu da geri dönüşten hemen sonra taze token'ları ezer ve uygulamayı
+      // /dashboard'dan /login'e geri atar.
       await this.closeContext();
       fs.rmSync(config.stateFile, { force: true });
       await this.launch(false);
@@ -66,7 +66,7 @@ export class MidasSession {
         await this.clearAppStorage();
         await this.login(true);
         if (!(await this.isAuthenticated())) {
-          throw new Error("Midas login finished but the API still rejects the session (HTTP 401).");
+          throw new Error("Midas girişi tamamlandı ama API oturumu hâlâ reddediyor (HTTP 401).");
         }
       }
       await this.saveState();
@@ -93,8 +93,8 @@ export class MidasSession {
       headless,
       viewport: { width: 1440, height: 900 },
       locale: "tr-TR",
-      // Headless Chromium advertises "HeadlessChrome" and omits these hints, which the
-      // API gateway rejects with a 403 before the request is ever routed.
+      // Başsız Chromium kendini "HeadlessChrome" olarak tanıtır ve bu ipuçlarını göndermez;
+      // API geçidi de isteği yönlendirmeden önce 403 ile reddeder.
       userAgent: USER_AGENT,
       extraHTTPHeaders: {
         "sec-ch-ua": '"Chromium";v="151", "Not=A?Brand";v="99"',
@@ -118,18 +118,18 @@ export class MidasSession {
   }
 
   /**
-   * Atlas keeps its auth in session-scoped storage: Chromium drops session cookies when
-   * the browser closes, so the persistent profile alone comes back logged out. Playwright's
-   * storageState() *does* see those in-memory cookies, so they are snapshotted here and
-   * replayed on the next start — which is what makes a restart silent instead of asking
-   * for another push approval.
+   * Atlas kimliği oturum ömürlü depoda tutar: Chromium tarayıcı kapanınca oturum çerezlerini
+   * atar, bu yüzden kalıcı profil tek başına oturumu kapalı açılır. Playwright'ın
+   * storageState() yöntemi bellekteki bu çerezleri *görür*; burada anlık görüntüleri alınır
+   * ve sonraki açılışta geri yüklenir. Yeniden başlatmanın yeni bir bildirim onayı istemeden
+   * sessiz geçmesini sağlayan budur.
    */
   private async saveState(): Promise<void> {
     try {
       const state = await this.context!.storageState();
       fs.writeFileSync(config.stateFile, JSON.stringify(state), { mode: 0o600 });
     } catch {
-      // A snapshot is an optimisation; failing to take one must not break the session.
+      // Anlık görüntü bir iyileştirmedir; alınamaması oturumu bozmamalı.
     }
   }
 
@@ -149,15 +149,15 @@ export class MidasSession {
         );
       }
     } catch {
-      // A corrupt snapshot just means a fresh login.
+      // Bozuk anlık görüntü yalnızca yeni bir giriş demektir.
     }
   }
 
   /**
-   * The URL alone cannot be trusted: the persistent profile keeps `midas:member-uid` and
-   * the expiry keys in localStorage after the auth cookies are gone, so the app renders
-   * /dashboard for a dead session. Ask the API gateway directly — it answers 401 when
-   * the cookies are missing or expired.
+   * Yalnız URL'ye güvenilmez: kimlik çerezleri gittikten sonra da kalıcı profil
+   * `midas:member-uid` ve süre anahtarlarını localStorage'da tutar; uygulama ölü oturum için
+   * /dashboard gösterir. Doğrudan API geçidine sorulur: çerezler yoksa ya da süresi
+   * dolmuşsa 401 döner.
    */
   private async isAuthenticated(): Promise<boolean> {
     const page = this.page!;
@@ -182,7 +182,7 @@ export class MidasSession {
     return status !== 0 && status !== 401 && status !== 403;
   }
 
-  /** Drops the app's stale localStorage so it stops pretending to be logged in and shows the SSO form. */
+  /** Uygulamanın bayat localStorage'ını siler; uygulama girişli gibi davranmayı bırakıp SSO formunu gösterir. */
   private async clearAppStorage(): Promise<void> {
     const page = this.page!;
     await page.evaluate(`localStorage.clear(); sessionStorage.clear()`).catch(() => {});
@@ -200,22 +200,22 @@ export class MidasSession {
   }
 
   /**
-   * True once the app has bounced the page back to the login screen, which is how an
-   * expired session shows up mid-request.
+   * Uygulama sayfayı giriş ekranına geri attığında true döner; süresi dolan oturum istek
+   * ortasında böyle görünür.
    */
   isLoggedOut(): boolean {
     return !this.page || this.page.isClosed() || this.needsLogin();
   }
 
   /**
-   * Fills the SSO form and then waits for the user to approve the push notification
-   * in the Midas mobile app. There is no way to complete this without the phone.
+   * SSO formunu doldurur, ardından kullanıcının Midas mobil uygulamasındaki bildirimi
+   * onaylamasını bekler. Telefon olmadan tamamlanamaz.
    */
   private async login(visible: boolean): Promise<void> {
     const page = this.page!;
     if (!visible) {
       throw new Error(
-        "Midas session has expired and the browser is headless, so the push prompt cannot be shown."
+        "Midas oturumunun süresi doldu ve tarayıcı başsız çalışıyor; bildirim onayı gösterilemez."
       );
     }
 
@@ -231,11 +231,11 @@ export class MidasSession {
       await page.waitForTimeout(1000);
     }
     throw new Error(
-      "Login timed out after 3 minutes — the push notification was not approved in the Midas app."
+      "Giriş 3 dakika sonra zaman aşımına uğradı: Midas uygulamasındaki bildirim onaylanmadı."
     );
   }
 
-  /** Reload if needed until we observe the app sending an x-midas-rid header. */
+  /** Uygulamanın x-midas-rid başlığı gönderdiği görülene kadar gerekirse sayfayı yeniler. */
   private async waitForRid(): Promise<void> {
     const page = this.page!;
     for (let attempt = 0; attempt < 3 && !this.rid; attempt++) {
@@ -243,7 +243,7 @@ export class MidasSession {
       for (let i = 0; i < 40 && !this.rid; i++) await page.waitForTimeout(250);
     }
     if (!this.rid) {
-      throw new Error("Could not observe the app's x-midas-rid header; the session may be invalid.");
+      throw new Error("Uygulamanın x-midas-rid başlığı gözlenemedi; oturum geçersiz olabilir.");
     }
   }
 
@@ -252,7 +252,7 @@ export class MidasSession {
       `localStorage.getItem("midas:member-uid")`
     )) as string | null;
     if (!this.memberUid) {
-      throw new Error("Could not read midas:member-uid — not logged in?");
+      throw new Error("midas:member-uid okunamadı; giriş yapılmamış olabilir.");
     }
   }
 
@@ -276,8 +276,8 @@ export class MidasSession {
   }
 
   /**
-   * Reloads an idle, already-open session and snapshots it. Never starts a browser or a
-   * login on its own: a push prompt nobody asked for would just time out.
+   * Boşta duran, zaten açık oturumu yeniler ve anlık görüntüsünü alır. Kendiliğinden tarayıcı
+   * ya da giriş başlatmaz: kimsenin istemediği bir bildirim onayı yalnızca zaman aşımına uğrar.
    */
   async keepAlive(): Promise<void> {
     if (this.starting || !this.isStarted() || this.needsLogin()) return;

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Exercises the read-only tool paths against the live session and prints the results.
- * Usage: node dist/smoke.js [symbol]
+ * Salt okuma araç yollarını canlı oturuma karşı çalıştırır ve sonuçları yazdırır.
+ * Kullanım: node dist/smoke.js [sembol]
  */
 import { session } from "./session.js";
 import * as midas from "./midas.js";
@@ -13,7 +13,7 @@ async function show(label: string, fn: () => Promise<unknown>) {
   try {
     console.log(JSON.stringify(await fn(), null, 2));
   } catch (error) {
-    console.log("FAILED:", error instanceof Error ? error.message : error);
+    console.log("BAŞARISIZ:", error instanceof Error ? error.message : error);
     process.exitCode = 1;
   }
 }

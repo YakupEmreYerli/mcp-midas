@@ -1,4 +1,4 @@
-/** Summarize captured GraphQL traffic: operation names, variables, and auth header style. */
+/** Yakalanan GraphQL trafiğini özetler: işlem adları, değişkenler ve kimlik doğrulama başlığı biçimi. */
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -29,13 +29,13 @@ for (const e of lines) {
   }
 }
 
-console.log("=== auth header sample ===");
+console.log("=== kimlik doğrulama başlığı örneği ===");
 const withAuth = lines.find((e) => e.reqHeaders?.authorization);
-console.log(withAuth ? JSON.stringify(withAuth.reqHeaders, null, 2) : "none captured");
+console.log(withAuth ? JSON.stringify(withAuth.reqHeaders, null, 2) : "yakalanmadı");
 
-console.log(`\n=== ${seen.size} distinct operations ===`);
+console.log(`\n=== ${seen.size} farklı işlem ===`);
 for (const [name, { o }] of seen) {
   console.log(`\n--- ${name} ---`);
-  console.log("variables:", JSON.stringify(o.variables));
-  if (showQuery) console.log("query:", o.query);
+  console.log("değişkenler:", JSON.stringify(o.variables));
+  if (showQuery) console.log("sorgu:", o.query);
 }

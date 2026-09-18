@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 /**
- * One-off interactive login: opens a visible browser, submits the SSO form and waits
- * for the push notification to be approved in the Midas mobile app. The resulting
- * session is stored in .midas-session/ and reused by the MCP server.
+ * Tek seferlik etkileşimli giriş: görünür tarayıcı açar, SSO formunu gönderir ve Midas mobil
+ * uygulamasındaki bildirimin onaylanmasını bekler. Oluşan oturum .midas-session/ altında
+ * saklanır ve MCP sunucusu tarafından yeniden kullanılır.
  */
 import { MidasSession } from "./session.js";
 
 const s = new MidasSession({ headless: false });
 try {
   await s.ensureStarted();
-  console.log("Logged in. Session saved to .midas-session/ — you can start the MCP server now.");
+  console.log("Giriş yapıldı. Oturum .midas-session/ altına kaydedildi; MCP sunucusunu başlatabilirsin.");
 } finally {
   await s.close();
 }

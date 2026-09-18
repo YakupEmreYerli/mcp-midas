@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 /**
- * Re-score completed v3.1 scans under v3.2 by adding the real-VWAP positioning term.
+ * Tamamlanmış v3.1 taramalarını reel VWAP konumlanma terimini ekleyerek v3.2'ye göre
+ * yeniden puanlar.
  *
- * The term is a bounded post-blend adjustment, so a full re-scan is unnecessary: the
- * stored Q, P and R reproduce FINAL_raw exactly, and only the additive part changes.
- * Writes scans/_RESCORE.md and scans/_rescored.json.
+ * Terim harman sonrası sınırlı bir düzeltme olduğundan tam yeniden tarama gerekmez: saklanan
+ * Q, P ve R, FINAL_raw değerini birebir üretir; yalnız eklenen kısım değişir.
+ * scans/_RESCORE.md ve scans/_rescored.json dosyalarını yazar.
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { PROJECT_ROOT } from "./config.js";
 
 const JOURNAL = process.argv[2];
-if (!JOURNAL || !fs.existsSync(JOURNAL)) throw new Error("pass the workflow journal.jsonl path");
+if (!JOURNAL || !fs.existsSync(JOURNAL)) throw new Error("iş akışı journal.jsonl dosyasının yolunu ver");
 
 const positioning = JSON.parse(
   fs.readFileSync(path.join(PROJECT_ROOT, "scans", "_positioning.json"), "utf8")
@@ -59,6 +60,8 @@ for (const line of fs.readFileSync(JOURNAL, "utf8").split("\n").filter(Boolean))
   }
 }
 
+// Duruş adları tarama günlüğündeki (journal) stance değerleriyle karşılaştırıldığı için
+// İngilizce kalır.
 function stanceFor(final: number): string {
   if (final >= 75) return "Strong Buy";
   if (final >= 60) return "Buy / Accumulate";
@@ -73,7 +76,7 @@ for (const r of rows.values()) {
   const term: number = pos && typeof pos.term === "number" ? pos.term : 0;
   const blend = 100 * (r.q / 100) ** 0.45 * (r.p / 100) ** 0.55;
   const raw = blend * r.r + r.tape + term;
-  // the speculative ceiling still binds after the additive terms
+  // spekülatif tavan, eklenen terimlerden sonra da geçerlidir
   const ceiling = r.q < 45 ? 55 : 100;
   const final32 = Math.max(0, Math.min(raw, ceiling));
   out.push({
@@ -95,15 +98,15 @@ fs.writeFileSync(path.join(PROJECT_ROOT, "scans", "_rescored.json"), JSON.string
 
 const fmt = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 const lines: string[] = [];
-lines.push("# BIST-100 scan — v3.2 re-score (real-VWAP positioning term added)");
+lines.push("# BIST-100 taraması — v3.2 yeniden puanlama (reel VWAP konumlanma terimi eklendi)");
 lines.push("");
 lines.push(
-  `Re-scored ${out.length} completed scans. The positioning term is a bounded post-blend ` +
-    "adjustment, so Q, P and R are unchanged from each stock's v3.1 scorecard — only the " +
-    "additive part moves. Term shape and evidence: see `docs/analiz-kurallari.md` §PositioningTerm."
+  `Tamamlanmış ${out.length} tarama yeniden puanlandı. Konumlanma terimi harman sonrası sınırlı ` +
+    "bir düzeltmedir; bu yüzden Q, P ve R her hissenin v3.1 puan kartındakiyle aynıdır — yalnız " +
+    "eklenen kısım değişir. Terimin biçimi ve kanıtı: `docs/analiz-kurallari.md` §PositioningTerm."
 );
 lines.push("");
-lines.push("| # | Symbol | v3.2 | v3.1 | Δ | Term | z | Bucket | Stance (v3.2) |");
+lines.push("| # | Sembol | v3.2 | v3.1 | Δ | Terim | z | Grup | Duruş (v3.2) |");
 lines.push("|---|---|---|---|---|---|---|---|---|");
 out.forEach((r, i) => {
   lines.push(
@@ -115,11 +118,11 @@ out.forEach((r, i) => {
 
 const stab = out.filter((r) => r.term === 10);
 lines.push("");
-lines.push("## Confirmed capitulation screen (term +10)");
+lines.push("## Teyitli teslimiyet taraması (terim +10)");
 lines.push("");
 lines.push(
-  "Deep below real VWAP **and** stabilizing — the backtest's sharpest discriminator " +
-    "(+4 points of 63-day excess return versus the same cheapness still falling)."
+  "Reel VWAP'ın çok altında **ve** dengeleniyor — geriye dönük testin en keskin ayırıcısı " +
+    "(aynı ucuzlukta hâlâ düşenlere göre 63 günlük fazla getiride +4 puan)."
 );
 lines.push("");
 if (stab.length) {
@@ -127,23 +130,23 @@ if (stab.length) {
     lines.push(`- **${r.symbol}** — z ${r.z.toFixed(2)}, ${r.reasons.join("; ")} → ${r.final32} (${r.stance32})`);
   }
 } else {
-  lines.push("- None in the completed set.");
+  lines.push("- Tamamlanan kümede yok.");
 }
 
 const danger = out.filter((r) => r.term === -5);
 lines.push("");
-lines.push(`## Danger zone (term −5): ${danger.length} names`);
+lines.push(`## Tehlike bölgesi (terim −5): ${danger.length} hisse`);
 lines.push("");
 lines.push(
-  "z between −2 and −0.5: cheap enough to look tempting, not cheap enough to have " +
-    "capitulated. Historically the worst cohort (−3.15% excess over 63 days, n=1139)."
+  "z −2 ile −0.5 arasında: cazip görünecek kadar ucuz, teslimiyete varacak kadar değil. " +
+    "Tarihsel olarak en kötü grup (63 günde −%3,15 fazla getiri, n=1139)."
 );
 lines.push("");
-lines.push(danger.map((r) => r.symbol).join(" · ") || "None.");
+lines.push(danger.map((r) => r.symbol).join(" · ") || "Yok.");
 
 const moved = out.filter((r) => r.changed);
 lines.push("");
-lines.push(`## Stance changes: ${moved.length}`);
+lines.push(`## Duruş değişiklikleri: ${moved.length}`);
 lines.push("");
 for (const r of moved) {
   lines.push(`- ${r.symbol}: ${r.stance31} → **${r.stance32}** (${r.final31} → ${r.final32})`);

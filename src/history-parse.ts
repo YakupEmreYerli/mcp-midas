@@ -1,6 +1,6 @@
 /**
- * Pure helpers that turn Atlas' display-shaped history rows into structured records.
- * No I/O here so the parsing rules stay unit-testable.
+ * Atlas'ın görüntüleme biçimindeki geçmiş satırlarını yapılandırılmış kayıtlara çeviren saf
+ * yardımcılar. Ayrıştırma kuralları birim testlenebilsin diye burada G/Ç yoktur.
  */
 
 const MONTHS: Record<string, number> = {
@@ -27,9 +27,9 @@ export interface Money {
 }
 
 /**
- * Parse an Atlas money string. Most rows use Turkish formatting ("₺1.001,09"), but some
- * detail sheets use a dot decimal ("₺317.40"), so a lone dot followed by 1–2 digits is
- * read as a decimal point and any other dot as a thousands separator.
+ * Atlas para metnini ayrıştırır. Çoğu satır Türkçe biçim kullanır ("₺1.001,09"), ama bazı
+ * ayrıntı sayfaları ondalık nokta kullanır ("₺317.40"); bu yüzden ardından 1–2 basamak gelen
+ * tek nokta ondalık ayırıcı, diğer noktalar binlik ayırıcı sayılır.
  */
 export function parseMoney(text: string | null | undefined): Money | null {
   if (!text) return null;
@@ -56,7 +56,7 @@ export interface DayMonth {
   time: string | null;
 }
 
-/** "17 Eylül", "17 Eylül 2026" or "17 Eylül 2026, 15:48:05". */
+/** "17 Eylül", "17 Eylül 2026" ya da "17 Eylül 2026, 15:48:05". */
 export function parseTurkishDate(text: string | null | undefined): DayMonth | null {
   if (!text) return null;
   const m = text
@@ -76,10 +76,10 @@ export function isoDate(year: number, month: number, day: number): string {
 }
 
 /**
- * The history list shows "17 Eylül" without a year. Rows arrive newest first, so walk
- * them in order: the first row belongs to the current year unless its month lies more
- * than a month ahead (value dates can be a few days in the future), and each time the
- * month jumps forward while walking back in time a year boundary was crossed.
+ * Geçmiş listesi "17 Eylül" gösterir, yıl yoktur. Satırlar en yeni önce gelir, sırayla
+ * gezilir: ayı bir aydan fazla ileride değilse ilk satır bu yıla aittir (valör tarihleri
+ * birkaç gün ileride olabilir); geçmişe doğru giderken ay her ileri sıçradığında bir yıl
+ * sınırı geçilmiştir.
  */
 export function assignYears(
   dates: Array<DayMonth | null>,
@@ -102,7 +102,7 @@ export function assignYears(
   });
 }
 
-/** Map the grey sub-line / tag text of a row to a status; null when it says nothing. */
+/** Satırın gri alt satırını ya da etiket metnini duruma eşler; bir şey söylemiyorsa null. */
 export function statusFromText(text: string | null | undefined): TxStatus | null {
   if (!text) return null;
   const t = text.toLocaleLowerCase("tr-TR");
@@ -114,7 +114,7 @@ export function statusFromText(text: string | null | undefined): TxStatus | null
   return null;
 }
 
-/** Side from a Turkish action label: "piyasa alış", "USD/TL satış", "fon alış". */
+/** Türkçe işlem etiketinden yön: "piyasa alış", "USD/TL satış", "fon alış". */
 export function sideFromTitle(title: string): "BUY" | "SELL" | null {
   const t = title.toLocaleLowerCase("tr-TR");
   if (/(^|\s)alış(\s|$)/.test(t)) return "BUY";
@@ -122,7 +122,7 @@ export function sideFromTitle(title: string): "BUY" | "SELL" | null {
   return null;
 }
 
-/** ASCII, lower-case label: "TCELL kâr al, zarar durdur" action → "kar al zarar durdur". */
+/** ASCII, küçük harfli etiket: "TCELL kâr al, zarar durdur" işlemi → "kar al zarar durdur". */
 export function asciiLabel(text: string): string {
   return text
     .toLocaleLowerCase("tr-TR")
@@ -142,20 +142,20 @@ export function asciiLabel(text: string): string {
     .trim();
 }
 
-/** "2026-09-17 15:48:06" (Istanbul local) → date and time parts. */
+/** "2026-09-17 15:48:06" (İstanbul yerel) → tarih ve saat parçaları. */
 export function splitTimestamp(ts: string | null | undefined): { date: string; time: string | null } | null {
   const m = ts?.match(/^(\d{4}-\d{2}-\d{2})(?:[ T](\d{2}:\d{2}(?::\d{2})?))?/);
   return m ? { date: m[1], time: m[2] ?? null } : null;
 }
 
-/** Title → symbol for row kinds whose title starts with the ticker. */
+/** Başlığı sembolle başlayan satır türlerinde başlık → sembol. */
 export function symbolFromTitle(typeV2: string, title: string): string | null {
   if (typeV2 !== "ORDER" && typeV2 !== "DIVIDEND") return null;
   const first = title.trim().split(/\s+/)[0];
   return /^[A-Z0-9.]{1,12}$/.test(first) ? first : null;
 }
 
-/** First detail row whose title names a date, parsed to ISO date and time. */
+/** Başlığı bir tarih adlandıran ilk ayrıntı satırı, ISO tarih ve saate ayrıştırılmış. */
 export function dateFromDetailRows(rows: Record<string, string>): { date: string; time: string | null } | null {
   const preferred = ["Gerçekleşme tarihi", "İşlem tarihi", "Ödenme tarihi", "Emir tarihi", "Tarih"];
   const keys = [...preferred.filter((k) => k in rows), ...Object.keys(rows).filter((k) => /tarih/i.test(k))];

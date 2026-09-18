@@ -43,7 +43,7 @@ export interface Position {
   sessionStatus: string | null;
 }
 
-/** Portfolio value, day P/L, and per-market cash balances. */
+/** Portföy değeri, günlük kâr/zarar ve piyasa başına nakit bakiyeleri. */
 export async function getPortfolio() {
   const memberUid = await session.getMemberUid();
   const data = await gql("GetPortfolioOverview", Q.PORTFOLIO_OVERVIEW, {
@@ -65,11 +65,11 @@ async function getAccounts(): Promise<Account[]> {
 
 async function accountFor(market: "TR" | "US"): Promise<Account> {
   const account = (await getAccounts()).find((a) => a.assetVertical === market);
-  if (!account) throw new MidasApiError(`No ${market} account found on this Midas profile`);
+  if (!account) throw new MidasApiError(`Bu Midas profilinde ${market} hesabı bulunamadı`);
   return account;
 }
 
-/** All open positions across BIST stocks, US stocks, TR funds and US options. */
+/** BIST hisseleri, ABD hisseleri, TEFAS fonları ve ABD opsiyonlarındaki tüm açık pozisyonlar. */
 export async function getPositions(): Promise<Position[]> {
   const memberUid = await session.getMemberUid();
   const data = await gql(
@@ -124,8 +124,8 @@ export interface ResolvedAsset {
 }
 
 /**
- * Resolve a ticker to a Midas instrument uid. Prefers an exact symbol match;
- * falls back to the first search hit so partial names still work.
+ * Sembolü Midas enstrüman uid'sine çözer. Önce birebir sembol eşleşmesini seçer; yoksa
+ * ilk arama sonucuna düşer, böylece kısmi adlar da çalışır.
  */
 export async function resolveSymbol(symbol: string): Promise<ResolvedAsset> {
   const data = await gql("Search", Q.SEARCH, {
@@ -135,7 +135,7 @@ export async function resolveSymbol(symbol: string): Promise<ResolvedAsset> {
     size: 30,
   });
   const results = (data.Search?.results ?? []).filter((r: any) => r.symbol);
-  if (!results.length) throw new MidasApiError(`No instrument found for "${symbol}"`);
+  if (!results.length) throw new MidasApiError(`"${symbol}" için enstrüman bulunamadı`);
 
   const wanted = symbol.trim().toUpperCase();
   const hit = results.find((r: any) => r.symbol.toUpperCase() === wanted) ?? results[0];
@@ -149,7 +149,7 @@ export async function resolveSymbol(symbol: string): Promise<ResolvedAsset> {
   };
 }
 
-/** Last trade price for a symbol, optionally converted to another currency. */
+/** Bir sembolün son işlem fiyatı; istenirse başka bir para birimine çevrilir. */
 export async function getAssetPrice(symbol: string, currency?: "TRY" | "USD") {
   const asset = await resolveSymbol(symbol);
   const data = await gql("GetAssetSnapshot", Q.ASSET_SNAPSHOT, {
@@ -173,7 +173,7 @@ export async function getAssetPrice(symbol: string, currency?: "TRY" | "USD") {
   };
 }
 
-/** "Risk seviyesi" → "riskSeviyesi"-style keys would hide the Turkish labels, so keep them verbatim. */
+/** "Risk seviyesi" → "riskSeviyesi" gibi anahtarlar Türkçe etiketleri gizler; etiketler olduğu gibi kalır. */
 function statsObject(items: Array<{ key: string; value: string }> | null | undefined): Record<string, string> {
   const out: Record<string, string> = {};
   for (const item of items ?? []) if (item?.key) out[item.key] = item.value;
@@ -181,10 +181,10 @@ function statsObject(items: Array<{ key: string; value: string }> | null | undef
 }
 
 /**
- * Descriptive info plus current pricing for a symbol. `stats` is the key/value block of the
- * Atlas instrument page: for TEFAS funds risk level, value dates, tax, annual fee and
- * investor count; for stocks price band, 52-week range and ratios. Search is fuzzy, so
- * `exactMatch` says whether the resolved ticker equals the one asked for.
+ * Bir sembolün tanıtıcı bilgisi ve güncel fiyatı. `stats`, Atlas enstrüman sayfasının
+ * anahtar/değer bloğudur: TEFAS fonlarında risk seviyesi, valör, vergi, yıllık ücret ve
+ * yatırımcı sayısı; hisselerde fiyat bandı, 52 haftalık aralık ve oranlar. Arama bulanık
+ * olduğundan `exactMatch`, çözümlenen sembolün istenenle aynı olup olmadığını söyler.
  */
 export async function getAssetInfo(symbol: string) {
   const asset = await resolveSymbol(symbol);
@@ -219,9 +219,9 @@ export async function getAssetInfo(symbol: string) {
 }
 
 /**
- * Pending orders. Without a symbol: every pending order on every account in one call.
- * With a symbol: the per-instrument list when the ticker resolves exactly, otherwise the
- * all-accounts list filtered by ticker (search misses some US ETFs).
+ * Bekleyen emirler. Sembolsüz: tüm hesaplardaki bekleyen emirler tek çağrıda. Sembolle:
+ * sembol birebir çözülürse enstrüman başına liste, çözülmezse sembole göre süzülmüş tüm
+ * hesaplar listesi (arama bazı ABD ETF'lerini bulamıyor).
  */
 export async function getPendingOrders(symbol?: string) {
   if (!symbol?.trim()) {

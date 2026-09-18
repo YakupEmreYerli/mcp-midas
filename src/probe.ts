@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Emit chart-ready JSON for the real-VWAP artifact. */
+/** Reel VWAP grafiği için çizime hazır JSON üretir. */
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { session } from "./session.js";
@@ -15,7 +15,7 @@ const candles: Candle[] = JSON.parse(fs.readFileSync(path.join(CACHE, `${focus}.
 const window = candles.slice(-252);
 const v = realVwap(window, 252)!;
 
-// weekly downsample keeps the payload small without changing the shape
+// haftalık seyreltme, eğrinin biçimini bozmadan veriyi küçük tutar
 const series = window
   .filter((_, i) => i % 5 === 0 || i === window.length - 1)
   .map((c) => ({

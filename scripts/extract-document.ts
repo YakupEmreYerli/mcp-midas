@@ -1,6 +1,6 @@
 /**
- * Reconstruct a full GraphQL document from the minified bundle's embedded graphql-tag AST.
- * Usage: npx tsx scripts/extract-document.ts <file.js> <OperationName>
+ * Küçültülmüş paketin gömülü graphql-tag AST'sinden tam bir GraphQL belgesini yeniden kurar.
+ * Kullanım: npx tsx scripts/extract-document.ts <dosya.js> <İşlemAdı>
  */
 import * as fs from "node:fs";
 import { print } from "graphql";
@@ -9,19 +9,19 @@ const src = fs.readFileSync(process.argv[2], "utf8");
 const opName = process.argv[3];
 
 const nameIdx = src.indexOf(`value:"${opName}"`);
-if (nameIdx === -1) throw new Error(`operation ${opName} not found`);
+if (nameIdx === -1) throw new Error(`${opName} işlemi bulunamadı`);
 
-// walk back to the enclosing {kind:"Document"
+// kapsayan {kind:"Document" düğümüne geri yürü
 const docIdx = src.lastIndexOf('{kind:"Document"', nameIdx);
-if (docIdx === -1) throw new Error("enclosing Document node not found");
+if (docIdx === -1) throw new Error("kapsayan Document düğümü bulunamadı");
 
-// extract a brace-balanced object literal starting at docIdx
+// docIdx'ten başlayan, süslü parantezleri dengeli nesne değişmezini çıkar
 let depth = 0;
 let end = -1;
 for (let i = docIdx; i < src.length; i++) {
   const c = src[i];
   if (c === '"') {
-    // skip string literal
+    // dize değişmezini atla
     i++;
     while (i < src.length && !(src[i] === '"' && src[i - 1] !== "\\")) i++;
     continue;
@@ -35,10 +35,10 @@ for (let i = docIdx; i < src.length; i++) {
     }
   }
 }
-if (end === -1) throw new Error("unbalanced object literal");
+if (end === -1) throw new Error("dengesiz nesne değişmezi");
 
 const literal = src.slice(docIdx, end);
-// the literal is pure data (kind/value/name objects) produced by graphql-tag
+// değişmez, graphql-tag'in ürettiği saf veridir (kind/value/name nesneleri)
 const ast = new Function(`"use strict"; return (${literal});`)();
 
 const doc = {

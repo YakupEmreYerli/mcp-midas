@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * Tek girişte hesabın tam fotoğrafı: portföy özeti, bütün pozisyonlar ve her
- * pozisyonun bekleyen emirleri. Oturum diske yazılmadığı için (bkz. README notu)
- * her çalıştırma bir push onayı ister; bu yüzden her şeyi tek seferde toplar.
+ * pozisyonun bekleyen emirleri. Her şeyi tek oturumda toplar; oturum yeniden giriş
+ * isterse telefonda tek bir bildirim onayı yeter.
  */
 import * as fs from "node:fs";
 import * as path from "node:path";

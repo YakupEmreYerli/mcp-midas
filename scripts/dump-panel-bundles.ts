@@ -1,4 +1,4 @@
-/** Open the order panel, then download every JS resource the page has loaded (incl. lazy chunks). */
+/** Emir panelini açar, ardından sayfanın yüklediği her JS kaynağını indirir (tembel yüklenen parçalar dahil). */
 import { chromium } from "playwright";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -15,12 +15,12 @@ const buy = page.getByRole("button", { name: /^Al$/ }).first();
 await buy.waitFor({ state: "visible", timeout: 15000 });
 await buy.click();
 await page.waitForTimeout(5000);
-console.log("order panel opened");
+console.log("emir paneli açıldı");
 
 const urls = (await page.evaluate(
   `performance.getEntriesByType("resource").map(e => e.name).filter(n => n.includes(".js"))`
 )) as string[];
-console.log("js resources:", urls.length);
+console.log("js kaynakları:", urls.length);
 
 let n = 0;
 for (const url of urls) {
@@ -31,8 +31,8 @@ for (const url of urls) {
     fs.writeFileSync(path.join(OUT, name), await res.body());
     n++;
   } catch {
-    /* chunk no longer served */
+    /* parça artık sunulmuyor */
   }
 }
-console.log("saved", n, "files to discovery/js2");
+console.log(n, "dosya discovery/js2 klasörüne kaydedildi");
 await browser.close();

@@ -16,15 +16,15 @@ class AuthenticationRejected extends MidasApiError {
 }
 
 /**
- * Issue a GraphQL request from inside the authenticated page so that session
- * cookies are attached by the browser. The request is built as a string rather
- * than a callback because the page has no access to this module's scope.
+ * GraphQL isteğini oturumlu sayfanın içinden yapar; oturum çerezlerini tarayıcı ekler.
+ * İstek geri çağırma yerine metin olarak kurulur, çünkü sayfa bu modülün kapsamına
+ * erişemez.
  */
 export async function gql<T = any>(
   operationName: string,
   query: string,
   variables: Record<string, unknown> = {},
-  /** Overrides the routing header when the document's first selection is an alias. */
+  /** Belgenin ilk seçimi bir takma adsa yönlendirme başlığını geçersiz kılar. */
   rootFieldOverride?: string
 ): Promise<T> {
   const mutation = /^\s*mutation\b/.test(query);
@@ -42,8 +42,8 @@ export async function gql<T = any>(
       const rid = await session.getRid();
       const body = JSON.stringify({ operationName, query, variables });
 
-      // The gateway routes on the root field name, which is normally the first selection
-      // in the document — but an alias there would route nowhere, hence the override.
+      // Geçit kök alan adına göre yönlendirir; bu normalde belgedeki ilk seçimdir. Orada bir
+      // takma ad olursa istek hiçbir yere yönlenmez; geçersiz kılma bu yüzden var.
       const rootField =
         rootFieldOverride ?? query.match(/\{\s*([A-Za-z_][A-Za-z0-9_]*)/)?.[1] ?? operationName;
 
@@ -69,8 +69,8 @@ export async function gql<T = any>(
            })()`
         )) as { status: number; text: string };
       } catch (error) {
-        // A logged-out page is served from a different origin, so fetch can fail before
-        // exposing an HTTP status.
+        // Oturumu kapanmış sayfa başka bir kökenden sunulur; fetch HTTP durumu vermeden
+        // başarısız olabilir.
         if (session.isLoggedOut()) throw new AuthenticationRejected();
         throw error;
       }
@@ -83,13 +83,13 @@ export async function gql<T = any>(
       try {
         parsed = JSON.parse(result.text);
       } catch {
-        throw new MidasApiError(`Unexpected response from Midas (HTTP ${result.status}): ${result.text.slice(0, 300)}`);
+        throw new MidasApiError(`Midas'tan beklenmeyen yanıt (HTTP ${result.status}): ${result.text.slice(0, 300)}`);
       }
 
       if (parsed.errors?.length) {
         throw new MidasApiError(parsed.errors.map((e) => e.message).join("; "));
       }
-      if (!parsed.data) throw new MidasApiError("Midas returned no data");
+      if (!parsed.data) throw new MidasApiError("Midas veri döndürmedi");
       return parsed.data;
     },
   });

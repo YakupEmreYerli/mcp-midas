@@ -1,31 +1,32 @@
 /**
- * Real-VWAP positioning term (docs/analiz-kurallari.md v3.2).
+ * Reel VWAP konumlanma terimi (docs/analiz-kurallari.md v3.2).
  *
- * A bounded adjustment applied AFTER the Q/P blend, like the tape term. It asks where
- * price sits relative to what holders actually paid in today's lira — a flow/positioning
- * question, deliberately kept out of the Valuation sub-score because real VWAP is derived
- * from price and using it as a fair-value anchor would be circular.
+ * Bant (tape) terimi gibi, Q/P harmanından SONRA uygulanan sınırlı bir düzeltmedir. Fiyatın,
+ * sahiplerin bugünün lirasıyla gerçekte ödediğine göre nerede durduğunu sorar — bir akış /
+ * konumlanma sorusu. Reel VWAP fiyattan türediği ve onu adil değer çapası olarak kullanmak
+ * döngüsel olacağı için Değerleme (Valuation) alt puanının bilerek dışında tutulur.
  *
- * The shape is non-monotonic and comes straight from the backtest (29 BIST names,
- * Nov 2023 – Apr 2026, 3,478 point-in-time observations, returns vs the same-date peer
- * average):
+ * Biçim monoton değildir ve doğrudan geriye dönük testten (backtest) gelir (29 BIST hissesi,
+ * Kasım 2023 – Nisan 2026, 3.478 noktasal gözlem, aynı tarihteki emsal ortalamasına göre
+ * getiriler):
  *
- *   z ≤ −2 (deep capitulation)  n=189    excess 63d  +0.58%
- *   z −2..−1                    n=1139   excess 63d  −3.15%   ← worst cohort in the study
- *   z −1..0                     n=871    excess 63d  −2.10%
- *   z 0..+1                     n=536    excess 63d  +1.47%
- *   z +1..+2                    n=520    excess 63d  +6.59%   ← best cohort
- *   z > +2                      n=223    excess 63d  +4.90%
+ *   z ≤ −2 (derin teslimiyet)   n=189    63g fazla getiri  +0.58%
+ *   z −2..−1                    n=1139   63g fazla getiri  −3.15%   ← çalışmadaki en kötü grup
+ *   z −1..0                     n=871    63g fazla getiri  −2.10%
+ *   z 0..+1                     n=536    63g fazla getiri  +1.47%
+ *   z +1..+2                    n=520    63g fazla getiri  +6.59%   ← en iyi grup
+ *   z > +2                      n=223    63g fazla getiri  +4.90%
  *
- * and the split that carries the real signal, on identical cheapness:
- *   deep + stabilizing          n=529    excess 63d  +0.08%
- *   deep + still falling        n=158    excess 63d  −3.97%
+ * ve aynı ucuzlukta asıl sinyali taşıyan ayrım:
+ *   derin + dengeleniyor        n=529    63g fazla getiri  +0.08%
+ *   derin + hâlâ düşüyor        n=158    63g fazla getiri  −3.97%
  *
- * Hence: reward the extreme tail only when it is confirmed, penalise mild weakness
- * (which is where money was actually lost), and reward confirmed strength.
+ * Bu yüzden: uç kuyruğu yalnız teyit edildiğinde ödüllendir, hafif zayıflığı cezalandır
+ * (paranın asıl kaybedildiği yer orası) ve teyitli gücü ödüllendir.
  *
- * Mean IC of −z vs 63d return was −0.159, i.e. across the whole range momentum beat
- * mean reversion. That is why "cheaper is always better" is NOT the shape used here.
+ * −z ile 63 günlük getiri arasındaki ortalama bilgi katsayısı (IC) −0.159 idi; yani tüm
+ * aralıkta momentum ortalamaya dönüşü (mean reversion) yendi. "Daha ucuz her zaman daha iyi"
+ * biçiminin burada KULLANILMAMASININ nedeni bu.
  */
 import type { Candle } from "./technicals.js";
 import { realVwap, type VwapResult } from "./vwap.js";
@@ -34,12 +35,12 @@ export interface Positioning {
   vwap: VwapResult | null;
   z: number | null;
   premiumPct: number | null;
-  /** Volume share of the window that traded above the current price, in real terms. */
+  /** Penceredeki hacmin reel olarak güncel fiyatın üstünde işlem gören payı. */
   volumeAbovePricePct: number | null;
-  /** Deep below real VWAP AND showing basing behaviour rather than free descent. */
+  /** Reel VWAP'ın çok altında VE serbest düşüş yerine dip oluşturma davranışı gösteriyor. */
   stabilizing: boolean;
   stabilizingReasons: string[];
-  /** Bounded adjustment, −5 … +10, added to FINAL after the risk overlay. */
+  /** Sınırlı düzeltme, −5 … +10; risk katmanından sonra FINAL puana eklenir. */
   term: number;
   bucket: string;
   rationale: string;
@@ -69,7 +70,7 @@ function rsi(closes: number[], period = 14): number | null {
   return 100 - 100 / (1 + ag / al);
 }
 
-/** Swing-low support with at least `minTouches` touches, nearest below price. */
+/** Fiyatın altındaki en yakın salınım dibi desteği. */
 function nearestSupport(candles: Candle[], price: number, span = 3) {
   const lows: number[] = [];
   for (let i = span; i < candles.length - span; i++) {
@@ -108,8 +109,8 @@ export function computePositioning(candles: Candle[], asOfMs?: number): Position
       stabilizing: false,
       stabilizingReasons: [],
       term: 0,
-      bucket: "insufficient history",
-      rationale: "fewer than 20 bars — positioning term skipped",
+      bucket: "yetersiz geçmiş",
+      rationale: "20 mumdan az — konumlanma terimi atlandı",
     };
   }
 
@@ -118,17 +119,17 @@ export function computePositioning(candles: Candle[], asOfMs?: number): Position
 
   const sup = nearestSupport(candles, price);
   if (sup && sup.touches >= 2 && price <= sup.level * 1.05) {
-    reasons.push(`holding ${sup.touches}-touch support ₺${sup.level.toFixed(2)}`);
+    reasons.push(`${sup.touches} temaslı ₺${sup.level.toFixed(2)} desteği tutuyor`);
   }
   const avg5 = mean(vols.slice(-5));
   const avg20 = mean(vols.slice(-20));
   if (avg5 > avg20) {
-    reasons.push(`volume improving (5d ${(avg5 / avg20 - 1) * 100 >= 0 ? "+" : ""}${((avg5 / avg20 - 1) * 100).toFixed(0)}% vs 20d)`);
+    reasons.push(`hacim artıyor (5g, 20g'ye göre ${(avg5 / avg20 - 1) * 100 >= 0 ? "+" : ""}%${((avg5 / avg20 - 1) * 100).toFixed(0)})`);
   }
   const rsiNow = rsi(closes);
   const rsiPrev = rsi(closes.slice(0, -5));
   if (rsiNow !== null && rsiPrev !== null && rsiPrev < 32 && rsiNow > rsiPrev + 3) {
-    reasons.push(`RSI turning up off ${rsiPrev.toFixed(0)}`);
+    reasons.push(`RSI ${rsiPrev.toFixed(0)} seviyesinden yukarı dönüyor`);
   }
 
   const stabilizing = z <= -1.5 && reasons.length > 0;
@@ -139,28 +140,28 @@ export function computePositioning(candles: Candle[], asOfMs?: number): Position
 
   if (z <= -2 && stabilizing) {
     term = 10;
-    bucket = "deep capitulation, confirmed";
-    rationale = `${z.toFixed(2)}σ below real VWAP with ${reasons.join(" + ")} — the backtest's best cheap-side cohort`;
+    bucket = "derin teslimiyet, teyitli";
+    rationale = `reel VWAP'ın ${z.toFixed(2)}σ altında, ${reasons.join(" + ")} — geriye dönük testte ucuz taraftaki en iyi grup`;
   } else if (z <= -2) {
     term = 2;
-    bucket = "deep capitulation, unconfirmed";
-    rationale = `${z.toFixed(2)}σ below real VWAP but still falling (no support hold, no volume pickup, no RSI turn) — historically −3.97% excess over 63d`;
+    bucket = "derin teslimiyet, teyitsiz";
+    rationale = `reel VWAP'ın ${z.toFixed(2)}σ altında ama hâlâ düşüyor (destek tutmuyor, hacim artmıyor, RSI dönmüyor) — tarihsel olarak 63 günde −%3,97 fazla getiri`;
   } else if (z <= -0.5) {
     term = -5;
-    bucket = "mild weakness (the danger zone)";
-    rationale = `${z.toFixed(2)}σ below real VWAP — the worst-performing cohort in the backtest (−3.15% excess over 63d, n=1139): cheap enough to look tempting, not cheap enough to have capitulated`;
+    bucket = "hafif zayıflık (tehlike bölgesi)";
+    rationale = `reel VWAP'ın ${z.toFixed(2)}σ altında — geriye dönük testte en kötü performanslı grup (63 günde −%3,15 fazla getiri, n=1139): cazip görünecek kadar ucuz, teslimiyete varacak kadar değil`;
   } else if (z <= 1) {
     term = 0;
-    bucket = "near real VWAP";
-    rationale = `${z.toFixed(2)}σ from real VWAP — no positioning edge either way`;
+    bucket = "reel VWAP yakınında";
+    rationale = `reel VWAP'a ${z.toFixed(2)}σ uzaklıkta — iki yönde de konumlanma avantajı yok`;
   } else if (z <= 2) {
     term = 5;
-    bucket = "confirmed strength";
-    rationale = `${z.toFixed(2)}σ above real VWAP — the backtest's best cohort (+6.59% excess over 63d)`;
+    bucket = "teyitli güç";
+    rationale = `reel VWAP'ın ${z.toFixed(2)}σ üstünde — geriye dönük testin en iyi grubu (63 günde +%6,59 fazla getiri)`;
   } else {
     term = 0;
-    bucket = "extended";
-    rationale = `${z.toFixed(2)}σ above real VWAP — still positive historically but decaying; the parabolic-extension penalty already covers blowoff risk`;
+    bucket = "aşırı uzamış";
+    rationale = `reel VWAP'ın ${z.toFixed(2)}σ üstünde — tarihsel olarak hâlâ pozitif ama sönümleniyor; parabolik uzama cezası tepe patlaması (blowoff) riskini zaten karşılıyor`;
   }
 
   return {

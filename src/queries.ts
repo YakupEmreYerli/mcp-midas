@@ -1,8 +1,8 @@
 /**
- * GraphQL documents used by this server.
+ * Bu sunucunun kullandığı GraphQL belgeleri.
  *
- * These mirror the operations the Midas Atlas web app itself sends. Field
- * selections are trimmed to what the tools actually surface.
+ * Midas Atlas web uygulamasının kendi gönderdiği işlemlerin aynısıdır. Alan seçimleri
+ * araçların gerçekten döndürdüğü alanlara indirilmiştir.
  */
 
 export const PORTFOLIO_OVERVIEW = /* GraphQL */ `
@@ -136,8 +136,8 @@ export const ASSET_SNAPSHOT = /* GraphQL */ `
 `;
 
 /**
- * Returns tradability context for one instrument: buying power, sellable shares,
- * allowed order types, the daily price band, and the default order validity date.
+ * Bir enstrümanın işlem bağlamını döner: alım gücü, satılabilir adet, izin verilen emir
+ * tipleri, günlük fiyat bandı ve varsayılan emir geçerlilik tarihi.
  */
 export const PREPARE_ORDER = /* GraphQL */ `
   query PrepareOrder($accountUid: String!, $input: OrderPreparationRequest!) {
@@ -281,11 +281,11 @@ export const PENDING_ORDERS = /* GraphQL */ `
 `;
 
 /**
- * Account activity list behind Atlas' "İşlem geçmişi" screen: orders, money transfers,
- * FX, fund interest, withholding tax, dividends. Rows are display-shaped (title, day and
- * month without year, formatted amount); structure comes from RECENT_ORDERS and
- * TRANSACTION_DETAIL. `selectedFilterPath` is the id chain from the filter tree root,
- * e.g. ["orders", "o_buy"]; a leaf id alone is rejected.
+ * Atlas "İşlem geçmişi" ekranının arkasındaki hesap hareketleri listesi: emirler, para
+ * transferleri, döviz, nema, stopaj, temettü. Satırlar görüntüleme biçimindedir (başlık,
+ * yılsız gün ve ay, biçimlendirilmiş tutar); yapı RECENT_ORDERS ve TRANSACTION_DETAIL'dan
+ * gelir. `selectedFilterPath`, filtre ağacının kökünden başlayan kimlik zinciridir, ör.
+ * ["orders", "o_buy"]; tek başına yaprak kimliği reddedilir.
  */
 export const TRANSACTION_HISTORY = /* GraphQL */ `
   query TempTransactionHistory(
@@ -345,7 +345,7 @@ export const TRANSACTION_FILTER_TREE = /* GraphQL */ `
   }
 `;
 
-/** Detail sheet for one history row; `transactionDetailType` is the row's typeV2. */
+/** Bir geçmiş satırının ayrıntı sayfası; `transactionDetailType` satırın typeV2 değeridir. */
 export const TRANSACTION_DETAIL = /* GraphQL */ `
   query TempDetailPage(
     $accountUid: String!
@@ -447,8 +447,8 @@ const RECENT_ORDER_FIELDS = `
 `;
 
 /**
- * Every pending order across all accounts plus the order history, with structured
- * quantity/price/amount fields. Needs no symbol, unlike PENDING_ORDERS.
+ * Tüm hesaplardaki bekleyen emirler ve emir geçmişi, yapılandırılmış adet/fiyat/tutar
+ * alanlarıyla. PENDING_ORDERS'ın aksine sembol gerektirmez.
  */
 export const RECENT_ORDERS = /* GraphQL */ `
   query RecentOrdersV2($memberUid: String!, $page: Int!, $size: Int!) {
@@ -464,7 +464,7 @@ export const RECENT_ORDERS = /* GraphQL */ `
   }
 `;
 
-/** Key/value stats shown on an instrument page (fund risk level, fees; stock ratios). */
+/** Enstrüman sayfasında gösterilen anahtar/değer istatistikleri (fon risk seviyesi, ücretler; hisse oranları). */
 export const INSTRUMENT_OVERVIEW = /* GraphQL */ `
   query getInstrumentOverview($uid: String!) {
     instrumentOverviewSection(uid: $uid) {

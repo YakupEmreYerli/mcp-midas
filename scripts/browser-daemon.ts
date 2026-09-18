@@ -1,7 +1,7 @@
 /**
- * Long-running headed browser for discovery/development.
- * Exposes CDP on port 9222 so other scripts can attach via connectOverCDP.
- * Logs all XHR/fetch responses to discovery/network.jsonl (JSON bodies inlined when small).
+ * Keşif/geliştirme için uzun süre çalışan, görünür tarayıcı.
+ * Diğer betikler connectOverCDP ile bağlanabilsin diye CDP'yi 9222 portunda açar.
+ * Tüm XHR/fetch yanıtlarını discovery/network.jsonl dosyasına yazar (küçük JSON gövdeleri satır içi).
  */
 import { chromium } from "playwright";
 import * as fs from "node:fs";
@@ -36,7 +36,7 @@ context.on("response", async (response) => {
         Object.entries(await req.allHeaders()).map(([k, v]) => [k, v.slice(0, 80)])
       );
     } catch {
-      /* headers unavailable */
+      /* başlıklar alınamadı */
     }
   }
   try {
@@ -49,14 +49,14 @@ context.on("response", async (response) => {
       }
     }
   } catch {
-    // body unavailable (e.g. redirect) — keep the metadata entry
+    // gövde alınamadı (ör. yönlendirme) — üst veri kaydını koru
   }
   logStream.write(JSON.stringify(entry) + "\n");
 });
 
 const page = context.pages()[0] ?? (await context.newPage());
 await page.goto("https://atlas.getmidas.com/", { waitUntil: "domcontentloaded" });
-console.log("Browser up. CDP on http://localhost:9222 — leave this process running.");
+console.log("Tarayıcı açık. CDP http://localhost:9222 üzerinde — bu süreci çalışır bırak.");
 
-// keep alive until killed
+// sonlandırılana kadar açık tut
 await new Promise(() => {});

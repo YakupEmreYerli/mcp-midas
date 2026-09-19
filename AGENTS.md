@@ -30,7 +30,9 @@ desteklenen emirleri yalnızca yerel insan onayından sonra gönderebilir.
 - **Kimlik bilgisi yalnız ortamda.** `MIDAS_PHONE` ve `MIDAS_PASSWORD` ortam değişkeniyle
   (sır yöneticisi ya da gitignore'lu `.env`) verilir; koda, loga, commit'e yazılmaz.
 - **Oturum `storageState` ile açılır.** Okumada 401 sonrası sunucu içinde tek paylaşılan
-  görünür giriş akışı çalışır ve istek bir kez yinelenir; mutation otomatik yinelenmez.
+  giriş akışı çalışır (tarayıcı `MIDAS_LOGIN_WINDOW` kipine göre, varsayılan gizli pencere)
+  ve istek bir kez yinelenir; mutation otomatik yinelenmez. Canlı tutma döngüsü hiçbir
+  koşulda giriş başlatmaz, düşmüş oturumu yalnız loglar.
 
 ## BIST analiz kuralları
 

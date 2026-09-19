@@ -5,7 +5,7 @@ import { withAuthenticationRecovery } from "./auth-recovery.js";
 import { session } from "./session.js";
 
 const SESSION_EXPIRED =
-  "Midas oturumu sona erdi. Sunucu görünür tarayıcıyla yeniden giriş akışını başlattı; " +
+  "Midas oturumu sona erdi. Sunucu yeniden giriş akışını başlattı; " +
   "telefondaki bildirimi onayladıktan sonra çağrıyı yeniden deneyin.";
 
 class AuthenticationRejected extends MidasApiError {

@@ -89,6 +89,8 @@ MIDAS_PHONE=5XXXXXXXXX      # ülke kodu olmadan cep telefonu
 MIDAS_PASSWORD=sifren
 HEADLESS=true
 MAX_ORDER_VALUE_TRY=10000   # ek tavan; masaüstü onayı her zaman gerekir
+# MIDAS_LOGIN_WINDOW=hidden # giriş tarayıcısı: hidden | visible | headless
+# MIDAS_KEEPALIVE_HOURS=4   # HTTP servisinde canlı tutma aralığı; 0 kapatır
 # MIDAS_ORDERS_ENABLED=1    # emir araçlarını açar (varsayılan kapalı)
 ```
 
@@ -102,8 +104,10 @@ npm run smoke          # portföyü, pozisyonları ve bir fiyatı yazdırır
 ```
 
 Oturum `.midas-state.json` dosyasına (0600, gitignore'lu) yazılır ve sonraki açılışlarda
-geri yüklenir. Yenileme çerezinin ömrü (~24 saat) dolarsa sunucu kendi kendine yeniden
-giriş yapar; bu giriş yine bildirim onayı isteyebilir.
+geri yüklenir. Yenileme çerezinin ömrü girişten itibaren sabit 24 saattir ve yenilemeyle
+uzamaz; dolduktan sonraki ilk araç çağrısında sunucu kendi kendine yeniden giriş yapar ve
+telefona yine bildirim onayı düşer. Bu girişin tarayıcısı varsayılan olarak göz önünde
+açılmaz (bkz. [Giriş penceresi ve canlı tutma](#giriş-penceresi-ve-canlı-tutma)).
 
 **4. MCP istemcisine ekle**
 
@@ -164,6 +168,37 @@ adım atlanır. Pencere simgesinin masaüstünde Midas-MCP logosu olarak görün
 onay/masaustu-kur.sh          # ~/.local/share/applications/midas-mcp-onay.desktop (+ simge)
 onay/masaustu-kur.sh --kaldir # geri almak için
 ```
+
+### Giriş penceresi ve canlı tutma
+
+Midas girişi telefonda bildirim onayı ister ve SSO formunda Cloudflare Turnstile
+doğrulaması vardır; başsız tarayıcı bu doğrulamayı güvenilir biçimde geçemediği için giriş
+görünür (headed) bir Chromium'la yapılır. `MIDAS_LOGIN_WINDOW` bu pencerenin nasıl
+açılacağını belirler:
+
+| Değer | Davranış |
+| --- | --- |
+| `hidden` (varsayılan) | Chromium XWayland'da (`--ozone-platform=x11`) `mcp-midas-login` sınıfıyla açılır. KDE Plasma'da KWin'e geçici bir betik yüklenir: betik yalnız bu sınıftaki pencereyi küçültür, ekran dışına alır, saydam yapar ve görev çubuğundan gizler; giriş bitince kaldırılır. KWin yoksa pencere CDP ile simge durumuna küçültülür. Form gönderilince masaüstüne "Telefonundaki Midas bildirimini onayla" bildirimi (`notify-send`) düşer. Doğrulama 30 sn içinde kendiliğinden geçmezse pencere öne getirilir ve bildirimle haber verilir. |
+| `visible` | Eski davranış: normal, görünür tarayıcı penceresi. |
+| `headless` | Deneysel. Form tam Chromium'un yeni başsız kipiyle doldurulur. Turnstile 20 sn içinde geçmezse form **gönderilmeden** (telefona bildirim gitmeden) `hidden` kipine düşülür. |
+
+`npm run login` her zaman görünür pencere kullanır; `HEADLESS=false` verildiğinde de giriş
+görünür yapılır.
+
+HTTP servisi açılıştan bir dakika sonra ve ardından her `MIDAS_KEEPALIVE_HOURS` saatte bir
+(varsayılan 4; `0` kapatır) oturumu başsız yoklar: tarayıcı kapalıysa kayıtlı durumla
+başsız açar, zararsız bir okuma sorgusu atar, 401 alırsa sayfayı bir kez yeniden yükleyip
+uygulamanın token yenilemesini tetikler ve `storageState`'i kaydeder. Oturum düşmüşse giriş
+**başlatmaz**, yalnız loglar; giriş bir sonraki gerçek araç çağrısına kalır. Log satırı
+token değeri içermez, yalnız süreleri yazar:
+
+```bash
+journalctl --user -u midas-mcp.service | grep keepAlive
+```
+
+Canlı tutma kısa ömürlü `access_token`'ın (~15 dk) yenilenmesini ve anlık görüntünün taze
+kalmasını sağlar; `refresh_token`'ın 24 saatlik sınırını uzatmaz. Yani günde bir bildirim
+onayı yine gerekir, yalnız artık ekrana pencere gelmez.
 
 ### Emir araçlarını açmak
 
@@ -265,9 +300,11 @@ uygulamasının yaptığı GraphQL çağrılarını sayfanın içinden (`page.ev
 oturum çerezleri kendiliğinden eklenir. Belgelenmemiş iç uç noktalara dayandığı için
 Midas bir değişiklik yaptığında haber vermeden bozulabilir.
 
-Atlas kimliği `access_token` (~15 dk) ve `refresh_token` (~24 sa) çerezlerinde tutar ve
-Chromium bunları profile yazmaz; bu yüzden oturum her başarılı açılıştan sonra
-`storageState()` ile saklanır. 401/403 alan bir okuma isteği paylaşılan giriş akışından
+Atlas kimliği `access_token` (~15 dk) ve `refresh_token` (24 sa) çerezlerinde tutar ve
+Chromium bunları profile yazmaz; bu yüzden oturum her başarılı açılıştan sonra, canlı tutma
+turlarında ve kapanışta `storageState()` ile saklanır. Açık sayfa `access_token`'ı süresi
+dolmadan bir dakika önce kendisi yeniler; yenileme `refresh_token`'ı değiştirmez ve süresini
+uzatmaz (bitiş, girişten 24 saat sonrasında sabit kalır). 401/403 alan bir okuma isteği paylaşılan giriş akışından
 sonra bir kez yinelenir. Geçidin istediği `x-midas-rid` ve `x-apollo-operation-name`
 başlıkları gibi ayrıntılar [CONTRIBUTING.md](CONTRIBUTING.md) içindeki "Depoya özgü
 tuzaklar" bölümünde.

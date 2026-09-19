@@ -1,6 +1,7 @@
 import * as dotenv from "dotenv";
 import * as path from "node:path";
 import * as url from "node:url";
+import { parseKeepAliveMs, parseLoginWindowMode } from "./login-window.js";
 
 const HERE = path.dirname(url.fileURLToPath(import.meta.url));
 export const PROJECT_ROOT = path.resolve(HERE, "..");
@@ -19,6 +20,10 @@ export const config = {
   /** Ek güvenlik tavanı; bu değerin altında da masaüstü onayı zorunludur. */
   maxOrderValueTry: Number(process.env.MAX_ORDER_VALUE_TRY ?? 10_000),
   headless: (process.env.HEADLESS ?? "true").toLowerCase() !== "false",
+  /** Giriş gerektiğinde tarayıcı: hidden (varsayılan), visible (eski görünür pencere), headless. */
+  loginWindow: parseLoginWindowMode(process.env.MIDAS_LOGIN_WINDOW),
+  /** HTTP servisinde canlı tutma aralığı (MIDAS_KEEPALIVE_HOURS, varsayılan 4 sa; 0 kapatır). */
+  keepAliveMs: parseKeepAliveMs(process.env.MIDAS_KEEPALIVE_HOURS),
   sessionDir: path.join(PROJECT_ROOT, ".midas-session"),
   /** Çerez + localStorage anlık görüntüsü; Chromium'un atacağı oturum çerezleri dahil. */
   stateFile: path.join(PROJECT_ROOT, ".midas-state.json"),

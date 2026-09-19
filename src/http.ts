@@ -15,11 +15,12 @@ import * as path from "node:path";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { session } from "./session.js";
 import { createServer } from "./server.js";
+import { config } from "./config.js";
+import { startKeepAliveLoop } from "./keepalive.js";
 
 const HOST = "127.0.0.1";
 const PORT = Number(process.env.MIDAS_HTTP_PORT ?? 8766);
 const TOKEN_FILE = process.env.MIDAS_TOKEN_FILE ?? path.join(os.homedir(), ".config", "mcp-midas", "token");
-const KEEPALIVE_MS = 20 * 60_000;
 
 /** Aksi hâlde her yerel süreç emir araçlarına ulaşabilirdi; bu yüzden portu bir bearer token korur. */
 function loadToken(): string {
@@ -81,14 +82,18 @@ const httpServer = http.createServer(async (req, res) => {
   }
 });
 
-// Uygulama token'larını yalnız sayfa açıkken yeniler; düzenli yeniden yükleme yenileme
-// döngüsünü sürdürür ve sonucu kaydeder, böylece boşta geçen bir gece yeni bildirim onayı istemez.
-const keepAlive = setInterval(() => {
-  session.keepAlive().catch((error) => console.error("keepAlive:", error));
-}, KEEPALIVE_MS);
-keepAlive.unref();
+// Atlas access_token'ı (~15 dk) açık sayfa kendisi yeniler; döngü birkaç saatte bir oturumu
+// başsız yoklar, gerekirse sayfayı yenileyip token yenilemesini tetikler ve durumu kaydeder.
+// Oturum düşmüşse giriş başlatmaz, yalnız loglar. İlk tur açılıştan bir dakika sonra koşar.
+const stopKeepAlive = startKeepAliveLoop({
+  intervalMs: config.keepAliveMs,
+  initialDelayMs: 60_000,
+  tick: () => session.keepAlive(),
+  log: (line) => console.error(line),
+});
 
 const shutdown = async () => {
+  stopKeepAlive();
   httpServer.close();
   await session.close().catch(() => {});
   process.exit(0);

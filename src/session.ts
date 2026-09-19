@@ -1,6 +1,37 @@
 import { chromium, type BrowserContext, type Page } from "playwright";
 import * as fs from "node:fs";
 import { config } from "./config.js";
+import { describeAuthExpiry, type AuthExpiry } from "./auth-expiry.js";
+import {
+  hiddenLaunchArgs,
+  KWIN_HIDE_PLUGIN,
+  KWIN_REVEAL_PLUGIN,
+  kwinHideScript,
+  kwinRevealScript,
+  loadKwinScript,
+  notifyDesktop,
+  unloadKwinScript,
+  type LoginWindowMode,
+} from "./login-window.js";
+
+/** Tarayıcının nasıl açılacağı: başsız, görünür ya da göz önünden gizlenmiş görünür pencere. */
+type LaunchMode = "headless" | "visible" | "hidden";
+
+/** Canlı tutma turunun sonucu; HTTP servisi loga yazar. */
+export type KeepAliveResult =
+  | { status: "alive"; expiry: AuthExpiry | null }
+  | { status: "skipped"; reason: string }
+  | { status: "logged-out" };
+
+/** Sessiz açılışta kayıtlı oturum geçersizse fırlatılır; görünür giriş başlatılmaz. */
+export class SessionUnavailable extends Error {
+  constructor() {
+    super("Kayıtlı Midas oturumu geçersiz; giriş bir sonraki araç çağrısına bırakıldı.");
+    this.name = "SessionUnavailable";
+  }
+}
+
+const SUBMIT_READY = "button[type=submit]:not([disabled])";
 
 const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36";
@@ -20,13 +51,15 @@ export class MidasSession {
   private memberUid: string | null = null;
   private starting: Promise<void> | null = null;
   private readonly headless: boolean;
+  /** Açık bağlam gizlenmiş giriş penceresi mi; kapanışta KWin betikleri kaldırılır. */
+  private hiddenWindow = false;
 
   constructor(options: { headless?: boolean } = {}) {
     this.headless = options.headless ?? config.headless;
   }
 
   async ensureStarted(): Promise<void> {
-    if (this.starting) return this.starting;
+    if (await this.awaitPendingStart()) return;
     if (this.page && !this.page.isClosed()) return;
     this.starting ??= this.start().finally(() => {
       this.starting = null;
@@ -39,8 +72,9 @@ export class MidasSession {
    * `starting` üzerinden bu tek görünür giriş akışını paylaşır.
    */
   async reauthenticate(): Promise<void> {
-    if (this.starting) return this.starting;
-    this.starting = (async () => {
+    if (await this.awaitPendingStart()) return;
+    // Bekleme sırasında başka bir çağıran girişi başlatmış olabilir; ona katılınır.
+    this.starting ??= (async () => {
       await this.closeContext();
       await this.start();
     })().finally(() => {
@@ -49,30 +83,56 @@ export class MidasSession {
     return this.starting;
   }
 
-  private async start(): Promise<void> {
-    await this.launch(this.headless);
+  /**
+   * Süren bir açılış varsa onu bekler ve true döner. Canlı tutmanın sessiz açılışı oturumu
+   * geçersiz bulduysa false döner: gerçek araç çağrısı o zaman kendi giriş akışını başlatır.
+   */
+  private async awaitPendingStart(): Promise<boolean> {
+    if (!this.starting) return false;
+    try {
+      await this.starting;
+      return true;
+    } catch (error) {
+      if (error instanceof SessionUnavailable) return false;
+      throw error;
+    }
+  }
+
+  /**
+   * Sessiz açılış: yalnız kayıtlı durumla başsız açar. Oturum geçersizse giriş başlatmaz,
+   * `SessionUnavailable` fırlatır ve tarayıcıyı kapatır. Canlı tutma döngüsü bunu kullanır.
+   */
+  async ensureStartedQuietly(): Promise<void> {
+    if (this.starting) return this.starting;
+    if (this.page && !this.page.isClosed()) return;
+    this.starting = this.start(false).finally(() => {
+      this.starting = null;
+    });
+    return this.starting;
+  }
+
+  private async start(interactive = true): Promise<void> {
+    await this.launch(this.headless ? "headless" : "visible");
 
     if (this.needsLogin() || !(await this.isAuthenticated())) {
-      // Kayıtlı durum bayat (refresh_token ~24 sa yaşar) ve başsız tarayıcı SSO formunu ya
-      // da bildirim onayını gösteremez. Giriş yapacak kadar görünür aç, taze token'ların
-      // anlık görüntüsünü al, sonra çağıranın istediği moda dön.
+      if (!interactive) {
+        await this.closeContext();
+        throw new SessionUnavailable();
+      }
+      // Kayıtlı durum bayat (refresh_token ~24 sa yaşar) ve başsız tarayıcı SSO formundaki
+      // Turnstile doğrulamasını ve bildirim onayını güvenilir biçimde geçemez. Giriş
+      // `MIDAS_LOGIN_WINDOW` kipine göre (varsayılan: gizlenmiş görünür pencere) yapılır,
+      // taze token'ların anlık görüntüsü alınır, sonra çağıranın istediği moda dönülür.
       // Önce bayat anlık görüntü silinir: localStorage'ı her gezinmede bir init betiğiyle
       // yeniden yüklenir; bu da geri dönüşten hemen sonra taze token'ları ezer ve uygulamayı
       // /dashboard'dan /login'e geri atar.
       await this.closeContext();
       fs.rmSync(config.stateFile, { force: true });
-      await this.launch(false);
-      if (this.needsLogin() || !(await this.isAuthenticated())) {
-        await this.clearAppStorage();
-        await this.login(true);
-        if (!(await this.isAuthenticated())) {
-          throw new Error("Midas girişi tamamlandı ama API oturumu hâlâ reddediyor (HTTP 401).");
-        }
-      }
+      await this.interactiveLogin(this.headless ? config.loginWindow : "visible");
       await this.saveState();
       if (this.headless) {
         await this.closeContext();
-        await this.launch(true);
+        await this.launch("headless");
       }
     }
 
@@ -81,16 +141,79 @@ export class MidasSession {
     await this.saveState();
   }
 
+  /**
+   * Giriş akışı. `headless` kipinde Turnstile başsız geçmezse form gönderilmeden (telefona
+   * bildirim gitmeden) `hidden` kipine düşülür. `hidden` kipinde doğrulama kullanıcı
+   * etkileşimi isterse pencere görünür yapılır ve masaüstü bildirimi gönderilir.
+   */
+  private async interactiveLogin(mode: LoginWindowMode): Promise<void> {
+    {
+      if (mode === "headless") {
+        await this.launch("headless", { fullChromium: true });
+        if (!this.needsLogin() && (await this.isAuthenticated())) return;
+        await this.clearAppStorage();
+        if (await this.submitLoginForm(20_000)) {
+          await this.awaitApproval();
+          await this.assertAuthenticated();
+          return;
+        }
+        console.error("giriş: Turnstile başsız doğrulanamadı; form gönderilmedi, gizli pencereye geçiliyor");
+        await this.closeContext();
+        mode = "hidden";
+      }
+
+      await this.launch(mode === "visible" ? "visible" : "hidden");
+      if (!this.needsLogin() && (await this.isAuthenticated())) return;
+      await this.clearAppStorage();
+      let submitted = await this.submitLoginForm(30_000);
+      if (!submitted && mode === "hidden") {
+        await this.revealLoginWindow();
+        notifyDesktop(
+          "Midas girişi: doğrulama gerekiyor",
+          "Açılan tarayıcı penceresinde doğrulamayı tamamla; ardından telefonundaki bildirimi onayla.",
+          "critical"
+        );
+        submitted = await this.submitLoginForm(120_000);
+      }
+      if (!submitted) {
+        throw new Error("Midas giriş formu gönderilemedi: doğrulama (Turnstile) tamamlanmadı.");
+      }
+      await this.awaitApproval();
+      await this.assertAuthenticated();
+    }
+  }
+
+  private async assertAuthenticated(): Promise<void> {
+    if (!(await this.isAuthenticated())) {
+      throw new Error("Midas girişi tamamlandı ama API oturumu hâlâ reddediyor (HTTP 401).");
+    }
+  }
+
   private async closeContext(): Promise<void> {
     await this.context?.close().catch(() => {});
     this.context = null;
     this.page = null;
     this.rid = null;
+    await this.releaseHiddenWindow();
   }
 
-  private async launch(headless: boolean): Promise<void> {
+  /** Gizli pencerenin KWin betikleri pencere kapandıktan sonra kaldırılır; önce kaldırmak pencereyi gösterebilir. */
+  private async releaseHiddenWindow(): Promise<void> {
+    if (!this.hiddenWindow) return;
+    this.hiddenWindow = false;
+    await unloadKwinScript(KWIN_HIDE_PLUGIN);
+    await unloadKwinScript(KWIN_REVEAL_PLUGIN);
+  }
+
+  private async launch(mode: LaunchMode, options: { fullChromium?: boolean } = {}): Promise<void> {
+    const hidden = mode === "hidden";
+    this.hiddenWindow = hidden;
+    // Betik pencere açılmadan yüklenir ki KWin pencereyi eşleme anında yakalasın.
+    const kwinHides = hidden ? await loadKwinScript(KWIN_HIDE_PLUGIN, kwinHideScript()) : false;
     this.context = await chromium.launchPersistentContext(config.sessionDir, {
-      headless,
+      headless: mode === "headless",
+      // Yeni başsız kip tam Chromium'u kullanır; headless shell'e göre gerçek tarayıcıya yakındır.
+      ...(options.fullChromium ? { channel: "chromium" } : {}),
       viewport: { width: 1440, height: 900 },
       locale: "tr-TR",
       // Başsız Chromium kendini "HeadlessChrome" olarak tanıtır ve bu ipuçlarını göndermez;
@@ -101,9 +224,10 @@ export class MidasSession {
         "sec-ch-ua-mobile": "?0",
         "sec-ch-ua-platform": '"Windows"',
       },
-      args: ["--disable-blink-features=AutomationControlled"],
+      args: ["--disable-blink-features=AutomationControlled", ...(hidden ? hiddenLaunchArgs() : [])],
     });
     this.page = this.context.pages()[0] ?? (await this.context.newPage());
+    if (hidden && !kwinHides) await this.minimizeWindow();
 
     this.page.on("request", (req) => {
       if (req.url().includes("router-graphql")) {
@@ -124,12 +248,14 @@ export class MidasSession {
    * ve sonraki açılışta geri yüklenir. Yeniden başlatmanın yeni bir bildirim onayı istemeden
    * sessiz geçmesini sağlayan budur.
    */
-  private async saveState(): Promise<void> {
+  private async saveState(): Promise<AuthExpiry | null> {
     try {
       const state = await this.context!.storageState();
       fs.writeFileSync(config.stateFile, JSON.stringify(state), { mode: 0o600 });
+      return describeAuthExpiry(state, new URL(config.atlasUrl).origin);
     } catch {
       // Anlık görüntü bir iyileştirmedir; alınamaması oturumu bozmamalı.
+      return null;
     }
   }
 
@@ -207,29 +333,73 @@ export class MidasSession {
     return !this.page || this.page.isClosed() || this.needsLogin();
   }
 
-  /**
-   * SSO formunu doldurur, ardından kullanıcının Midas mobil uygulamasındaki bildirimi
-   * onaylamasını bekler. Telefon olmadan tamamlanamaz.
-   */
-  private async login(visible: boolean): Promise<void> {
-    const page = this.page!;
-    if (!visible) {
-      throw new Error(
-        "Midas oturumunun süresi doldu ve tarayıcı başsız çalışıyor; bildirim onayı gösterilemez."
-      );
+  /** KWin yoksa yedek yol: pencereyi CDP ile simge durumuna küçültür. */
+  private async minimizeWindow(): Promise<void> {
+    try {
+      const cdp = await this.context!.newCDPSession(this.page!);
+      const { windowId } = (await cdp.send("Browser.getWindowForTarget")) as { windowId: number };
+      await cdp.send("Browser.setWindowBounds", { windowId, bounds: { windowState: "minimized" } });
+      await cdp.detach().catch(() => {});
+    } catch {
+      // Küçültülemezse pencere görünür kalır; giriş yine çalışır.
     }
+  }
 
+  /** Gizli giriş penceresini kullanıcının etkileşimi için öne getirir. */
+  private async revealLoginWindow(): Promise<void> {
+    await unloadKwinScript(KWIN_HIDE_PLUGIN);
+    const shown = await loadKwinScript(KWIN_REVEAL_PLUGIN, kwinRevealScript());
+    if (shown) return;
+    try {
+      const cdp = await this.context!.newCDPSession(this.page!);
+      const { windowId } = (await cdp.send("Browser.getWindowForTarget")) as { windowId: number };
+      await cdp.send("Browser.setWindowBounds", { windowId, bounds: { windowState: "normal" } });
+      await cdp.detach().catch(() => {});
+    } catch {
+      // Gösterilemezse zaman aşımı hatası kullanıcıya yine döner.
+    }
+  }
+
+  /**
+   * SSO formunu doldurur ve gönderir. Gönder düğmesi etkinleşmeden ve (varsa) Turnstile
+   * yanıtı dolmadan tıklanmaz; süre içinde hazır olmazsa false döner ve istek gönderilmez,
+   * telefona bildirim düşmez.
+   */
+  private async submitLoginForm(readyTimeoutMs: number): Promise<boolean> {
+    const page = this.page!;
     await page.waitForSelector("#phone", { timeout: 30_000 });
     await page.fill("#phone", config.phone);
     await page.fill("#password", config.password);
-    await page.click("button[type=submit]:not([disabled])");
+    try {
+      await page.waitForFunction(
+        `(() => {
+           const button = document.querySelector(${JSON.stringify(SUBMIT_READY)});
+           if (!button) return false;
+           if (!document.querySelector("#turnstile-container")) return true;
+           const answer = document.querySelector('[name="cf-turnstile-response"]');
+           return !!(answer && answer.value);
+         })()`,
+        undefined,
+        { timeout: readyTimeoutMs, polling: 500 }
+      );
+    } catch {
+      return false;
+    }
+    await page.click(SUBMIT_READY);
+    notifyDesktop("Midas girişi", "Telefonundaki Midas bildirimini onayla.");
+    return true;
+  }
 
+  /** Kullanıcının Midas mobil uygulamasındaki bildirimi onaylamasını bekler. */
+  private async awaitApproval(): Promise<void> {
+    const page = this.page!;
     const deadline = Date.now() + 180_000;
     while (Date.now() < deadline) {
       const url = page.url();
       if (url.startsWith(config.atlasUrl) && !url.includes("/auth/") && !url.includes("/login")) return;
       await page.waitForTimeout(1000);
     }
+    notifyDesktop("Midas girişi başarısız", "Bildirim 3 dakika içinde onaylanmadı.", "critical");
     throw new Error(
       "Giriş 3 dakika sonra zaman aşımına uğradı: Midas uygulamasındaki bildirim onaylanmadı."
     );
@@ -276,18 +446,33 @@ export class MidasSession {
   }
 
   /**
-   * Boşta duran, zaten açık oturumu yeniler ve anlık görüntüsünü alır. Kendiliğinden tarayıcı
-   * ya da giriş başlatmaz: kimsenin istemediği bir bildirim onayı yalnızca zaman aşımına uğrar.
+   * Canlı tutma turu: tarayıcı kapalıysa kayıtlı durumla başsız açar, zararsız bir okuma
+   * sorgusuyla oturumu yoklar (gerekirse sayfayı yeniden yükleyip uygulamanın token
+   * yenilemesini tetikler) ve anlık görüntüyü kaydeder. Hiçbir koşulda giriş başlatmaz:
+   * oturum düşmüşse yalnız "logged-out" döner, giriş bir sonraki gerçek araç çağrısına kalır.
    */
-  async keepAlive(): Promise<void> {
-    if (this.starting || !this.isStarted() || this.needsLogin()) return;
-    await this.page!.reload({ waitUntil: "domcontentloaded" });
-    await this.page!.waitForTimeout(3000);
-    if (this.needsLogin()) return;
-    await this.saveState();
+  async keepAlive(): Promise<KeepAliveResult> {
+    if (this.starting) return { status: "skipped", reason: "giriş ya da açılış sürüyor" };
+    if (!this.isStarted()) {
+      try {
+        await this.ensureStartedQuietly();
+      } catch (error) {
+        if (error instanceof SessionUnavailable) return { status: "logged-out" };
+        throw error;
+      }
+    }
+    if (this.needsLogin()) return { status: "logged-out" };
+    if (!(await this.isAuthenticated())) {
+      await this.page!.reload({ waitUntil: "domcontentloaded" });
+      await this.page!.waitForTimeout(3000);
+      if (this.needsLogin() || !(await this.isAuthenticated())) return { status: "logged-out" };
+    }
+    return { status: "alive", expiry: await this.saveState() };
   }
 
   async close(): Promise<void> {
+    // Kapanmadan önce son token'lar kaydedilir; yeniden başlatma bayat anlık görüntüyle açılmaz.
+    if (!this.starting && this.isStarted() && !this.needsLogin()) await this.saveState();
     await this.context?.close();
     this.context = null;
     this.page = null;

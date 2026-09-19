@@ -73,6 +73,27 @@ For a persistent service, `dist/http.js` serves Streamable HTTP on `127.0.0.1:87
 a bearer token from `~/.config/mcp-midas/token`; a systemd user unit example is in the
 [Turkish README](README.md#kurulum).
 
+### Login window and keep-alive
+
+The Midas refresh token lives a fixed 24 hours from login; refreshing the access token
+(~15 min) neither rotates nor extends it, so one phone approval per day is still needed.
+The login browser is headed (the SSO form has a Cloudflare Turnstile check), but by default
+it stays out of sight. `MIDAS_LOGIN_WINDOW` picks the mode:
+
+- `hidden` (default): Chromium runs on XWayland with the window class `mcp-midas-login`; on
+  KDE Plasma a temporary KWin script minimizes it, moves it off-screen, makes it transparent
+  and hides it from the taskbar (without KWin it is minimized over CDP). A desktop
+  notification asks you to approve on your phone. If the check does not pass on its own
+  within 30 s, the window is brought forward.
+- `visible`: the old behaviour, a normal visible window.
+- `headless` (experimental): fills the form in Chromium's new headless mode; if Turnstile
+  does not pass within 20 s it falls back to `hidden` without submitting (no push is sent).
+
+The HTTP service also runs a keep-alive every `MIDAS_KEEPALIVE_HOURS` hours (default 4,
+`0` disables; first run one minute after start): it opens the saved session headless if
+needed, sends a harmless read query, reloads once on 401 and saves `storageState`. It never
+starts a login; a dropped session is only logged, and the next real tool call logs in.
+
 ### Turning on order tools
 
 Order tools (`place_order`, `update_order`, `cancel_order`) are registered only when

@@ -53,3 +53,26 @@ test("yalnız tam olarak 1 değeri açar", () => {
   assert.equal(ordersEnabled({ MIDAS_ORDERS_ENABLED: "1" }), true);
   assert.equal(ordersEnabled({ MIDAS_ORDERS_ENABLED: " 1 " }), true);
 });
+
+async function listTools(ordersOn: boolean) {
+  const server = createServer({ ordersEnabled: ordersOn });
+  const client = new Client({ name: "test", version: "0.0.0" });
+  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+  await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+  const { tools } = await client.listTools();
+  await client.close();
+  await server.close();
+  return tools;
+}
+
+test("okuma araçları isteğe bağlı market ipucu alır, emir araçları almaz", async () => {
+  const tools = await listTools(true);
+  for (const name of ["get_asset_price", "get_asset_info", "get_technicals", "get_chart", "get_pending_orders"]) {
+    const props = tools.find((t) => t.name === name)!.inputSchema.properties as Record<string, any>;
+    assert.deepEqual(props.market?.enum, ["TR", "US"], name);
+  }
+  for (const name of ["place_order", "update_order", "cancel_order"]) {
+    const props = tools.find((t) => t.name === name)!.inputSchema.properties as Record<string, any>;
+    assert.ok(!("market" in props), `${name} market ipucu almamalı`);
+  }
+});

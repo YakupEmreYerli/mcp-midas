@@ -4,6 +4,7 @@ import * as midas from "./midas.js";
 import { getTechnicals, getCandles } from "./technicals.js";
 import { getTransactions, getTransactionFilters } from "./history.js";
 import { ordersEnabled } from "./tool-flags.js";
+import { candidateSummary } from "./symbol-resolution.js";
 
 export interface ServerOptions {
   /**
@@ -49,6 +50,14 @@ export function createServer(options: ServerOptions = {}): McpServer {
   }
 
   const READ_ONLY = { readOnlyHint: true, openWorldHint: true };
+
+  const market = z
+    .enum(["TR", "US"])
+    .optional()
+    .describe(
+      "Aynı sembolü birden çok enstrüman taşıyorsa (ör. GTM: TEFAS fonu ve NASDAQ hissesi) ülke/piyasa ipucu. " +
+        "Verilmezse önce pozisyondaki enstrüman, yoksa Midas'ın ilk birebir eşleşmesi seçilir ve adaylar sonuçta listelenir."
+    );
   const WRITING = { readOnlyHint: false, destructiveHint: true, openWorldHint: true };
 
   tool(
@@ -76,8 +85,9 @@ export function createServer(options: ServerOptions = {}): McpServer {
         .enum(["TRY", "USD"])
         .optional()
         .describe("Fiyatı enstrümanın kendi para birimi yerine bu para birimine çevir"),
+      market,
     },
-    ({ symbol, currency }) => midas.getAssetPrice(symbol, currency),
+    ({ symbol, currency, market }) => midas.getAssetPrice(symbol, currency, market),
     READ_ONLY
   );
 
@@ -85,9 +95,10 @@ export function createServer(options: ServerOptions = {}): McpServer {
     "get_asset_info",
     "Bir enstrümanın tanıtıcı bilgilerini (tam ad, pazar, açıklama) güncel fiyatıyla ve Atlas enstrüman sayfası " +
       "istatistikleriyle döner: TEFAS fonlarında risk seviyesi (riskLevel), valör, vergi, yıllık yönetim ücreti ve yatırımcı " +
-      "sayısı; hisselerde günlük fiyat bandı, 52 haftalık aralık ve oranlar. Sembol araması bulanıktır: exactMatch ve name alanlarını kontrol et.",
-    { symbol: z.string().describe("Aranacak sembol ya da şirket adı") },
-    ({ symbol }) => midas.getAssetInfo(symbol),
+      "sayısı; hisselerde günlük fiyat bandı, 52 haftalık aralık ve oranlar. Sembol araması bulanıktır: exactMatch ve name alanlarını kontrol et; " +
+      "ambiguousSymbol true ise candidates listesindeki diğer enstrümanlar için market parametresini kullan.",
+    { symbol: z.string().describe("Aranacak sembol ya da şirket adı"), market },
+    ({ symbol, market }) => midas.getAssetInfo(symbol, market),
     READ_ONLY
   );
 
@@ -103,8 +114,9 @@ export function createServer(options: ServerOptions = {}): McpServer {
         .enum(["1d", "1w"])
         .optional()
         .describe("Mum aralığı; varsayılan günlük (1d)"),
+      market,
     },
-    ({ symbol, interval }) => getTechnicals(symbol, interval ?? "1d"),
+    ({ symbol, interval, market }) => getTechnicals(symbol, interval ?? "1d", undefined, market),
     READ_ONLY
   );
 
@@ -119,11 +131,18 @@ export function createServer(options: ServerOptions = {}): McpServer {
         .optional()
         .describe("Mum aralığı; varsayılan günlük (1d)"),
       limit: z.number().int().positive().max(500).optional().describe("Mum sayısı (en çok 500)"),
+      market,
     },
-    async ({ symbol, interval, limit }) => {
-      const asset = await midas.resolveSymbol(symbol);
+    async ({ symbol, interval, limit, market }) => {
+      const asset = await midas.resolveSymbol(symbol, { market });
       const candles = await getCandles(asset.uid, interval ?? "1d", limit ?? 200);
-      return { symbol: asset.symbol, interval: interval ?? "1d", count: candles.length, candles };
+      return {
+        symbol: asset.symbol,
+        interval: interval ?? "1d",
+        count: candles.length,
+        ...(asset.candidates.length > 1 ? { candidates: candidateSummary(asset.candidates) } : {}),
+        candles,
+      };
     },
     READ_ONLY
   );
@@ -132,8 +151,8 @@ export function createServer(options: ServerOptions = {}): McpServer {
     "get_pending_orders",
     "Henüz gerçekleşmemiş emirleri emir kimlikleriyle listeler. symbol verilmezse tüm hesaplardaki (BIST, TEFAS, ABD) " +
       "bekleyen emirler tek çağrıda döner; symbol verilirse yalnız o enstrümanın emirleri.",
-    { symbol: z.string().optional().describe("İsteğe bağlı sembol; tüm bekleyen emirler için boş bırak") },
-    ({ symbol }) => midas.getPendingOrders(symbol),
+    { symbol: z.string().optional().describe("İsteğe bağlı sembol; tüm bekleyen emirler için boş bırak"), market },
+    ({ symbol, market }) => midas.getPendingOrders(symbol, market),
     READ_ONLY
   );
 

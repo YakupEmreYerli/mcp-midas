@@ -51,7 +51,9 @@ QtWebEngine gerekir; yoksa `kdialog` ya da `zenity` kullanılır.
   web uygulamasının paketlerinden çıkarılır; bu araçların ürettiği `discovery/` hesap verisi
   içerebilir ve gitignore'ludur.
 - **Okumada sembol çözümü bulanıktır**, emir araçlarında birebir olmalıdır
-  (`assertExactResolvedSymbol`).
+  (`assertExactResolvedSymbol`). Aynı sembolü birden çok enstrüman taşıyorsa seçim
+  `src/symbol-resolution.ts` içindeki saf mantıkla yapılır (emrin enstrümanı → pozisyon →
+  piyasa ipucu); emir yolunda ayırt edilemeyen eşleşme tahmin edilmez, reddedilir.
 
 ## Güvenlik
 

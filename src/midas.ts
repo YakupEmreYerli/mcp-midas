@@ -15,6 +15,17 @@ import { createOrderAuditLogger } from "./order-audit.js";
 import { session } from "./session.js";
 import { getAllPendingOrders } from "./history.js";
 import * as Q from "./queries.js";
+import {
+  candidateSummary,
+  needsPositions,
+  pickInstrument,
+  type Country,
+  type HeldInstrument,
+  type PickResult,
+  type ResolvedBy,
+  type ResolveMode,
+  type SearchCandidate,
+} from "./symbol-resolution.js";
 
 export type { Side } from "./order-domain.js";
 
@@ -121,37 +132,88 @@ export interface ResolvedAsset {
   subtitle: string;
   country: "TR" | "US";
   type: string;
+  /** Seçimin nasıl yapıldığı: birebir tek eşleşme, emir, pozisyon, piyasa ipucu, ilk eşleşme, bulanık. */
+  resolvedBy: ResolvedBy;
+  /** Birebir aynı sembolü taşıyan bütün adaylar; birden çoksa sembol belirsizdir. */
+  candidates: SearchCandidate[];
+}
+
+export interface ResolveOptions {
+  /** "order": belirsiz eşleşmede tahmin yapmaz, adayları listeleyerek hata verir. */
+  mode?: ResolveMode;
+  /** Okuma araçları için isteğe bağlı ülke/piyasa ipucu (TR ya da US). */
+  market?: Country;
+  /** Güncelleme/iptalde emrin kendi enstrümanı (OrderDetail.stockUid). */
+  preferUid?: string;
+}
+
+async function heldInstruments(): Promise<HeldInstrument[]> {
+  try {
+    return (await getPositions()).map((p) => ({
+      symbol: p.symbol,
+      assetUid: p.assetUid,
+      name: p.name,
+      market: p.market,
+    }));
+  } catch (error) {
+    if (!(error instanceof MidasApiError)) throw error;
+    return [];
+  }
 }
 
 /**
- * Sembolü Midas enstrüman uid'sine çözer. Önce birebir sembol eşleşmesini seçer; yoksa
- * ilk arama sonucuna düşer, böylece kısmi adlar da çalışır.
+ * Sembolü Midas enstrüman uid'sine çözer. Tek birebir eşleşme varsa onu seçer. Aynı
+ * sembolü birden çok enstrüman taşıyorsa sırasıyla emrin kendi enstrümanını, kullanıcının
+ * pozisyonundaki enstrümanı ve piyasa ipucunu kullanır; emir yolunda (`mode: "order"`)
+ * bunlar ayırt etmezse adayları listeleyerek hata verir. Birebir eşleşme hiç yoksa ilk
+ * arama sonucuna düşer (kısmi adlar okumada çalışsın diye; emir yolu bunu reddeder).
  */
-export async function resolveSymbol(symbol: string): Promise<ResolvedAsset> {
+export async function resolveSymbol(symbol: string, options: ResolveOptions = {}): Promise<ResolvedAsset> {
   const data = await gql("Search", Q.SEARCH, {
     query: symbol,
     searchItemTypes: ["MARKET_INSTRUMENTS", "INVESTMENT_FUNDS"],
     page: 0,
     size: 30,
   });
-  const results = (data.Search?.results ?? []).filter((r: any) => r.symbol);
-  if (!results.length) throw new MidasApiError(`"${symbol}" için enstrüman bulunamadı`);
+  const results = ((data.Search?.results ?? []) as SearchCandidate[]).filter((r) => r.symbol);
+  const pickOptions = { mode: options.mode ?? "read", market: options.market, preferUid: options.preferUid } as const;
+  // Arama boşsa da tutulan aynı sembollü pozisyona bakılır (ör. aramada çıkmayan fon).
+  const positions = !results.length || needsPositions(symbol, results, pickOptions) ? await heldInstruments() : [];
+  return toResolved(pickInstrument(symbol, results, { ...pickOptions, positions }));
+}
 
-  const wanted = symbol.trim().toUpperCase();
-  const hit = results.find((r: any) => r.symbol.toUpperCase() === wanted) ?? results[0];
+function toResolved(pick: PickResult): ResolvedAsset {
+  const hit = pick.asset;
   return {
     uid: hit.uid,
     symbol: hit.symbol,
     title: hit.title,
     subtitle: hit.subtitle,
-    country: hit.country,
+    country: hit.country as "TR" | "US",
     type: hit.type,
+    resolvedBy: pick.resolvedBy,
+    candidates: pick.candidates,
+  };
+}
+
+/** Okuma sonuçlarına eklenen belirsizlik bilgisi; tek adayda boş nesne. */
+function ambiguityInfo(asset: ResolvedAsset) {
+  if (asset.candidates.length < 2) return {};
+  return {
+    ambiguousSymbol: true,
+    resolvedBy: asset.resolvedBy,
+    candidates: candidateSummary(asset.candidates),
+    note: "Bu sembolü birden çok enstrüman taşıyor; farklı enstrüman için market parametresini (TR ya da US) ver.",
   };
 }
 
 /** Bir sembolün son işlem fiyatı; istenirse başka bir para birimine çevrilir. */
-export async function getAssetPrice(symbol: string, currency?: "TRY" | "USD") {
-  const asset = await resolveSymbol(symbol);
+export async function getAssetPrice(symbol: string, currency?: "TRY" | "USD", market?: Country) {
+  const asset = await resolveSymbol(symbol, { market });
+  return { ...(await priceFor(asset, currency)), ...ambiguityInfo(asset) };
+}
+
+async function priceFor(asset: ResolvedAsset, currency?: "TRY" | "USD") {
   const data = await gql("GetAssetSnapshot", Q.ASSET_SNAPSHOT, {
     uid: asset.uid,
     currency: currency ?? null,
@@ -186,10 +248,12 @@ function statsObject(items: Array<{ key: string; value: string }> | null | undef
  * yatırımcı sayısı; hisselerde fiyat bandı, 52 haftalık aralık ve oranlar. Arama bulanık
  * olduğundan `exactMatch`, çözümlenen sembolün istenenle aynı olup olmadığını söyler.
  */
-export async function getAssetInfo(symbol: string) {
-  const asset = await resolveSymbol(symbol);
+export async function getAssetInfo(symbol: string, market?: Country) {
+  const asset = await resolveSymbol(symbol, { market });
+  // Fiyat, sembolü yeniden aramadan aynı uid üzerinden alınır; aksi hâlde belirsiz sembolde
+  // bilgi ve fiyat farklı enstrümanlardan gelebilir.
   const [price, overview, snapshot] = await Promise.all([
-    getAssetPrice(asset.symbol),
+    priceFor(asset),
     gql("getInstrumentOverview", Q.INSTRUMENT_OVERVIEW, { uid: asset.uid })
       .then((d) => d.instrumentOverviewSection)
       .catch(() => null),
@@ -215,6 +279,7 @@ export async function getAssetInfo(symbol: string) {
           completedAgo: overview.digestDetail.completedAgo ?? null,
         }
       : null,
+    ...ambiguityInfo(asset),
   };
 }
 
@@ -223,7 +288,7 @@ export async function getAssetInfo(symbol: string) {
  * sembol birebir çözülürse enstrüman başına liste, çözülmezse sembole göre süzülmüş tüm
  * hesaplar listesi (arama bazı ABD ETF'lerini bulamıyor).
  */
-export async function getPendingOrders(symbol?: string) {
+export async function getPendingOrders(symbol?: string, market?: Country) {
   if (!symbol?.trim()) {
     const orders = await getAllPendingOrders();
     return { symbol: null, count: orders.length, orders };
@@ -231,13 +296,22 @@ export async function getPendingOrders(symbol?: string) {
   const wanted = symbol.trim().toUpperCase();
   let asset: ResolvedAsset | null = null;
   try {
-    asset = await resolveSymbol(symbol);
+    asset = await resolveSymbol(symbol, { market });
   } catch (error) {
     if (!(error instanceof MidasApiError)) throw error;
   }
-  if (!asset || asset.symbol.toUpperCase() !== wanted) {
+  // Belirsiz sembolde (pozisyon ya da ipucu ayırt etmedi) tek enstrümana daralmak yerine
+  // tüm hesaplardaki aynı sembollü emirler döner.
+  const unresolvedAmbiguity = asset?.resolvedBy === "first-exact";
+  if (!asset || unresolvedAmbiguity || asset.symbol.toUpperCase() !== wanted) {
     const orders = (await getAllPendingOrders()).filter((o) => o.symbol?.toUpperCase() === wanted);
-    return { symbol: wanted, source: "all-accounts", count: orders.length, orders };
+    return {
+      symbol: wanted,
+      source: "all-accounts",
+      count: orders.length,
+      orders,
+      ...(asset && unresolvedAmbiguity ? ambiguityInfo(asset) : {}),
+    };
   }
   const account = await accountFor(asset.country === "TR" ? "TR" : "US");
   const data = await gql("PendingOrders", Q.PENDING_ORDERS, {
@@ -249,6 +323,7 @@ export async function getPendingOrders(symbol?: string) {
     accountUid: account.accountUid,
     stockUid: asset.uid,
     orders: data.pendingOrders?.orders ?? [],
+    ...ambiguityInfo(asset),
   };
 }
 
@@ -302,8 +377,13 @@ function isFund(snapshot: any): boolean {
   return snapshot?.investmentType === "INVESTMENT_FUNDS";
 }
 
-async function exactOrderAsset(symbol: string) {
-  const asset = await resolveSymbol(symbol);
+/**
+ * Emir yolu çözümlemesi: sembol birebir eşleşmeli; aynı sembolü birden çok enstrüman
+ * taşıyorsa emrin kendi enstrümanı (`preferUid`) ya da kullanıcının pozisyonu seçer,
+ * hiçbiri ayırt etmiyorsa tahmin yapılmaz ve adaylarla hata döner.
+ */
+async function exactOrderAsset(symbol: string, preferUid?: string) {
+  const asset = await resolveSymbol(symbol, { mode: "order", preferUid });
   assertExactResolvedSymbol(symbol, asset.symbol);
   if (asset.country !== "TR") {
     throw new MidasApiError("Emir araçları yalnızca BIST hisseleri ve TEFAS fonları içindir");
@@ -382,7 +462,7 @@ async function revalidateAsset(
   expected: { uid: string; name: string; price: number }
 ): Promise<{ ok: boolean; reason?: string }> {
   try {
-    const current = await exactOrderAsset(symbol);
+    const current = await exactOrderAsset(symbol, expected.uid);
     if (current.asset.uid !== expected.uid || current.snapshot.name !== expected.name) {
       return { ok: false, reason: "Çözümlenen enstrüman onay önizlemesinden farklı" };
     }
@@ -489,9 +569,10 @@ export async function updateOrder(input: UpdateOrderInput) {
   ) {
     throw new MidasApiError("Güncellenecek en az bir emir alanı verilmelidir");
   }
-  const resolved = await exactOrderAsset(input.symbol);
   const account = await accountFor("TR");
   const existing = await orderDetail(account.accountUid, input.orderId);
+  // Aynı sembolü birden çok enstrüman taşıyorsa emrin kendi enstrümanı seçilir.
+  const resolved = await exactOrderAsset(input.symbol, existing.stockUid);
   if (existing.stockUid !== resolved.asset.uid) throw new MidasApiError("Emir, çözümlenen enstrümana ait değil; işlem reddedildi");
   if (!existing.showUpdate) throw new MidasApiError("Midas bu emrin güncellenebilir olduğunu belirtmiyor");
   const supported: UpdatableOrderType[] = ["LIMIT", "STOP", "STOP_LIMIT", "TAKE_PROFIT", "STOP_LOSS", "TAKE_PROFIT_AND_STOP_LOSS"];
@@ -595,9 +676,9 @@ export async function updateOrder(input: UpdateOrderInput) {
 }
 
 export async function cancelOrder(orderId: string, symbol: string) {
-  const resolved = await exactOrderAsset(symbol);
   const account = await accountFor("TR");
   const existing = await orderDetail(account.accountUid, orderId);
+  const resolved = await exactOrderAsset(symbol, existing.stockUid);
   if (existing.stockUid !== resolved.asset.uid) throw new MidasApiError("Emir, çözümlenen enstrümana ait değil; işlem reddedildi");
   if (!existing.eligibleToCancel) throw new MidasApiError("Midas bu emrin iptal edilebilir olduğunu belirtmiyor");
   const oldValues = stableOrderValues(existing);

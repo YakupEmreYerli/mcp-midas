@@ -1,5 +1,6 @@
 import { gql } from "./api.js";
 import { resolveSymbol } from "./midas.js";
+import { candidateSummary } from "./symbol-resolution.js";
 import { realVwapBundle, type RealVwapBundle } from "./vwap.js";
 
 /** Midas grafik uç noktasının döndürdüğü tek bir OHLCV mumu. */
@@ -352,9 +353,12 @@ export function computeTechnicals(
 export async function getTechnicals(
   symbol: string,
   interval = "1d",
-  limit = 400
-): Promise<Technicals> {
-  const asset = await resolveSymbol(symbol);
+  limit = 400,
+  market?: "TR" | "US"
+): Promise<Technicals & { candidates?: ReturnType<typeof candidateSummary> }> {
+  const asset = await resolveSymbol(symbol, { market });
   const candles = await getCandles(asset.uid, interval, limit);
-  return computeTechnicals(asset.symbol, candles, interval);
+  const technicals = computeTechnicals(asset.symbol, candles, interval);
+  // Belirsiz sembolde hangi enstrümanın analiz edildiği görünür kalsın.
+  return asset.candidates.length > 1 ? { ...technicals, candidates: candidateSummary(asset.candidates) } : technicals;
 }

@@ -186,18 +186,25 @@ hiçbir emir onay penceresi olmadan gönderilmez.
 | --- | --- | --- |
 | `get_portfolio` | – | TL cinsinden toplam değer, günlük kâr/zarar, hesap başına nakit ve alım gücü (TRY / USD / EUR) |
 | `get_assets` | – | Açık pozisyonların hepsi: adet, ortalama maliyet, fiyat, piyasa değeri, kâr/zarar |
-| `get_asset_price` | `symbol`, isteğe bağlı `currency` | Son fiyat, önceki kapanış, % değişim, seans durumu |
-| `get_asset_info` | `symbol` | Enstrüman adı, pazar, açıklama, güncel fiyat ve Atlas istatistikleri (TEFAS: risk, valör, vergi, yönetim ücreti; hisse: günlük bant, 52 haftalık aralık, oranlar). `exactMatch` bulanık eşleşmeyi işaretler |
-| `get_pending_orders` | `symbol?` | Bekleyen emirler; `symbol` verilmezse tüm hesaplardakiler tek çağrıda |
+| `get_asset_price` | `symbol`, isteğe bağlı `currency`, `market` | Son fiyat, önceki kapanış, % değişim, seans durumu |
+| `get_asset_info` | `symbol`, isteğe bağlı `market` | Enstrüman adı, pazar, açıklama, güncel fiyat ve Atlas istatistikleri (TEFAS: risk, valör, vergi, yönetim ücreti; hisse: günlük bant, 52 haftalık aralık, oranlar). `exactMatch` bulanık eşleşmeyi işaretler |
+| `get_pending_orders` | `symbol?`, `market?` | Bekleyen emirler; `symbol` verilmezse tüm hesaplardakiler tek çağrıda |
 | `get_transactions` | `from_date?`, `to_date?`, `status?`, `filter?`, `details?`, `limit?`, `offset?` | Hesap hareketleri: hisse/ETF/fon işlemleri, TL transferleri, döviz, nema, stopaj, temettü. Varsayılan: son 30 gün |
 | `get_transaction_filters` | – | `get_transactions` için kategori kimlikleri |
-| `get_technicals` | `symbol`, isteğe bağlı `interval` | RSI(14), SMA/EMA (20/50/200), MACD, Bollinger, ATR, yıllık oynaklık, 52 haftalık aralık, destek/direnç, hacim/ortalama |
-| `get_chart` | `symbol`, isteğe bağlı `interval`, `limit` | Ham OHLCV mumları (en çok 500) |
+| `get_technicals` | `symbol`, isteğe bağlı `interval`, `market` | RSI(14), SMA/EMA (20/50/200), MACD, Bollinger, ATR, yıllık oynaklık, 52 haftalık aralık, destek/direnç, hacim/ortalama |
+| `get_chart` | `symbol`, isteğe bağlı `interval`, `limit`, `market` | Ham OHLCV mumları (en çok 500) |
 
 > **Okumada sembol çözümü bulanıktır.** Semboller arama ile bulunur ve bilinmeyen bir kod
 > hata vermek yerine en yakın eşleşmeye düşer: `VOO` istenince `IOO` fonu, `TTE` istenince
 > aynı kodlu Türk fonu yerine TotalEnergies dönebilir. Yanıttaki `name` ve `currency`
 > alanlarını kontrol et. Emir araçları birebir sembol ister ve bulanık eşleşmeyi reddeder.
+>
+> **Aynı sembolü birden çok enstrüman taşıyabilir** (ör. `GTM`: bir TEFAS fonu ve NASDAQ'taki
+> ZoomInfo). Bu durumda önce pozisyonundaki enstrüman seçilir; pozisyon ayırt etmiyorsa okuma
+> araçları Midas'ın ilk birebir eşleşmesini döner ve yanıtta `ambiguousSymbol` ile `candidates`
+> listesini verir, isteğe bağlı `market` (`TR` ya da `US`) ipucuyla diğeri seçilir. Emir
+> araçları bu durumda tahmin yapmaz: adayları (ad, piyasa, ülke, tip) listeleyerek reddeder.
+> Güncelleme ve iptalde emrin kendi enstrümanı esas alınır.
 
 ### Emir (varsayılan kapalı)
 

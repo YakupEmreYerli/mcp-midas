@@ -3,8 +3,8 @@ import { MidasApiError } from "./errors.js";
 /**
  * Sembol çözümlemenin ağa çıkmayan seçim mantığı. Midas araması aynı sembolü taşıyan
  * birden çok enstrüman döndürebilir (ör. "GTM": bir TEFAS fonu ve NASDAQ'taki ZoomInfo).
- * Seçim sırası: emrin kendi enstrümanı (güncelleme/iptal) → kullanıcının pozisyonu →
- * piyasa ipucu. Yazma araçlarında bunların hiçbiri ayırt etmiyorsa tahmin yapılmaz.
+ * Seçim sırası: emrin kendi enstrümanı (güncelleme/iptal) → okumada açık piyasa ipucu →
+ * kullanıcının pozisyonu. Yazma araçlarında bunların hiçbiri ayırt etmiyorsa tahmin yapılmaz.
  */
 
 export type Country = "TR" | "US";
@@ -126,6 +126,13 @@ export function pickInstrument(requested: string, results: SearchCandidate[], op
 
   if (pool.length === 1) {
     return { asset: pool[0], candidates: pool, resolvedBy: exact.length ? "exact" : "position" };
+  }
+
+  // Okumada açıkça verilen piyasa ipucu pozisyon tercihinden önce gelir: kullanıcı
+  // tuttuğu fonu değil, aynı sembollü diğer enstrümanı bilerek istiyor olabilir.
+  if (options.mode === "read" && options.market) {
+    const inMarket = pool.filter((c) => c.country === options.market);
+    if (inMarket.length === 1) return { asset: inMarket[0], candidates: pool, resolvedBy: "market" };
   }
 
   const heldUids = new Set(held.map((p) => p.assetUid));

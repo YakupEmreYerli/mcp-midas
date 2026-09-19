@@ -166,8 +166,8 @@ async function heldInstruments(): Promise<HeldInstrument[]> {
 
 /**
  * Sembolü Midas enstrüman uid'sine çözer. Tek birebir eşleşme varsa onu seçer. Aynı
- * sembolü birden çok enstrüman taşıyorsa sırasıyla emrin kendi enstrümanını, kullanıcının
- * pozisyonundaki enstrümanı ve piyasa ipucunu kullanır; emir yolunda (`mode: "order"`)
+ * sembolü birden çok enstrüman taşıyorsa sırasıyla emrin kendi enstrümanını, okumada açık
+ * piyasa ipucunu ve kullanıcının pozisyonundaki enstrümanı kullanır; emir yolunda (`mode: "order"`)
  * bunlar ayırt etmezse adayları listeleyerek hata verir. Birebir eşleşme hiç yoksa ilk
  * arama sonucuna düşer (kısmi adlar okumada çalışsın diye; emir yolu bunu reddeder).
  */

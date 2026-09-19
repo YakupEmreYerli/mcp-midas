@@ -117,3 +117,11 @@ test("birebir eşleşme yoksa okuma bulanık ilk sonuca düşer", () => {
   assert.equal(pick.asset.uid, "us-gtmx");
   assert.equal(pick.resolvedBy, "fuzzy");
 });
+
+test("okumada açık piyasa ipucu pozisyon tercihini geçersiz kılar", () => {
+  const pick = pickInstrument("GTM", [ZOOMINFO, GTM_FUND], { mode: "read", market: "US", positions: [HELD_GTM] });
+  assert.equal(pick.asset.uid, "us-gtm");
+  assert.equal(pick.resolvedBy, "market");
+  const held = pickInstrument("GTM", [ZOOMINFO, GTM_FUND], { mode: "read", positions: [HELD_GTM] });
+  assert.equal(held.asset.uid, "tr-gtm");
+});

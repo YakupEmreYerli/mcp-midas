@@ -197,18 +197,35 @@ export function createServer(options: ServerOptions = {}): McpServer {
 
   tool(
     "place_order",
-    "BIST hissesi için MARKET/LIMIT emri ya da TEFAS fonu için DEMAND satış emri verir. " +
+    "BIST hissesi için MARKET/LIMIT emri, eldeki BIST hissesi için kâr al/zarar durdur satış emri " +
+      "(TAKE_PROFIT_AND_STOP_LOSS, TAKE_PROFIT, STOP_LOSS) ya da TEFAS fonu için DEMAND satış emri verir. " +
+      "Kâr al/zarar durdur için side SELL, quantity ve take_profit_price ve/veya stop_loss_price ver; order_type verilmezse " +
+      "verilen fiyatlardan çıkarılır. Midas'ın güncellemeye izin vermediği mevcut bir kâr al/zarar durdur emrini değiştirmek " +
+      "için önce cancel_order ile iptal et, sonra bununla yeniden gir. Sembol birden çok enstrümanla eşleşirse pozisyondaki " +
+      "enstrüman seçilir; pozisyon ayırt etmiyorsa tahmin yapılmaz, adaylar hata olarak döner. " +
       "Kabul edilen her istek yerel bir masaüstü onay penceresi açar; hiçbir şema argümanı onayı atlatamaz. " +
       "TEFAS alışı şimdilik reddedilir: Atlas paketinden PlaceOrderRequest'in tutar mı adet mi beklediği kanıtlanamadı.",
     {
       symbol: z.string().min(1).describe("Birebir Midas sembolü; bulanık eşleşme reddedilir"),
       side: z.enum(["BUY", "SELL"]),
-      order_type: z.enum(["MARKET", "LIMIT", "DEMAND"]).optional(),
+      order_type: z
+        .enum(["MARKET", "LIMIT", "DEMAND", "TAKE_PROFIT", "STOP_LOSS", "TAKE_PROFIT_AND_STOP_LOSS"])
+        .optional(),
       quantity: z.number().positive().optional().describe("Hisse ya da fon payı adedi"),
       amount_try: z.number().positive().optional().describe("TL tutarı; istek alanı kanıtlandığında TEFAS alışı için ayrıldı"),
       limit_price: z.number().positive().optional().describe("LIMIT hisse emirlerinde zorunlu"),
+      take_profit_price: z
+        .number()
+        .positive()
+        .optional()
+        .describe("Kâr alma fiyatı; güncel fiyatın üstünde olmalı (TAKE_PROFIT ve TAKE_PROFIT_AND_STOP_LOSS)"),
+      stop_loss_price: z
+        .number()
+        .positive()
+        .optional()
+        .describe("Zarar durdurma fiyatı; güncel fiyatın altında olmalı (STOP_LOSS ve TAKE_PROFIT_AND_STOP_LOSS)"),
     },
-    ({ symbol, side, order_type, quantity, amount_try, limit_price }) =>
+    ({ symbol, side, order_type, quantity, amount_try, limit_price, take_profit_price, stop_loss_price }) =>
       midas.placeOrder({
         symbol,
         side,
@@ -216,6 +233,8 @@ export function createServer(options: ServerOptions = {}): McpServer {
         quantity,
         amountTry: amount_try,
         limitPrice: limit_price,
+        takeProfitPrice: take_profit_price,
+        stopLossPrice: stop_loss_price,
       }),
     WRITING
   );
@@ -223,7 +242,9 @@ export function createServer(options: ServerOptions = {}): McpServer {
   tool(
     "update_order",
     "Bekleyen bir emri zorunlu yerel masaüstü onayından sonra günceller. LIMIT, STOP, STOP_LIMIT, TAKE_PROFIT, " +
-      "STOP_LOSS ve TAKE_PROFIT_AND_STOP_LOSS desteklenir; kâr al/zarar durdur için take_profit_price ve stop_loss_price kullan.",
+      "STOP_LOSS ve TAKE_PROFIT_AND_STOP_LOSS desteklenir; kâr al/zarar durdur için take_profit_price ve stop_loss_price kullan. " +
+      "Midas emirde güncellemeye izin vermiyorsa (showUpdate: false; mevcut kâr al/zarar durdur emirlerinde görülür) " +
+      "araç hata döner: emri cancel_order ile iptal edip place_order ile yeniden gir.",
     {
       order_id: z.string().min(1).describe("Bekleyen emrin uid değeri"),
       symbol: z.string().min(1).describe("Emre ait birebir sembol"),

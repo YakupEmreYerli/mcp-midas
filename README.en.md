@@ -86,7 +86,13 @@ relaxes the approval gate.
 | `get_portfolio`, `get_assets`, `get_asset_price`, `get_asset_info`, `get_pending_orders`, `get_transactions`, `get_transaction_filters`, `get_technicals`, `get_chart` | `place_order`, `update_order`, `cancel_order` |
 
 Symbol lookup for read tools is fuzzy (check `name` and `currency` in the reply); order
-tools require an exact symbol. Full argument tables are in the [Turkish README](README.md#araçlar).
+tools require an exact symbol. When several instruments share a symbol (e.g. `GTM`: a TEFAS
+fund and ZoomInfo on NASDAQ), the one you hold wins; otherwise read tools return
+`ambiguousSymbol` with `candidates` and accept an optional `market` hint (`TR` or `US`),
+while order tools refuse and list the candidates instead of guessing. `place_order` also
+places take-profit/stop-loss sell orders (`take_profit_price`, `stop_loss_price`); Midas does
+not allow updating an existing TP/SL order, so cancel it and place a new one. Full argument
+tables are in the [Turkish README](README.md#araçlar).
 
 ## Security
 

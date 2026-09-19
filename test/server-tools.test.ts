@@ -65,6 +65,20 @@ async function listTools(ordersOn: boolean) {
   return tools;
 }
 
+test("place_order kâr al/zarar durdur tiplerini ve fiyat alanlarını kabul eder", async () => {
+  const tools = await listTools(true);
+  const place = tools.find((t) => t.name === "place_order")!;
+  const props = place.inputSchema.properties as Record<string, any>;
+  assert.deepEqual(props.order_type.enum, ["MARKET", "LIMIT", "DEMAND", "TAKE_PROFIT", "STOP_LOSS", "TAKE_PROFIT_AND_STOP_LOSS"]);
+  assert.ok(props.take_profit_price);
+  assert.ok(props.stop_loss_price);
+  for (const forbidden of ["confirmed", "approve", "approved", "test_mode"]) {
+    assert.ok(!(forbidden in props), `${forbidden} şemada olmamalı`);
+  }
+  const update = tools.find((t) => t.name === "update_order")!;
+  assert.match(update.description ?? "", /cancel_order ile iptal edip place_order ile yeniden gir/);
+});
+
 test("okuma araçları isteğe bağlı market ipucu alır, emir araçları almaz", async () => {
   const tools = await listTools(true);
   for (const name of ["get_asset_price", "get_asset_info", "get_technicals", "get_chart", "get_pending_orders"]) {

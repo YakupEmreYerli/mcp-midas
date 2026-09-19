@@ -5,7 +5,10 @@ import {
   assertExactResolvedSymbol,
   buildPlaceOrderRequest,
   buildUpdateOrderRequest,
+  isTpslOrderType,
   meaningfulPriceDrift,
+  resolveTpslOrderType,
+  updateNotAllowedMessage,
   type PlaceOrderType,
   type Side,
   type UpdatableOrderType,
@@ -361,6 +364,8 @@ interface PlaceOrderInput {
   quantity?: number;
   amountTry?: number;
   limitPrice?: number;
+  takeProfitPrice?: number;
+  stopLossPrice?: number;
 }
 
 interface UpdateOrderInput {
@@ -476,15 +481,49 @@ async function revalidateAsset(
 export async function placeOrder(input: PlaceOrderInput) {
   const resolved = await exactOrderAsset(input.symbol);
   const account = await accountFor("TR");
-  const orderType: PlaceOrderType = input.orderType ?? (resolved.kind === "fund" ? "DEMAND" : input.limitPrice != null ? "LIMIT" : "MARKET");
-  const prep = await prepareOrder(account.accountUid, resolved.asset.uid, input.side, orderType);
-  if (prep.availableOrderTypes?.length && !prep.availableOrderTypes.includes(orderType)) {
-    throw new MidasApiError(`${orderType} şu anda kabul edilmiyor; kullanılabilir tipler: ${prep.availableOrderTypes.join(", ")}`);
+  const tpslFromPrices = resolveTpslOrderType(input.takeProfitPrice, input.stopLossPrice);
+  const orderType: PlaceOrderType =
+    input.orderType ??
+    tpslFromPrices ??
+    (resolved.kind === "fund" ? "DEMAND" : input.limitPrice != null ? "LIMIT" : "MARKET");
+  const tpsl = isTpslOrderType(orderType);
+  if (!tpsl && (input.takeProfitPrice != null || input.stopLossPrice != null)) {
+    throw new MidasApiError(
+      `take_profit_price/stop_loss_price yalnızca TAKE_PROFIT, STOP_LOSS ve TAKE_PROFIT_AND_STOP_LOSS emirlerinde kullanılır; ${orderType} için verilemez`
+    );
+  }
+  if (tpsl && (input.limitPrice != null || input.amountTry != null)) {
+    throw new MidasApiError(
+      "Kâr al/zarar durdur emrinde limit_price ve amount_try verilmez; quantity, take_profit_price ve/veya stop_loss_price kullan"
+    );
+  }
+  if (tpsl && resolved.kind !== "stock") {
+    throw new MidasApiError("Kâr al/zarar durdur emirleri yalnızca BIST hisseleri için verilebilir");
+  }
+  // Atlas, kâr al ve zarar durdur bacaklarını tek "Kâr al, zarar durdur" sekmesinden
+  // hazırlar; yalnız TAKE_PROFIT ya da STOP_LOSS gönderilse de hazırlık bu tiple yapılır.
+  const prepType = tpsl ? "TAKE_PROFIT_AND_STOP_LOSS" : orderType;
+  const prep = await prepareOrder(account.accountUid, resolved.asset.uid, input.side, prepType);
+  if (prep.availableOrderTypes?.length && !prep.availableOrderTypes.includes(prepType)) {
+    throw new MidasApiError(`${prepType} şu anda kabul edilmiyor; kullanılabilir tipler: ${prep.availableOrderTypes.join(", ")}`);
   }
   if (input.side === "SELL" && input.quantity != null) {
     const available = prep.availableSharesDecoupled ?? prep.availableShares;
     if (available != null && input.quantity > available) {
-      throw new MidasApiError(`Satılabilir adet ${available}; ${input.quantity} adet gönderilemez`);
+      const blocked = tpsl
+        ? " Adetler bekleyen başka bir satış emrinde (ör. mevcut kâr al/zarar durdur) bloke olabilir; önce o emri cancel_order ile iptal edin."
+        : "";
+      throw new MidasApiError(`Satılabilir adet ${available}; ${input.quantity} adet gönderilemez.${blocked}`);
+    }
+  }
+  if (tpsl && prep.priceRange) {
+    const floor = prep.priceRange.fatFingerMinPrice;
+    const ceiling = prep.priceRange.fatFingerMaxPrice;
+    if (floor != null && input.stopLossPrice != null && input.stopLossPrice < floor) {
+      throw new MidasApiError(`Zarar durdurma fiyatı Midas alt sınırı ${floor} altında`);
+    }
+    if (ceiling != null && input.takeProfitPrice != null && input.takeProfitPrice > ceiling) {
+      throw new MidasApiError(`Kâr alma fiyatı Midas üst sınırı ${ceiling} üstünde`);
     }
   }
   if (resolved.kind === "stock" && !prep.isFractionable && input.quantity != null && !Number.isInteger(input.quantity)) {
@@ -505,9 +544,16 @@ export async function placeOrder(input: PlaceOrderInput) {
     quantity: input.quantity,
     amountTry: input.amountTry,
     limitPrice: input.limitPrice,
-    endingDate: orderType === "LIMIT" ? defaultEndingDate(prep) : undefined,
+    takeProfitPrice: input.takeProfitPrice,
+    stopLossPrice: input.stopLossPrice,
+    referencePrice: tpsl ? resolved.price : undefined,
+    endingDate: orderType === "LIMIT" || tpsl ? defaultEndingDate(prep) : undefined,
   });
-  const unitPrice = orderType === "LIMIT" ? input.limitPrice! : resolved.price;
+  const unitPrice = orderType === "LIMIT"
+    ? input.limitPrice!
+    : tpsl
+      ? Math.max(resolved.price, input.takeProfitPrice ?? 0)
+      : resolved.price;
   const estimatedTry = input.amountTry ?? unitPrice * (input.quantity ?? 0);
   assertOrderValue(estimatedTry);
 
@@ -520,7 +566,9 @@ export async function placeOrder(input: PlaceOrderInput) {
     orderType,
     quantity: input.quantity,
     amountTry: input.amountTry,
-    limitPrice: input.limitPrice,
+    limitPrice: tpsl ? undefined : input.limitPrice,
+    takeProfitPrice: tpsl ? input.takeProfitPrice : undefined,
+    stopLossPrice: tpsl ? input.stopLossPrice : undefined,
     currentPrice: resolved.price,
     estimatedTry,
     accountUid: account.accountUid,
@@ -574,7 +622,7 @@ export async function updateOrder(input: UpdateOrderInput) {
   // Aynı sembolü birden çok enstrüman taşıyorsa emrin kendi enstrümanı seçilir.
   const resolved = await exactOrderAsset(input.symbol, existing.stockUid);
   if (existing.stockUid !== resolved.asset.uid) throw new MidasApiError("Emir, çözümlenen enstrümana ait değil; işlem reddedildi");
-  if (!existing.showUpdate) throw new MidasApiError("Midas bu emrin güncellenebilir olduğunu belirtmiyor");
+  if (!existing.showUpdate) throw new MidasApiError(updateNotAllowedMessage(existing, resolved.asset.symbol));
   const supported: UpdatableOrderType[] = ["LIMIT", "STOP", "STOP_LIMIT", "TAKE_PROFIT", "STOP_LOSS", "TAKE_PROFIT_AND_STOP_LOSS"];
   if (!supported.includes(existing.type)) throw new MidasApiError(`${existing.type} emir güncellemesi desteklenmiyor`);
   await prepareOrder(account.accountUid, resolved.asset.uid, existing.side, existing.type, existing.uid);

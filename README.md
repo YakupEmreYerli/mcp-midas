@@ -210,12 +210,18 @@ hiçbir emir onay penceresi olmadan gönderilmez.
 
 | Araç | Argümanlar | Ne yapar |
 | --- | --- | --- |
-| `place_order` | birebir `symbol`, `side`, isteğe bağlı `order_type`, `quantity`, `amount_try`, `limit_price` | BIST hisse MARKET/LIMIT emri ve TEFAS fonu DEMAND satış emri |
-| `update_order` | `order_id`, birebir `symbol`, değişen adet/fiyatlar | Bekleyen LIMIT/STOP/kâr al/zarar durdur emrini günceller |
+| `place_order` | birebir `symbol`, `side`, isteğe bağlı `order_type`, `quantity`, `amount_try`, `limit_price`, `take_profit_price`, `stop_loss_price` | BIST hisse MARKET/LIMIT emri, eldeki BIST hissesi için kâr al/zarar durdur satış emri (`TAKE_PROFIT_AND_STOP_LOSS`, `TAKE_PROFIT`, `STOP_LOSS`) ve TEFAS fonu DEMAND satış emri |
+| `update_order` | `order_id`, birebir `symbol`, değişen adet/fiyatlar | Bekleyen LIMIT/STOP/kâr al/zarar durdur emrini günceller; Midas izin vermiyorsa (`showUpdate: false`) iptal edip yeniden girme yolunu söyler |
 | `cancel_order` | `order_id`, birebir `symbol` | Uygun bekleyen emri iptal eder |
 
 TEFAS fon satışı `DEMAND` emri ve adetle desteklenir. Fon alımı şimdilik bilerek reddedilir:
 isteğin TL tutarı mı adet mi taşıması gerektiği kanıtlanmadı, sunucu tahmin etmez.
+
+Midas mevcut kâr al/zarar durdur emirlerinde güncellemeye izin vermez (`showUpdate: false`).
+Fiyatları değiştirmek için emri `cancel_order` ile iptal et, sonra `place_order` ile
+`side: "SELL"`, `quantity`, `take_profit_price` ve `stop_loss_price` vererek yeniden gir. İki
+adım ayrı onay ister; aradaki sürede pozisyon korumasızdır. İstek alanları Atlas web
+paketindeki kâr al/zarar durdur satış formunun gönderdiğiyle aynıdır.
 
 ## Güvenlik
 

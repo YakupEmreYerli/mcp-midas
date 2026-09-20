@@ -198,13 +198,13 @@ export function createServer(options: ServerOptions = {}): McpServer {
   tool(
     "place_order",
     "BIST hissesi için MARKET/LIMIT emri, eldeki BIST hissesi için kâr al/zarar durdur satış emri " +
-      "(TAKE_PROFIT_AND_STOP_LOSS, TAKE_PROFIT, STOP_LOSS) ya da TEFAS fonu için DEMAND satış emri verir. " +
+      "(TAKE_PROFIT_AND_STOP_LOSS, TAKE_PROFIT, STOP_LOSS) ya da TEFAS fonu için DEMAND alış/satış emri verir. " +
+      "TEFAS fonunda alış tutarla (amount_try), satış adetle (quantity) verilir; ikisi birlikte verilemez. " +
       "Kâr al/zarar durdur için side SELL, quantity ve take_profit_price ve/veya stop_loss_price ver; order_type verilmezse " +
       "verilen fiyatlardan çıkarılır. Midas'ın güncellemeye izin vermediği mevcut bir kâr al/zarar durdur emrini değiştirmek " +
       "için önce cancel_order ile iptal et, sonra bununla yeniden gir. Sembol birden çok enstrümanla eşleşirse pozisyondaki " +
       "enstrüman seçilir; pozisyon ayırt etmiyorsa tahmin yapılmaz, adaylar hata olarak döner. " +
-      "Kabul edilen her istek yerel bir masaüstü onay penceresi açar; hiçbir şema argümanı onayı atlatamaz. " +
-      "TEFAS alışı şimdilik reddedilir: Atlas paketinden PlaceOrderRequest'in tutar mı adet mi beklediği kanıtlanamadı.",
+      "Kabul edilen her istek yerel bir masaüstü onay penceresi açar; hiçbir şema argümanı onayı atlatamaz.",
     {
       symbol: z.string().min(1).describe("Birebir Midas sembolü; bulanık eşleşme reddedilir"),
       side: z.enum(["BUY", "SELL"]),
@@ -212,7 +212,7 @@ export function createServer(options: ServerOptions = {}): McpServer {
         .enum(["MARKET", "LIMIT", "DEMAND", "TAKE_PROFIT", "STOP_LOSS", "TAKE_PROFIT_AND_STOP_LOSS"])
         .optional(),
       quantity: z.number().positive().optional().describe("Hisse ya da fon payı adedi"),
-      amount_try: z.number().positive().optional().describe("TL tutarı; istek alanı kanıtlandığında TEFAS alışı için ayrıldı"),
+      amount_try: z.number().positive().optional().describe("TL tutarı; TEFAS fon alışında zorunlu, başka emir tipinde verilmez"),
       limit_price: z.number().positive().optional().describe("LIMIT hisse emirlerinde zorunlu"),
       take_profit_price: z
         .number()

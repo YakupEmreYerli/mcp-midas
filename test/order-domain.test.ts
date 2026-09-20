@@ -63,7 +63,20 @@ test("TEFAS fon satışı DEMAND ve adet ile gider", () => {
   );
 });
 
-test("bundle alanı kanıtlanmayan TEFAS fon alışını reddeder", () => {
+test("TEFAS fon alışı DEMAND ve notional ile gider", () => {
+  assert.deepEqual(
+    buildPlaceOrderRequest({
+      kind: "fund",
+      stockUid: "fund-1",
+      side: "BUY",
+      orderType: "DEMAND",
+      amountTry: 950,
+    }),
+    { type: "DEMAND", side: "BUY", stockUid: "fund-1", notional: 950 }
+  );
+});
+
+test("TEFAS fon alışı adetle verilemez", () => {
   assert.throws(
     () =>
       buildPlaceOrderRequest({
@@ -71,9 +84,36 @@ test("bundle alanı kanıtlanmayan TEFAS fon alışını reddeder", () => {
         stockUid: "fund-1",
         side: "BUY",
         orderType: "DEMAND",
-        amountTry: 1_000,
+        quantity: 100,
       }),
-    /fon alışının.*doğrulanamadı/i
+    /tutarla verilir/i
+  );
+});
+
+test("TEFAS fon alışında tutar zorunlu", () => {
+  assert.throws(
+    () =>
+      buildPlaceOrderRequest({
+        kind: "fund",
+        stockUid: "fund-1",
+        side: "BUY",
+        orderType: "DEMAND",
+      }),
+    /amount_try sıfırdan büyük/i
+  );
+});
+
+test("TEFAS fon satışı tutarla verilemez", () => {
+  assert.throws(
+    () =>
+      buildPlaceOrderRequest({
+        kind: "fund",
+        stockUid: "fund-1",
+        side: "SELL",
+        orderType: "DEMAND",
+        amountTry: 950,
+      }),
+    /adetle verilir/i
   );
 });
 

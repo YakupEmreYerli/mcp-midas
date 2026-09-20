@@ -112,7 +112,8 @@ fund and ZoomInfo on NASDAQ), the one you hold wins; otherwise read tools return
 `ambiguousSymbol` with `candidates` and accept an optional `market` hint (`TR` or `US`),
 while order tools refuse and list the candidates instead of guessing. `place_order` also
 places take-profit/stop-loss sell orders (`take_profit_price`, `stop_loss_price`); Midas does
-not allow updating an existing TP/SL order, so cancel it and place a new one. Full argument
+not allow updating an existing TP/SL order, so cancel it and place a new one. TEFAS fund orders
+use `DEMAND`: buys are sized by amount (`amount_try`), sells by share count (`quantity`). Full argument
 tables are in the [Turkish README](README.md#araçlar).
 
 ## Security

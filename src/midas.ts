@@ -500,6 +500,9 @@ export async function placeOrder(input: PlaceOrderInput) {
   if (tpsl && resolved.kind !== "stock") {
     throw new MidasApiError("Kâr al/zarar durdur emirleri yalnızca BIST hisseleri için verilebilir");
   }
+  if (resolved.kind === "stock" && input.amountTry != null) {
+    throw new MidasApiError("amount_try yalnızca TEFAS fon alışında kullanılır; BIST hissesinde quantity ver");
+  }
   // Atlas, kâr al ve zarar durdur bacaklarını tek "Kâr al, zarar durdur" sekmesinden
   // hazırlar; yalnız TAKE_PROFIT ya da STOP_LOSS gönderilse de hazırlık bu tiple yapılır.
   const prepType = tpsl ? "TAKE_PROFIT_AND_STOP_LOSS" : orderType;

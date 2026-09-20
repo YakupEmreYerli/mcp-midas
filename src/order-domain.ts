@@ -129,15 +129,36 @@ function buildTpslPlaceOrderRequest(fields: PlaceOrderFields & { orderType: Tpsl
   return request;
 }
 
+/**
+ * Emir yerleştirme isteği.
+ *
+ * TEFAS fonunda alış **tutar**, satış **adet** üzerinden gider. Atlas paketinde
+ * `getPlaceOrderSuccessToastContent` isteği okurken `request.notional` değerini para birimiyle
+ * (`formatCurrency`), `request.quantity` değerini adetle (`formatQuantityWithTicker`)
+ * biçimlendiriyor; yani `PlaceOrderRequest` iki alanı da taşıyor ve hangisi doluysa emrin tabanı
+ * odur. Aynı ikilik kripto tarafında `buildCryptoAmendOrderInput` içinde açıkça görünür:
+ * `AmountBased` ise `{notional}`, değilse `{quantity}` — ayrıca bir "taban" alanı gönderilmiyor.
+ * Canlı kayıt da bunu doğruluyor: uygulamadan girilen 900 TL'lik fon alışı Midas'ta
+ * `notional: 900, quantity: null` olarak duruyor.
+ */
 export function buildPlaceOrderRequest(fields: PlaceOrderFields): Record<string, unknown> {
   if (fields.kind === "fund") {
     if (fields.orderType !== "DEMAND") {
       throw new MidasApiError("TEFAS fon emirleri yalnızca DEMAND tipiyle gönderilebilir");
     }
     if (fields.side === "BUY") {
-      throw new MidasApiError(
-        "TEFAS fon alışının PlaceOrderRequest alanı yakalanan Atlas bundle'ından doğrulanamadı; işlem reddedildi"
-      );
+      if (fields.quantity != null) {
+        throw new MidasApiError("TEFAS fon alışı tutarla verilir; quantity değil amount_try kullan");
+      }
+      return {
+        type: "DEMAND",
+        side: "BUY",
+        stockUid: fields.stockUid,
+        notional: positive(fields.amountTry, "amount_try"),
+      };
+    }
+    if (fields.amountTry != null) {
+      throw new MidasApiError("TEFAS fon satışı adetle verilir; amount_try değil quantity kullan");
     }
     return {
       type: "DEMAND",

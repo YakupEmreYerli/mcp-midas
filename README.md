@@ -245,7 +245,7 @@ hiçbir emir onay penceresi olmadan gönderilmez.
 
 | Araç | Argümanlar | Ne yapar |
 | --- | --- | --- |
-| `place_order` | birebir `symbol`, `side`, isteğe bağlı `order_type`, `quantity`, `amount_try`, `limit_price`, `take_profit_price`, `stop_loss_price` | BIST hisse MARKET/LIMIT emri, eldeki BIST hissesi için kâr al/zarar durdur satış emri (`TAKE_PROFIT_AND_STOP_LOSS`, `TAKE_PROFIT`, `STOP_LOSS`) ve TEFAS fonu DEMAND satış emri |
+| `place_order` | birebir `symbol`, `side`, isteğe bağlı `order_type`, `quantity`, `amount_try`, `limit_price`, `take_profit_price`, `stop_loss_price` | BIST hisse MARKET/LIMIT emri, eldeki BIST hissesi için kâr al/zarar durdur satış emri (`TAKE_PROFIT_AND_STOP_LOSS`, `TAKE_PROFIT`, `STOP_LOSS`) ve TEFAS fonu DEMAND emri (alış `amount_try` ile, satış `quantity` ile) |
 | `update_order` | `order_id`, birebir `symbol`, değişen adet/fiyatlar | Bekleyen LIMIT/STOP/kâr al/zarar durdur emrini günceller; Midas izin vermiyorsa (`showUpdate: false`) iptal edip yeniden girme yolunu söyler |
 | `cancel_order` | `order_id`, birebir `symbol` | Uygun bekleyen emri iptal eder |
 

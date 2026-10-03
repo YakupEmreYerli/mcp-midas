@@ -17,12 +17,6 @@ discovery/
 scans/
 *-log.txt
 
-# Impeccable inceleme görüntüleri (yerel)
-.impeccable/review/
-
 # Python bayt kodu
 __pycache__/
 *.pyc
-
-# Marka yönü taslakları (yerel)
-.impeccable/marka/

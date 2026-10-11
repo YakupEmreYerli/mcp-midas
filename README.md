@@ -16,7 +16,7 @@ varsayılan kapalıdır; açıldığında da her emir masaüstünde senin onayı
 
 > English: [README.en.md](README.en.md)
 
-![Midas-MCP: koyu tahta zemininde, üstte ve altta kotasyon şeritleri arasında aynı boyda iki onay penceresi; solda yeşil ALIŞ, sağda kırmızı SATIŞ](docs/vitrin/hero.png)
+![Midas-MCP: ajan tahtayı okur, emri hazırlar; emir, sen onaylamadan Midas'a gitmez. Yanında yeşil ALIŞ ve kırmızı SATIŞ onay pencereleri](docs/banner.tr.png)
 
 ## Resmî değildir
 

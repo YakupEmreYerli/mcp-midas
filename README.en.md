@@ -17,7 +17,7 @@ enabled, every order waits for your approval on the desktop.
 > Türkçe (primary documentation): [README.md](README.md). Tool descriptions and messages
 > are in Turkish.
 
-![Midas-MCP: two equally sized confirmation windows, a green BUY and a red SELL, between two ticker strips on a dark board](docs/vitrin/hero.png)
+![Midas-MCP: the agent reads the board and drafts the order; the order never reaches Midas until you approve it. Beside it, a green BUY and a red SELL confirmation window](docs/banner.en.png)
 
 ## Unofficial
 

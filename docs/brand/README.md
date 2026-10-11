@@ -116,12 +116,15 @@ ALIŞ yeşil, DEĞİŞTİR altın zeminde gece yazı; renk her zaman sözcük ve
 
 | Dosya | Boyut | İçerik |
 | --- | --- | --- |
-| [`../vitrin/hero.png`](../vitrin/hero.png) | 1760×920 (880×460 @2x) | README başlık görseli: iki onay penceresi, tahta şeritleri |
+| [`../banner.tr.png`](../banner.tr.png), [`../banner.en.png`](../banner.en.png) | 1280×640 | Banner: her README kendi dilindekini başta gösterir; GitHub sosyal önizlemesi `banner.tr.png` |
 | [`../vitrin/okuma.png`](../vitrin/okuma.png) | 1760×1144 | Temsilî ajan oturumu: işlem geçmişi ve portföy okuma |
 | [`../vitrin/emir-kapilari.png`](../vitrin/emir-kapilari.png) | 1760×820 | Bir emrin geçtiği beş kapı |
 | [`../vitrin/onay-iptal-koyu.png`](../vitrin/onay-iptal-koyu.png), [`-acik`](../vitrin/onay-iptal-acik.png) | 560×832 | Onay penceresi, iki tema, örnek veri |
-| [`../social-preview.png`](../social-preview.png) | 1280×640 | GitHub sosyal önizleme |
 
 Şeritlerdeki semboller gerçek BIST kodlarıdır; fiyatlar, değişimler ve işlemler
 uydurmadır ve her görselde "temsilî" ya da "örnek veri" ibaresi bulunur. Pencere
 görüntülerindeki hesap ve emir kimlikleri örnektir.
+
+Banner'ın kaynağı [`banner/banner.html`](banner/banner.html); iki dili birden
+`node docs/brand/banner/render.mjs` üretir. Onay pencerelerini [`onay/onay.html`](../../onay/onay.html)'den
+örnek emirle kendisi çeker, ayrı pencere görseli tutulmaz.

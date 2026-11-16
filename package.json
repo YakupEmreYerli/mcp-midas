@@ -1,0 +1,41 @@
+{
+  "name": "mcp-midas",
+  "version": "0.3.0",
+  "description": "Midas aracı kurumunun Atlas web uygulaması için resmî olmayan MCP sunucusu (Playwright ile)",
+  "author": "Yakup Emre Yerli",
+  "license": "MIT",
+  "homepage": "https://github.com/YakupEmreYerli/mcp-midas#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YakupEmreYerli/mcp-midas.git"
+  },
+  "bugs": {
+    "url": "https://github.com/YakupEmreYerli/mcp-midas/issues"
+  },
+  "keywords": ["mcp", "model-context-protocol", "midas", "bist", "tefas", "playwright"],
+  "engines": {
+    "node": ">=20"
+  },
+  "type": "module",
+  "bin": {
+    "mcp-midas": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --import tsx --test test/*.test.ts",
+    "start": "node dist/index.js",
+    "login": "node dist/login.js",
+    "smoke": "node dist/smoke.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.0",
+    "dotenv": "^16.6.1",
+    "playwright": "^1.63.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  }
+}

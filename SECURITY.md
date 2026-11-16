@@ -1,0 +1,51 @@
+# Güvenlik
+
+## Bildirim
+
+Güvenlik sorunlarını herkese açık issue olarak açma. Bunun yerine bu depodaki GitHub
+[özel güvenlik açığı bildirimini](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability)
+kullan.
+
+## Bu yazılım neye dokunuyor
+
+Bir aracı kurum hesabına açılmış oturumu tutar. Çalıştırmadan önce bilinmesi gereken
+noktalar:
+
+**Emir araçları varsayılan kapalıdır.** `place_order`, `update_order` ve `cancel_order`
+yalnızca `MIDAS_ORDERS_ENABLED=1` verildiğinde kaydedilir; aksi hâlde MCP araç listesinde
+hiç görünmez.
+
+**İşlemler yerel insan onayı ister.** Emir araçları açıkken sunucu desteklenen emir
+tiplerini verebilir, güncelleyebilir ve iptal edebilir; ama kendi süreci onay penceresini
+göstermeden (tasarımlı PySide6 penceresi; açılamazsa `kdialog`/`zenity`) ve kullanıcı
+**Evet**'i basılı tutmadan bu mutation'ları gönderemez. Varsayılan Hayır'dır; zaman aşımı,
+ekranın olmaması ve pencere hataları reddedilir. Pencere hataları kullanıcının Hayır'ı
+olarak değil, hata olarak bildirilir. MCP şemalarında onay ya da atlatma alanı yoktur;
+sunucu onaydan sonra enstrümanı ve fiyatı birebir yeniden doğrular.
+
+**Onay penceresi yalnız kendine dokunur.** Pencere çerçevesizdir; başlık çubuğu sayfanın
+künye şerididir. Şeritteki kapat düğmesi, Esc ve pencereyi kapatmak yalnız Hayır üretir;
+Evet'e giden tek yol düğmeyi basılı tutmaktır. Wayland'de KWin'e yüklenen geçici betik
+(`onay/onay.py`, `KWIN_SCRIPT`) yalnız onay sürecinin PID'ine ait pencereyi üstte tutar,
+ortalar ve öne alır; karar sonunda kaldırılır. `onay/masaustu-kur.sh` yalnız kullanıcı
+dizinine bir `.desktop` dosyası ve simge yazar (`~/.local/share/`), root istemez.
+
+**Kimlik bilgileri makineden çıkmaz.** `MIDAS_PHONE` ve `MIDAS_PASSWORD` ortamdan okunur ve
+tek bir yerde kullanılır: Midas'ın kendi SSO formunu doldurmak (`src/session.ts`).
+Loglanmaz, önbelleğe alınmaz, başka bir yere gönderilmez. Koddaki tek ağ hedefleri
+`atlas.getmidas.com` ve `api.atlas.getmidas.com`'dur.
+
+**Üç dosya hassastır.** `.env` şifreni, `.midas-state.json` canlı oturum token'larını
+tutar (bu dosyaya sahip olan herkes token'ların süresi dolana kadar hesabını okuyabilir),
+`.midas-orders.log.jsonl` ise yerel emir denetim kayıtlarını içerir. Hepsi gitignore'ludur;
+oturum ve denetim dosyaları 0600 izinle yazılır. `.midas-session/` altındaki tarayıcı
+profili de yereldir. Bunları commit'leme ya da kopyalama.
+
+**HTTP servisi yalnız yerelde dinler.** `dist/http.js` yalnızca `127.0.0.1` üzerinde açılır
+ve `/mcp` isteklerini `~/.config/mcp-midas/token` dosyasındaki bearer token ile doğrular.
+
+## Kapsam
+
+Teknik gösterge hesaplarıyla (`src/technicals.ts`, `src/vwap.ts`, `src/inflation.ts`) ve
+analiz yönergesiyle (`docs/analiz-kurallari.md`, `METHOD.md`) ilgili bildirimler de kabul
+edilir; bunlar yatırım tavsiyesi üretmez.

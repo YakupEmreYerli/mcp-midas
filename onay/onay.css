@@ -1,0 +1,374 @@
+/* midas-mcp emir onayı — kapı: ajan emri hazırlar, emir senin onayına kadar kapıda bekler.
+   Marka: mavi aile (Hayır, seçim, künye şeridi), gece zemin, Geist yazı, Geist Mono rakamlar.
+   İşlem tipi tek bir güvenlik rengi bandıyla okunur; kırmızı yalnız tehlike (SATIŞ, İPTAL) içindir.
+   Geist, Geist Mono ve ₺ köprüsü onay/fontlar/ altından data: URL olarak gömülür (onay.py);
+   ağdan hiçbir şey yüklenmez. */
+
+@font-face {
+  font-family: "Geist";
+  src: url(data:font/woff2;base64,__GEIST__) format("woff2");
+  font-weight: 100 900;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url(data:font/woff2;base64,__GEIST_MONO__) format("woff2");
+  font-weight: 100 900;
+  font-display: block;
+}
+
+/* ₺ Geist ailesinde yok: o tek glif Inter SemiBold'dan (yalnız U+20BA alt kümesi) gelir. */
+@font-face {
+  font-family: "Midas TL";
+  src: url(data:font/woff2;base64,__TL__) format("woff2");
+  unicode-range: U+20BA;
+  font-weight: 100 900;
+  font-display: block;
+}
+
+:root {
+  --yazi: "Midas TL", "Geist", "Noto Sans", "DejaVu Sans", sans-serif;
+  --rakam: "Midas TL", "Geist Mono", "Noto Sans Mono", "DejaVu Sans Mono", monospace;
+
+  --r: 6px;
+  --bosluk: 28px;
+  --pencere-r: 10px;        /* çerçevesiz pencerenin köşesi */
+  --golge-pay: 12px;        /* pencere gölgesi için şeffaf pay (onay.py genişliğe ekler) */
+
+  --mavi: #4959EA;         /* marka mavisi: Hayır dolgusu */
+  --mavi-yazi: #FFFFFF;    /* 5,4:1 */
+
+  /* Açık tema: kâğıt zemin, gece mürekkep. */
+  --zemin: #F5F6FC;
+  --yuzey: #FFFFFF;
+  --murekkep: #0A0D2A;
+  --ikincil: #3D4372;
+  --soluk: #5B6194;
+  --cizgi: #DCDFF2;
+  --cizgi-guclu: #0A0D2A;
+  --odak: #0A0D2A;
+  --serit-zemin: #0A0D2A;   /* künye şeridi açık temada da gece kalır (logo karosu gibi) */
+  --serit-yazi: #E1E4FF;
+  --serit-vurgu: #8C96F6;
+  --serit-soluk: #8E95C8;
+  --serit-nokta: #4959EA;   /* kapı işaretinin noktası (grafik, gece üzerinde 3,5:1) */
+  --pencere-kenar: rgb(10 13 42 / 0.30);
+  --pencere-ic-kenar: rgb(255 255 255 / 0.06);
+
+  /* Güvenlik renkleri: bant dolgusu, bant yazısı, nötr zemindeki metin tonu. */
+  --tehlike: #D32F4A;
+  --tehlike-yazi: #FFFFFF;
+  --tehlike-ton: #C2253F;
+  --alis: #22D67E;
+  --alis-yazi: #0A0D2A;
+  --alis-ton: #087A4B;
+  --dikkat: #F4C24D;
+  --dikkat-yazi: #0A0D2A;
+  --dikkat-ton: #8A6200;
+}
+
+:root[data-theme="koyu"] {
+  /* Koyu tema: gece zemin. */
+  --zemin: #0A0D2A;
+  --yuzey: #151A45;
+  --murekkep: #E1E4FF;
+  --ikincil: #B6BBE3;
+  --soluk: #8E95C8;
+  --cizgi: #262C63;
+  --cizgi-guclu: #C4C9EE;
+  --odak: #8C96F6;
+  --serit-zemin: #151A45;
+  --pencere-kenar: rgb(0 0 0 / 0.55);
+  --pencere-ic-kenar: rgb(140 150 246 / 0.16);
+
+  --tehlike-ton: #FF5468;
+  --alis-ton: #22D67E;
+  --dikkat-ton: #F4C24D;
+}
+
+.panel[data-ton="tehlike"] { --bant: var(--tehlike); --bant-yazi: var(--tehlike-yazi); --ton: var(--tehlike-ton); }
+.panel[data-ton="alis"]    { --bant: var(--alis);    --bant-yazi: var(--alis-yazi);    --ton: var(--alis-ton); }
+.panel[data-ton="dikkat"]  { --bant: var(--dikkat);  --bant-yazi: var(--dikkat-yazi);  --ton: var(--dikkat-ton); }
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: transparent;  /* pencere şeffaf; zemin panelde */
+  color: var(--murekkep);
+  font-family: var(--yazi);
+  font-size: 15px;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums lining-nums;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+body { user-select: none; cursor: default; padding: var(--golge-pay); }
+
+/* Çerçevesiz pencere: yuvarlak köşe, tek piksel kenar ve payın içinde kalan yumuşak gölge. */
+.panel {
+  position: relative;
+  overflow: hidden;
+  background: var(--zemin);
+  border-radius: var(--pencere-r);
+  box-shadow:
+    0 0 0 1px var(--pencere-kenar),
+    0 4px 10px -2px rgb(4 6 24 / 0.28);
+}
+.panel::after {
+  /* Kenar çizgisi içerikte (bant, şerit) de görünsün: panelin üstünde ince bir iç çizgi. */
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px var(--pencere-ic-kenar);
+}
+::selection { background: var(--mavi); color: var(--mavi-yazi); }
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: var(--zemin); }
+::-webkit-scrollbar-thumb { background: var(--cizgi); border-radius: 5px; border: 2px solid var(--zemin); }
+
+p, h1 { margin: 0; }
+[hidden] { display: none !important; }
+.gorunmez { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ---------- Künye şeridi: pencereyi kimin açtığını söyler ---------- */
+
+.serit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 28px;
+  padding: 0 var(--bosluk);
+  background: var(--serit-zemin);
+  color: var(--serit-soluk);
+  font-family: var(--rakam);
+  font-size: 11px;
+  line-height: 1;
+}
+.marka {
+  display: inline-flex; align-items: center; gap: 0;
+  color: var(--serit-yazi);
+  font-family: var(--yazi);
+  font-weight: 620;
+  font-size: 13px;
+  letter-spacing: -0.02em;
+}
+.marka b { color: var(--serit-vurgu); font-weight: 620; }
+/* Kapı işareti: iki direk, aralarında mavi nokta (logodan, karosuz). */
+.marka-kapi { width: 13px; height: 13px; margin-right: 7px; flex: none; }
+.marka-kapi .direk { fill: #FFFFFF; }
+.marka-kapi .nokta { fill: var(--serit-nokta); }
+.serit-not { letter-spacing: 0.01em; }
+
+/* Şerit pencerenin başlık çubuğudur: basılı sürükleme pencereyi taşır (onay.py startSystemMove). */
+.serit { padding-right: 6px; }
+.serit-sag { display: inline-flex; align-items: center; gap: 10px; height: 100%; }
+.kapat {
+  display: grid; place-items: center;
+  width: 28px; height: 22px;
+  padding: 0; border: 0; border-radius: 4px;
+  background: transparent;
+  color: var(--serit-soluk);
+  transition: background-color 120ms ease-out, color 120ms ease-out;
+}
+.kapat svg { width: 10px; height: 10px; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; fill: none; }
+.kapat:hover { background: color-mix(in srgb, var(--serit-yazi) 14%, transparent); color: var(--serit-yazi); }
+.kapat:active { background: color-mix(in srgb, var(--serit-yazi) 22%, transparent); }
+
+/* ---------- Sinyal bandı ---------- */
+
+.bant {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px var(--bosluk) 30px;
+  background: var(--bant);
+  color: var(--bant-yazi);
+}
+
+.bant-sol { display: flex; align-items: center; gap: 14px; min-width: 0; }
+
+.piktogram { width: 38px; height: 38px; flex: none; }
+.piktogram-ucgen { fill: var(--bant-yazi); }
+.piktogram-isaret { fill: var(--bant); }
+
+.sinyal {
+  font-family: var(--rakam);
+  font-weight: 800;
+  font-size: 46px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+}
+
+.sayac { display: grid; justify-items: end; gap: 4px; flex: none; }
+.sayac-deger { font-family: var(--rakam); font-size: 24px; font-weight: 600; line-height: 1; letter-spacing: -0.01em; }
+.sayac-not { font-size: 12.5px; font-weight: 600; }
+
+/* Geri sayım: bandın dibinde ince, düz bir çubuk; süre aktıkça soldan sağa doğru kısalır.
+   Dolu kısım bant yazısı rengindedir, yolu aynı rengin bant üzerindeki soluk izidir. */
+.ray {
+  position: absolute;
+  left: var(--bosluk); right: var(--bosluk); bottom: 12px;
+  height: 3px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--bant-yazi) 24%, var(--bant));
+}
+.ray-dolu {
+  display: block;
+  height: 100%;
+  background: color-mix(in srgb, var(--bant-yazi) 92%, var(--bant));
+  transform-origin: left center;
+  transform: scaleX(1);
+}
+
+/* ---------- İçerik ---------- */
+
+.icerik { padding: 22px var(--bosluk) 4px; display: grid; gap: 20px; }
+
+.ozet { font-size: 18px; font-weight: 500; line-height: 1.38; text-wrap: balance; }
+
+.enstruman { display: grid; gap: 4px; }
+.sembol {
+  font-family: var(--rakam);
+  font-size: 28px; font-weight: 700;
+  letter-spacing: -0.01em; line-height: 1.1;
+}
+.ad { font-size: 15px; color: var(--ikincil); text-wrap: balance; }
+.kunye { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+.etiket {
+  display: inline-flex; align-items: center;
+  height: 24px; padding: 0 9px;
+  border: 1px solid var(--cizgi);
+  border-radius: 4px;
+  font-size: 12.5px; font-weight: 500;
+  color: var(--ikincil);
+  background: var(--yuzey);
+  white-space: nowrap;
+}
+.etiket[data-yon="SATIŞ"], .etiket[data-yon="ALIŞ"] { color: var(--murekkep); font-weight: 600; }
+
+/* Cetvelli değer tablosu: tek cihaz pikseli çizgiler, sağa hizalı Geist Mono rakamlar. */
+.tablo, .degisim { width: 100%; border-collapse: collapse; }
+.tablo th, .tablo td { padding: 9px 0; border-bottom: 1px solid var(--cizgi); font-size: 15px; }
+.tablo th { text-align: left; font-weight: 400; color: var(--ikincil); }
+.tablo td { text-align: right; font-family: var(--rakam); font-size: 14px; font-weight: 500; }
+.tablo tfoot th, .tablo tfoot td { border-bottom: 0; border-top: 2px solid var(--cizgi-guclu); padding-top: 12px; }
+.tablo tbody tr:last-child th, .tablo tbody tr:last-child td { border-bottom: 0; }
+.tablo tfoot th { color: var(--murekkep); font-weight: 600; }
+.tablo tfoot td { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+/* İptalde tutar harcanacak para değil, bilgidir: hafif çizgi, gövde boyu. */
+.tablo[data-hafif] tfoot th, .tablo[data-hafif] tfoot td { border-top: 1px solid var(--cizgi); padding-top: 9px; }
+.tablo[data-hafif] tfoot th { color: var(--ikincil); font-weight: 400; }
+.tablo[data-hafif] tfoot td { font-size: 14px; font-weight: 500; letter-spacing: 0; }
+
+/* Eski → yeni: ortada alan rayı, solda şimdiki, sağda sonraki değer. */
+.degisim thead th {
+  font-size: 12px; font-weight: 600; letter-spacing: 0.04em;
+  color: var(--soluk); text-transform: uppercase;
+  padding: 0 0 6px; border-bottom: 1px solid var(--cizgi);
+}
+.degisim .d-eski { text-align: right; width: 38%; }
+.degisim .d-alan { text-align: center; width: 24%; }
+.degisim .d-yeni { text-align: left; width: 38%; }
+.degisim td { padding: 9px 0; border-bottom: 1px solid var(--cizgi); font-size: 14px; }
+.degisim tbody tr:last-child td { border-bottom: 0; }
+.degisim td.d-eski { font-family: var(--rakam); color: var(--ikincil); padding-right: 14px; }
+.degisim td.d-alan {
+  color: var(--soluk); font-size: 13px; font-weight: 500;
+  border-left: 1px solid var(--cizgi); border-right: 1px solid var(--cizgi);
+  padding: 9px 8px;
+}
+.degisim td.d-yeni { font-family: var(--rakam); padding-left: 14px; font-weight: 600; }
+.degisim tr[data-degisti="evet"] td.d-alan { color: var(--murekkep); font-weight: 600; }
+.degisim tr[data-degisti="evet"] td.d-eski { text-decoration: line-through; text-decoration-thickness: 1px; text-decoration-color: var(--soluk); }
+.degisim tr[data-degisti="evet"] td.d-yeni { color: var(--ton); font-weight: 700; }
+.degisim tr[data-degisti="evet"] td.d-yeni::before {
+  content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 8px;
+  border-radius: 50%; background: var(--ton); vertical-align: 0.1em;
+}
+.degisim tr[data-degisti="hayir"] td.d-yeni { font-family: var(--yazi); color: var(--ikincil); font-weight: 400; }
+
+.kimlik { font-size: 12px; color: var(--soluk); display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.kimlik code { font-family: var(--rakam); font-size: 11px; color: var(--ikincil); user-select: text; }
+
+/* ---------- Eylem ---------- */
+
+.eylem {
+  margin-top: 22px;
+  padding: 18px var(--bosluk) 22px;
+  border-top: 1px solid var(--cizgi);
+  background: var(--yuzey);
+  display: grid; gap: 14px;
+}
+
+.soru { font-size: 16px; font-weight: 600; }
+
+.dugmeler { display: grid; grid-template-columns: 1fr 1.25fr; gap: 12px; }
+
+button {
+  font: inherit;
+  height: 52px;
+  border-radius: var(--r);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+button:focus { outline: none; }
+button:focus-visible, button.odakta {
+  outline: 3px solid var(--odak);
+  outline-offset: 3px;
+}
+
+/* Hayır: marka mavisi, dolu, geniş ve baştan odaklı. */
+.hayir {
+  border: 0;
+  background: var(--mavi);
+  color: var(--mavi-yazi);
+  font-size: 17px; font-weight: 700;
+  transition: filter 150ms ease-out;
+}
+.hayir:hover { filter: brightness(1.1); }
+.hayir:active { filter: brightness(0.92); }
+
+/* Kapaklı anahtar: basılı tutulunca dolgu soldan sağa kalkar; bırakılınca geri iner. */
+.evet {
+  position: relative;
+  overflow: hidden;
+  display: grid; place-content: center; justify-items: center;
+  gap: 1px;
+  border: 2px solid var(--ton);
+  background: transparent;
+  color: var(--ton);
+  touch-action: none;
+}
+/* Kapak: dinlenirken taralı emniyet kapağı görünür; basılı tutunca dolgu onu örter. */
+.evet-kapak { position: absolute; inset: 0; width: 100%; height: 100%; }
+.tarama-cizgi { stroke: var(--ton); stroke-width: 2.2; opacity: 0.16; }
+.evet-dolgu {
+  position: absolute; inset: 0;
+  background: var(--bant);
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.evet.tutuluyor .evet-dolgu { transform: scaleX(1); transition: transform var(--tutma, 900ms) linear; }
+.evet-yazi, .evet-not { position: relative; line-height: 1.1; }
+.evet-yazi { font-size: 16px; font-weight: 700; }
+.evet-not { font-size: 12.5px; font-weight: 600; }
+.evet.tutuluyor .evet-yazi, .evet.tutuluyor .evet-not { color: var(--bant-yazi); transition: color 120ms 200ms; }
+.evet:hover { background: color-mix(in srgb, var(--ton) 8%, transparent); }
+.evet.kilitli { cursor: wait; opacity: 0.55; }
+.evet.itti { animation: itti 360ms cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes itti { 30% { transform: translateX(-4px); } 60% { transform: translateX(3px); } }
+
+.ipucu { font-size: 12.5px; color: var(--soluk); line-height: 1.4; }
+.ipucu strong { color: var(--ikincil); font-weight: 600; }
+
+@media (prefers-reduced-motion: reduce) {
+  .evet-dolgu, .evet.tutuluyor .evet-dolgu { transition-timing-function: steps(6, end); }
+  .evet.itti { animation: none; }
+}

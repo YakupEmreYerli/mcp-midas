@@ -1,0 +1,12 @@
+/* Vitrin görsellerinin ortak zemini: gece, Geist yazı, Geist Mono veri. */
+@font-face{font-family:"Geist";src:url("../../../onay/fontlar/Geist.woff2") format("woff2");font-weight:100 900}
+@font-face{font-family:"Geist Mono";src:url("../../../onay/fontlar/GeistMono.woff2") format("woff2");font-weight:100 900}
+@font-face{font-family:"Midas TL";src:url("../../../onay/fontlar/Inter-TL.woff2") format("woff2");unicode-range:U+20BA;font-weight:100 900}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{-webkit-font-smoothing:antialiased}
+body{width:880px;position:relative;overflow:hidden;font-family:"Midas TL","Geist";color:#E1E4FF;
+  font-variant-numeric:tabular-nums lining-nums;
+  background:radial-gradient(700px 360px at 50% -80px, rgb(73 89 234 / .16), transparent 70%),#0A0D2A}
+.mono{font-family:"Midas TL","Geist Mono"}
+.not{font:400 11.5px/1.4 "Geist Mono";color:#8E95C8;letter-spacing:.01em}
+.not b{color:#E1E4FF;font-weight:500}

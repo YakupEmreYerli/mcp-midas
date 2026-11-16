@@ -1,0 +1,18 @@
+# Giriş bilgileri
+.env
+
+# Oturum: tarayıcı profili, çerez/localStorage anlık görüntüleri, emir denetim günlüğü
+.midas-session/
+.midas-state*.json*
+.midas-orders.log.jsonl
+
+# Derleme ve bağımlılıklar
+/dist/
+/node_modules/
+
+# API keşfi sırasında kaydedilen trafik (hesap verisi içerebilir)
+/discovery/
+
+# Python bayt kodu (onay penceresi)
+__pycache__/
+*.pyc

@@ -1,0 +1,31 @@
+<!doctype html>
+<!-- Vitrin: bir emrin geçtiği beş kapı ve denetim günlüğü. Üret: node docs/brand/vitrin/render.mjs -->
+<html lang="tr"><meta charset="utf-8"><link rel="stylesheet" href="ortak.css"><style>
+body{height:410px;padding:44px 48px 0}
+h1{font-weight:600;font-size:30px;letter-spacing:-.025em;color:#fff}
+h1 em{font-style:normal;color:#8C96F6}
+.alt-baslik{margin-top:8px;font-size:15px;color:#8E95C8}
+.kapilar{margin-top:28px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;position:relative}
+.kapilar::before{content:"";position:absolute;left:20px;right:20px;top:15px;height:2px;background:#262C63}
+.kapi{position:relative;padding:0 14px 16px;border-radius:10px;background:#151A45;box-shadow:inset 0 0 0 1px #262C63;min-height:208px}
+.kapi.sen{background:#161C52;box-shadow:inset 0 0 0 2px #4959EA}
+.no{display:inline-grid;place-items:center;width:30px;height:30px;margin-top:0;border-radius:0 0 6px 6px;background:#262C63;font:600 14px/1 "Geist Mono";color:#E1E4FF}
+.sen .no{background:#4959EA;color:#fff}
+h2{margin-top:12px;font-weight:600;font-size:16px;line-height:1.2;color:#fff}
+.alt{margin-top:4px;font:500 12px/1.35 "Geist Mono";color:#8C96F6}
+p.ac{margin-top:12px;font-size:13px;line-height:1.45;color:#B6BBE3}
+p.ac code{font:500 12px/1.45 "Geist Mono";color:#E1E4FF;overflow-wrap:anywhere}
+.gunluk{margin-top:16px;display:flex;align-items:center;gap:12px;height:40px;padding:0 16px;border-radius:8px;border:1px dashed #262C63;font:400 12.5px/1 "Geist Mono";color:#8E95C8}
+.gunluk b{font-family:"Geist";font-weight:600;font-size:13px;color:#E1E4FF}
+</style>
+<h1>Bir emir <em>beş kapıdan</em> geçer</h1>
+<p class="alt-baslik">Herhangi bir kapıda ret, hata ya da sessizlik: emir gönderilmez.</p>
+<div class="kapilar">
+  <div class="kapi"><span class="no">1</span><h2>Bayrak</h2><div class="alt">varsayılan kapalı</div><p class="ac"><code>MIDAS_ORDERS_<wbr>ENABLED=1</code> yoksa emir araçları listede hiç görünmez.</p></div>
+  <div class="kapi"><span class="no">2</span><h2>Önizleme</h2><div class="alt">Midas'tan çözülür</div><p class="ac">Birebir sembol, hesap, fiyat; ₺ tavanı aşılırsa ret.</p></div>
+  <div class="kapi sen"><span class="no">3</span><h2>Senin onayın</h2><div class="alt">masaüstü penceresi</div><p class="ac">Varsayılan Hayır. Evet basılı tutulur; 120 sn sessizlik Hayır.</p></div>
+  <div class="kapi"><span class="no">4</span><h2>Yeniden doğrulama</h2><div class="alt">onaydan sonra</div><p class="ac">Enstrüman değiştiyse ya da fiyat %2'den çok oynadıysa ret.</p></div>
+  <div class="kapi"><span class="no">5</span><h2>Midas</h2><div class="alt">emir gider</div><p class="ac">401 alırsa otomatik yinelenmez; yeni çağrı yeni onay ister.</p></div>
+</div>
+<div class="gunluk"><b>denetim günlüğü</b> her adım · .midas-orders.log.jsonl · 0600 · kimlik bilgileri ayıklanır</div>
+</html>

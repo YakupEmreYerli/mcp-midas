@@ -1,0 +1,66 @@
+<!doctype html>
+<!-- Vitrin: temsilî ajan oturumu (yalnız okuma). Veriler uydurmadır. Üret: node docs/brand/vitrin/render.mjs -->
+<html lang="tr"><meta charset="utf-8"><link rel="stylesheet" href="ortak.css"><style>
+body{height:572px;padding:40px 48px 0}
+.oturum{border-radius:12px;background:#151A45;box-shadow:0 0 0 1px #262C63,0 30px 60px -30px rgb(0 0 0 / .7);overflow:hidden}
+.bas{display:flex;align-items:center;gap:10px;height:44px;padding:0 18px;border-bottom:1px solid #262C63;font-size:13px;color:#8E95C8}
+.bas svg{width:14px;height:14px}
+.bas b{color:#E1E4FF;font-weight:600}
+.rozet{margin-left:auto;height:22px;padding:0 9px;display:inline-flex;align-items:center;border-radius:4px;background:#0A0D2A;box-shadow:inset 0 0 0 1px #262C63;font:500 11px/1 "Geist Mono";color:#B6BBE3;letter-spacing:.04em}
+.govde{padding:20px 22px 22px;display:grid;grid-template-columns:44px 1fr;row-gap:16px;font-size:14px;line-height:1.5}
+.kim{font-weight:600;font-size:13px;padding-top:1px}
+.sen{color:#E1E4FF}.ajan{color:#8C96F6}
+.arac{font:500 13px/1.5 "Geist Mono";color:#E1E4FF}
+.arac span{color:#8E95C8;font-weight:400}
+.ok{font:400 12.5px/1.5 "Geist Mono";color:#8E95C8;margin-top:2px}
+.ok i{font-style:normal;color:#22D67E;margin-right:6px}
+table{width:100%;border-collapse:collapse;margin-top:10px;font:400 12.5px/1 "Midas TL","Geist Mono"}
+th{font:500 11px/1 "Geist";color:#8E95C8;text-align:left;padding:0 0 8px;border-bottom:1px solid #262C63;letter-spacing:.02em}
+td{padding:7px 0;border-bottom:1px solid #1E2458;color:#B6BBE3}
+tr:last-child td{border-bottom:0}
+.s{text-align:right}
+td.sym{color:#E1E4FF;font-weight:600}
+.al{color:#22D67E}.sat{color:#FF5468}
+.d-bek{color:#F4C24D}.d-tam{color:#8E95C8}.d-ipt{color:#FF5468}
+.cevap{color:#E1E4FF;font-size:14.5px;line-height:1.55;max-width:680px}
+.cevap strong{color:#FFFFFF;font-weight:600}
+.alt{position:absolute;left:48px;bottom:22px}
+</style>
+<div class="oturum">
+  <div class="bas">
+    <svg viewBox="30 30 68 68" aria-hidden="true"><rect x="30" y="30" width="14" height="68" rx="7" fill="#fff"/><rect x="84" y="30" width="14" height="68" rx="7" fill="#fff"/><circle cx="64" cy="64" r="13" fill="#4959EA"/></svg>
+    <span>ajan oturumu · <b>midas-mcp</b> (yalnız okuma)</span>
+    <span class="rozet">TEMSİLÎ · UYDURMA VERİ</span>
+  </div>
+  <div class="govde">
+    <div class="kim sen">sen</div>
+    <div class="cevap">Eylülde neler alıp sattım? Portföy bugün ne durumda?</div>
+
+    <div class="kim ajan">ajan</div>
+    <div>
+      <div class="arac">get_transactions <span>from_date=2026-09-01 filter=orders</span></div>
+      <div class="ok"><i>✓</i>5 satır · 1 bekleyen · 1 iptal</div>
+      <table>
+        <thead><tr><th>tarih</th><th>sembol</th><th>yön</th><th>tip</th><th class="s">adet</th><th class="s">ort. fiyat</th><th class="s">tutar</th><th style="padding-left:18px">durum</th></tr></thead>
+        <tbody>
+          <tr><td>18.09 14:32</td><td class="sym">THYAO</td><td class="al">ALIŞ</td><td>LIMIT</td><td class="s">40</td><td class="s">₺298,75</td><td class="s">₺11.950,00</td><td class="d-bek" style="padding-left:18px">PENDING</td></tr>
+          <tr><td>16.09 10:05</td><td class="sym">ASELS</td><td class="sat">SATIŞ</td><td>LIMIT</td><td class="s">25</td><td class="s">₺121,40</td><td class="s">₺3.035,00</td><td class="d-tam" style="padding-left:18px">COMPLETED</td></tr>
+          <tr><td>11.09 11:47</td><td class="sym">KCHOL</td><td class="al">ALIŞ</td><td>MARKET</td><td class="s">15</td><td class="s">₺182,10</td><td class="s">₺2.731,50</td><td class="d-tam" style="padding-left:18px">COMPLETED</td></tr>
+          <tr><td>09.09 15:20</td><td class="sym">TCELL</td><td class="al">ALIŞ</td><td>LIMIT</td><td class="s">60</td><td class="s">₺94,15</td><td class="s">₺5.649,00</td><td class="d-tam" style="padding-left:18px">COMPLETED</td></tr>
+          <tr><td>03.09 09:58</td><td class="sym">SISE</td><td class="al">ALIŞ</td><td>LIMIT</td><td class="s">120</td><td class="s">₺41,20</td><td class="s">—</td><td class="d-ipt" style="padding-left:18px">CANCELLED</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="kim ajan">ajan</div>
+    <div>
+      <div class="arac">get_portfolio</div>
+      <div class="ok"><i>✓</i>toplam ₺148.320,55 · gün <span style="color:#22D67E">+₺1.240,10 (%0,84)</span> · nakit ₺6.410,00</div>
+    </div>
+
+    <div class="kim ajan">ajan</div>
+    <div class="cevap">Eylülde 3 alış ve 1 satış tamamlandı; SISE emrini 3 Eylül'de iptal etmişsin. THYAO için ₺298,75 limitli alış hâlâ bekliyor. Portföy bugün %0,84 yukarıda. <strong>Hiçbir emir göndermedim.</strong></div>
+  </div>
+</div>
+<p class="not alt">Temsilî görsel: semboller gerçek, fiyat ve işlemler uydurmadır · <b>Resmî değildir</b> · Yatırım tavsiyesi değildir</p>
+</html>

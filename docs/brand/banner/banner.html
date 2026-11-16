@@ -1,0 +1,49 @@
+<!doctype html>
+<!-- midas-mcp banner, 1280×640: docs/banner.tr.png ve docs/banner.en.png bu dosyadan üretilir.
+     Üret: node docs/brand/banner/render.mjs
+     Türkçe metin sayfada, İngilizcesi data-en (vurgulu başlıkta data-en-html) özniteliğinde. İki onay penceresi ayrı görsel olarak
+     tutulmaz: render.mjs onları onay/onay.html'den çekip img[data-pencere] yuvalarına koyar. -->
+<html lang="tr"><meta charset="utf-8"><style>
+@font-face{font-family:"Geist";src:url("../../../onay/fontlar/Geist.woff2") format("woff2");font-weight:100 900}
+@font-face{font-family:"Geist Mono";src:url("../../../onay/fontlar/GeistMono.woff2") format("woff2");font-weight:100 900}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{-webkit-font-smoothing:antialiased}
+body{width:1280px;height:640px;position:relative;overflow:hidden;font-family:"Geist";color:#E1E4FF;
+  font-variant-numeric:tabular-nums lining-nums;
+  background:
+    radial-gradient(640px 420px at 900px 330px, rgb(73 89 234 / .20), transparent 70%),
+    radial-gradient(900px 500px at 0 640px, rgb(21 26 69 / .9), transparent 70%),
+    #0A0D2A}
+/* Kapı: pencerelerin iki yanında logodaki gibi iki ince direk; aralarında emir bekler. */
+.direk{position:absolute;top:58px;bottom:58px;width:6px;border-radius:3px;background:linear-gradient(#262C63,#1B2052 70%,transparent)}
+.sol{position:absolute;left:72px;top:0;bottom:0;width:440px;display:flex;flex-direction:column;justify-content:center}
+.kilit{display:block;height:46px;width:auto}
+h1{margin-top:40px;font-weight:600;font-size:40px;line-height:1.12;letter-spacing:-.025em;color:#FFFFFF;text-wrap:balance}
+h1 em{font-style:normal;color:#8C96F6}
+.alt{margin-top:18px;font-size:17px;line-height:1.5;color:#8E95C8;max-width:390px}
+.akis{margin-top:30px;font:500 14px/1.9 "Geist Mono";color:#8E95C8}
+.akis b{display:inline-block;width:52px;font-weight:600}
+.imlec{display:inline-block;width:8px;height:16px;background:#8C96F6;vertical-align:-3px;margin-left:8px}
+.not{position:absolute;left:72px;bottom:40px;font:400 12px/1.4 "Geist Mono";color:#8E95C8;letter-spacing:.01em}
+.pen{position:absolute;display:block;border-radius:10px;overflow:hidden;
+  box-shadow:0 0 0 1px rgb(140 150 246 / .22),0 2px 6px rgb(0 0 0 / .35),0 40px 80px -24px rgb(0 0 0 / .8)}
+.pen img{display:block;width:100%;height:auto}
+</style>
+<div class="direk" style="left:574px"></div>
+<div class="direk" style="left:1262px"></div>
+
+<div class="sol">
+  <img class="kilit" src="../kilit-koyu.svg" alt="midas-mcp">
+  <h1 data-en-html="The agent drafts the order. It <em>waits at the gate</em> until you approve.">Ajan emri hazırlar. Emir, sen onaylayana kadar <em>kapıda bekler</em>.</h1>
+  <p class="alt" data-en="Unofficial MCP server for Midas Atlas: read portfolio, prices and trades; orders only through a desktop approval window.">Midas Atlas için resmî olmayan MCP sunucusu: portföy, fiyat ve işlemleri okur; emir yalnız masaüstü onay penceresinden geçer.</p>
+  <div class="akis">
+    <div><b style="color:#8C96F6" data-en="agent">ajan</b>› place_order THYAO 40 @ 298,75</div>
+    <div><b style="color:#E1E4FF" data-en="you">sen</b><span data-en="› awaiting approval">› onay bekleniyor</span><span class="imlec"></span></div>
+  </div>
+</div>
+
+<div class="pen" style="left:598px;top:84px;width:316px"><img data-pencere="alis" alt=""></div>
+<div class="pen" style="left:928px;top:146px;width:316px"><img data-pencere="satis" alt=""></div>
+
+<p class="not" data-en="Unofficial · not affiliated with Midas · orders shown are sample data">Resmî değildir · Midas ile bağlantısı yoktur · pencerelerdeki emirler örnek veridir</p>
+</html>

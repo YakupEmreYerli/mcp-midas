@@ -240,7 +240,9 @@ for example through a small wrapper started from that session. Use a separate ke
 | [docs/analiz-kurallari.md](docs/analiz-kurallari.md) | Guidelines the agent follows when analysing a stock or fund (Turkish) |
 | [docs/brand](docs/brand/README.md) | Brand kit: logo, colours, type, voice (Turkish) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Setup, pre-submit commands, repository pitfalls (Turkish) |
-| [SECURITY.md](SECURITY.md) | Vulnerability reporting, sensitive files (Turkish) |
+| [SECURITY.md](SECURITY.md) | Vulnerability reporting, scope, sensitive files (Turkish) |
+| [CHANGELOG.md](CHANGELOG.md) | What changed in each release and what you need to do |
+| [RELEASES.md](RELEASES.md) | What a version number promises, what counts as breaking, supported versions |
 
 ## License
 

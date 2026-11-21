@@ -427,6 +427,8 @@ tuzaklar" bölümünde.
 | [docs/brand](docs/brand/README.md) | Marka kiti: logo, renkler, yazı, üslup, Midas'la ilişki |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Kurulum, gönderim öncesi komutlar, depoya özgü tuzaklar |
 | [SECURITY.md](SECURITY.md) | Güvenlik açığı bildirimi, hassas dosyalar, alınmış önlemler |
+| [CHANGELOG.md](CHANGELOG.md) | Her sürümde ne değişti, ne yapman gerekiyor (İngilizce) |
+| [RELEASES.md](RELEASES.md) | Sürüm numarasının sözü, neyin uyumu bozan değişiklik sayıldığı, desteklenen sürümler (İngilizce) |
 | [DESIGN.md](DESIGN.md) | Onay penceresinin tasarım sistemi |
 
 ## Geliştirme

@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html) in the 0.x range.
 See [RELEASES.md](RELEASES.md) for what each number promises and which versions get fixes.
 
+## [Unreleased]
+
+### Added
+
+- **English.** The approval and SMS code windows, the kdialog/zenity fallbacks, desktop
+  notifications, tool and argument descriptions, server instructions, the account line,
+  error messages returned to the agent and log lines now come in Turkish or English.
+  `MIDAS_LANG` (`tr` or `en`) picks the language; without it the system locale decides
+  (`LC_ALL`, `LC_MESSAGES`, `LANG`: anything starting with `tr` is Turkish, everything else
+  English). An invalid `MIDAS_LANG` stops the server at start-up. Tool names, argument names
+  and JSON fields are the same in both languages.
+- The windows get the language from the server, so a window opened on another machine
+  matches the server. The approval model on stdin gains `dil`, `islemYazi` and `yonYazi`, and
+  the `MIDAS_SMS_CODE_COMMAND` stdin JSON gains `dil`. Existing fields are unchanged; a window
+  that gets no `dil` (an older server) stays Turkish.
+- English versions of SECURITY, CONTRIBUTING, METHOD and the analysis guide, and a README.en
+  on par with the Turkish README.
+
+### Changed
+
+- **Text language follows the system locale.** Until now every message was Turkish. On a
+  machine whose locale doesn't start with `tr`, messages, windows and tool descriptions are
+  now English; set `MIDAS_LANG=tr` to keep Turkish.
+
 ## [0.4.0] - 2026-11-21
 
 Several accounts side by side, optional approval on another machine, and a quieter browser.

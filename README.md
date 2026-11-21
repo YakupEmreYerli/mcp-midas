@@ -3,6 +3,8 @@
   <img src="docs/brand/yazi-koyu.svg#gh-dark-mode-only" alt="midas-mcp" height="40">
 </h1>
 
+**Türkçe** · [English](README.en.md)
+
 [![CI](https://github.com/YakupEmreYerli/mcp-midas/actions/workflows/ci.yml/badge.svg)](https://github.com/YakupEmreYerli/mcp-midas/actions/workflows/ci.yml) [![Lisans: MIT](https://img.shields.io/badge/lisans-MIT-4959EA)](LICENSE) [![Node.js 20+](https://img.shields.io/badge/Node.js-20%2B-0A0D2A?logo=nodedotjs&logoColor=22D67E)](https://nodejs.org) [![Emirler: varsayılan kapalı](https://img.shields.io/badge/emirler-varsay%C4%B1lan%20kapal%C4%B1-F4C24D)](#emir-araçlarını-açmak) [![Midas: resmî değil](https://img.shields.io/badge/Midas-resm%C3%AE%20de%C4%9Fil-8E95C8)](#resmî-değildir)
 
 **Ajan tahtayı okur, emri hazırlar. Emir, sen onaylamadan Midas'a gitmez.**
@@ -11,8 +13,6 @@ Midas aracı kurumunun web uygulaması [Atlas](https://atlas.getmidas.com/) içi
 [MCP](https://modelcontextprotocol.io) sunucusu. Bir AI asistanın portföyünü,
 pozisyonlarını, işlem geçmişini ve piyasa verisini okumasını sağlar. Emir araçları
 varsayılan kapalıdır; açıldığında da her emir masaüstünde senin onayını bekler.
-
-> English: [README.en.md](README.en.md)
 
 ![midas-mcp: ajan emri hazırlar, emir sen onaylayana kadar kapıda bekler. Yanında yeşil ALIŞ ve kırmızı SATIŞ onay pencereleri](docs/banner.tr.png)
 
@@ -55,6 +55,8 @@ varsayılan kapalıdır; açıldığında da her emir masaüstünde senin onayı
   sunucu tek bir giriş akışıyla kendini toparlar.
 - **stdio ya da HTTP.** Doğrudan MCP istemcisine bağlanır ya da yerelde kalıcı bir servis
   olarak birden çok istemciye aynı oturumu paylaştırır.
+- **Türkçe ve İngilizce.** Pencereler, bildirimler, araç açıklamaları ve hata mesajları iki
+  dilde; dil sistem yerelinden ya da `MIDAS_LANG` ile seçilir.
 
 ![Temsilî ajan oturumu: kullanıcı eylül işlemlerini ve portföyü soruyor; ajan get_transactions ve get_portfolio çağırıp bir işlem tablosu ve özet döndürüyor, "Hiçbir emir göndermedim" diyor. Veriler uydurmadır.](docs/vitrin/okuma.png)
 
@@ -94,6 +96,7 @@ MAX_ORDER_VALUE_TRY=10000   # ek tavan; masaüstü onayı her zaman gerekir
 # MIDAS_ORDERS_ENABLED=1    # emir araçlarını açar (varsayılan kapalı)
 # MIDAS_ACCOUNT_LABEL=personal # birden çok hesapta hesabın adı (bkz. Birden çok hesap)
 # MIDAS_DATA_DIR=/mutlak/yol # oturum ve günlük dosyalarının dizini (varsayılan proje kökü)
+# MIDAS_LANG=tr             # arayüz dili: tr | en (varsayılan sistem yereli, bkz. Dil)
 ```
 
 **3. İlk giriş**
@@ -171,6 +174,17 @@ onay/masaustu-kur.sh          # ~/.local/share/applications/midas-mcp-onay.deskt
 onay/masaustu-kur.sh --kaldir # geri almak için
 ```
 
+### Dil
+
+Onay ve SMS kodu pencereleri, masaüstü bildirimleri, araç açıklamaları, ajana dönen hata
+mesajları ve loglar Türkçe ya da İngilizcedir. Dili `MIDAS_LANG` (`tr` ya da `en`) seçer.
+Verilmezse sistem yereline bakılır (sırasıyla `LC_ALL`, `LC_MESSAGES`, `LANG`): `tr` ile
+başlıyorsa Türkçe, değilse İngilizce. Geçersiz bir değer sunucuyu açılışta durdurur.
+
+Pencereler dili kendileri seçmez, sunucudan alır. Bu yüzden başka bir makinede açılan onay
+ya da SMS kodu penceresi de, o makinenin yereli farklı olsa bile sunucuyla aynı dilde açılır.
+Araç adları, argüman adları ve JSON alanları dile göre değişmez.
+
 ### Giriş penceresi ve canlı tutma
 
 Midas girişi telefonda bildirim onayı ister ve SSO formunda Cloudflare Turnstile
@@ -193,8 +207,8 @@ seçilir ve kod 8 dakika beklenir:
   ya da süre dolması iptal demektir. Sunucu kodu giriş sayfasına kendisi yazar, kod loga
   girmez.
 - `MIDAS_SMS_CODE_COMMAND` (JSON dizi) kodu soracak komutu belirler; verilirse yerel pencerenin
-  yerine geçer. Komut stdin'den `{"hesapEtiketi": …, "sureSn": …}` alır, kodu stdout'a yazıp
-  0 ile çıkar; başka her sonuç iptaldir. Örnek: `["python3", "/mutlak/yol/mcp-midas/onay/sms.py"]`
+  yerine geçer. Komut stdin'den `{"hesapEtiketi": …, "sureSn": …, "dil": …}` alır, kodu stdout'a
+  yazıp 0 ile çıkar; başka her sonuç iptaldir. Örnek: `["python3", "/mutlak/yol/mcp-midas/onay/sms.py"]`
   ya da başka bir makinede açmak için `["ssh", "kullanici@masaustu", "python3", "/mutlak/yol/mcp-midas/onay/sms.py"]`.
 - Pencere açılamazsa ya da iptal edilirse Midas tarayıcı penceresi öne getirilir, kodu oraya
   yazarsın.
@@ -247,8 +261,8 @@ veri dizini, port ve token paylaşılmaz:
 | `MIDAS_ACCOUNT_LABEL` | Hesabın kısa adı (en çok 40 karakter). Sunucu adında (`midas-mcp (child)`), ajana verilen yönergede, her araç sonucunda, onay penceresinin şeridinde ve başlığında, kdialog/zenity yedeklerinde ve giriş bildirimlerinde görünür |
 | `MIDAS_HTTP_PORT`, `MIDAS_TOKEN_FILE` | HTTP servisinde her hesaba ayrı port ve token |
 
-Araç sonucunda hesap satırı (`Hesap: child`) JSON'dan sonra ayrı bir parça olarak gelir;
-ilk parça her zaman saf JSON kalır. stdio ile iki hesap:
+Araç sonucunda hesap satırı (`Hesap: child`, İngilizcede `Account: child`) JSON'dan sonra
+ayrı bir parça olarak gelir; ilk parça her zaman saf JSON kalır. stdio ile iki hesap:
 
 ```bash
 claude mcp add midas-personal -e MIDAS_ACCOUNT_LABEL=personal -e MIDAS_DATA_DIR=~/.local/share/mcp-midas/personal \

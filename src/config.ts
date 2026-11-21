@@ -14,16 +14,14 @@ const env = process.env;
 const ATLAS_ORIGIN = "https://atlas.getmidas.com";
 const GATEWAY_ORIGIN = "https://api.atlas.getmidas.com";
 
-function mustHave(key: string): string {
-  const value = env[key];
-  if (value) return value;
-  throw new Error(`${key} eksik: ortam değişkeni olarak ver ya da .env.example'ı .env olarak kopyalayıp doldur`);
+function optionalEnv(key: string): string {
+  return (env[key] ?? "").trim();
 }
 
 /** Ortamdan okunan ayarlar ve sabit adresler. */
 export const config = {
-  phone: mustHave("MIDAS_PHONE"),
-  password: mustHave("MIDAS_PASSWORD"),
+  phone: optionalEnv("MIDAS_PHONE"),
+  password: optionalEnv("MIDAS_PASSWORD"),
   /** Ek güvenlik tavanı; bu değerin altında da masaüstü onayı zorunludur. */
   maxOrderValueTry: Number(env.MAX_ORDER_VALUE_TRY ?? 10_000),
   /** Normal çalışmada tarayıcı başsız; yalnız HEADLESS=false görünür açar. */

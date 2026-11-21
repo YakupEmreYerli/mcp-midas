@@ -90,9 +90,12 @@ MIDAS_PASSWORD=sifren       # ikisi de isteğe bağlı; boşsa giriş penceresin
 HEADLESS=true
 MAX_ORDER_VALUE_TRY=10000   # ek tavan; masaüstü onayı her zaman gerekir
 # MIDAS_LOGIN_WINDOW=hidden # giriş tarayıcısı: hidden | visible | headless
-# MIDAS_LOGIN_METHOD=push   # doğrulama: push (bildirim) | sms (kodu pencereye sen yazarsın)
+# MIDAS_LOGIN_METHOD=push   # doğrulama: push (bildirim) | sms (kodu bir pencereye sen yazarsın)
 # MIDAS_KEEPALIVE_HOURS=4   # HTTP servisinde canlı tutma aralığı; 0 kapatır
+# MIDAS_IDLE_CLOSE_MINUTES=10 # boştaki tarayıcı bu kadar dakika sonra kapanır; 0 kapatır
 # MIDAS_ORDERS_ENABLED=1    # emir araçlarını açar (varsayılan kapalı)
+# MIDAS_ACCOUNT_LABEL=personal # birden çok hesapta hesabın adı (bkz. Birden çok hesap)
+# MIDAS_DATA_DIR=/mutlak/yol # oturum ve günlük dosyalarının dizini (varsayılan proje kökü)
 ```
 
 **3. İlk giriş**
@@ -183,9 +186,20 @@ açılacağını belirler:
 | `visible` | Eski davranış: normal, görünür tarayıcı penceresi. |
 | `headless` | Deneysel. Form tam Chromium'un yeni başsız kipiyle doldurulur. Turnstile 20 sn içinde geçmezse form **gönderilmeden** (telefona bildirim gitmeden) `hidden` kipine düşülür. |
 
-`MIDAS_LOGIN_METHOD=sms` ikinci adımı telefon bildiriminden SMS koduna çevirir: mobil onay
-ekranında "SMS ile giriş yap" seçilir, pencere öne getirilir ve kodu senin pencereye yazman
-8 dakika beklenir. Bildirim onayının "geçersiz imza" verdiği hesaplar için.
+`MIDAS_LOGIN_METHOD=sms` ikinci adımı telefon bildiriminden SMS koduna çevirir. Bildirim
+onayının "geçersiz imza" verdiği hesaplar için. Mobil onay ekranında "SMS ile giriş yap"
+seçilir ve kod 8 dakika beklenir:
+
+- Yerel masaüstü varsa kod, onay penceresiyle aynı görünümdeki SMS kodu penceresiyle
+  (`onay/sms.py`) sorulur. Yalnız rakam kabul eder (4-8 hane), Enter gönderir; Esc, kapatma
+  ya da süre dolması iptal demektir. Sunucu kodu giriş sayfasına kendisi yazar, kod loga
+  girmez.
+- `MIDAS_SMS_CODE_COMMAND` (JSON dizi) kodu soracak komutu belirler; verilirse yerel pencerenin
+  yerine geçer. Komut stdin'den `{"hesapEtiketi": …, "sureSn": …}` alır, kodu stdout'a yazıp
+  0 ile çıkar; başka her sonuç iptaldir. Örnek: `["python3", "/mutlak/yol/mcp-midas/onay/sms.py"]`
+  ya da başka bir makinede açmak için `["ssh", "kullanici@masaustu", "python3", "/mutlak/yol/mcp-midas/onay/sms.py"]`.
+- Pencere açılamazsa ya da iptal edilirse Midas tarayıcı penceresi öne getirilir, kodu oraya
+  yazarsın.
 
 `npm run login` her zaman görünür pencere kullanır; `HEADLESS=false` verildiğinde de giriş
 görünür yapılır.
@@ -205,6 +219,11 @@ Canlı tutma kısa ömürlü `access_token`'ın (~15 dk) yenilenmesini ve anlık
 kalmasını sağlar; `refresh_token`'ın 24 saatlik sınırını uzatmaz. Yani günde bir bildirim
 onayı yine gerekir, yalnız artık ekrana pencere gelmez.
 
+Tarayıcı boşta açık kalmaz: son araç çağrısından `MIDAS_IDLE_CLOSE_MINUTES` dakika sonra
+(varsayılan 10; `0` kapatır) son token'ları kaydedip kapanır. Sonraki çağrı kayıtlı oturumu
+başsız ve sessizce yeniden açar; oturum hâlâ geçerliyse yeni giriş istenmez. Canlı tutma da
+yalnız yoklamak için açtığı tarayıcıyı iş bitince kapatır.
+
 ### Emir araçlarını açmak
 
 Emir araçları yalnız şu ortam değişkeni **tam olarak `1`** ise kaydedilir:
@@ -217,6 +236,62 @@ Değişken yoksa (ya da `true`, `yes` gibi başka bir değerse) `place_order`, `
 ve `cancel_order` MCP araç listesinde hiç görünmez; asistan bunları çağıramaz,
 varlıklarını da bilmez. Bayrak yalnız araçların var olup olmadığını belirler. Açıkken de
 hiçbir emir onay penceresi olmadan gönderilmez.
+
+### Birden çok hesap
+
+Aynı makinede birden çok Midas hesabı kullanılabilir; örneğin kendi hesabın ve 18 yaşından
+küçük bir çocuğun senin yönettiğin hesabı. Her hesap ayrı bir süreçtir; kimlik bilgisi,
+veri dizini, port ve token paylaşılmaz:
+
+| Değişken | Ne yapar |
+| --- | --- |
+| `MIDAS_DATA_DIR` | Tarayıcı profili, `.midas-state.json` ve emir günlüğünün dizini (mutlak yol, `~/` kabul edilir; 0700 izinle kurulur). Verilmezse proje kökü |
+| `MIDAS_ACCOUNT_LABEL` | Hesabın kısa adı (en çok 40 karakter). Sunucu adında (`midas-mcp (child)`), ajana verilen yönergede, her araç sonucunda, onay penceresinin şeridinde ve başlığında, kdialog/zenity yedeklerinde ve giriş bildirimlerinde görünür |
+| `MIDAS_HTTP_PORT`, `MIDAS_TOKEN_FILE` | HTTP servisinde her hesaba ayrı port ve token |
+
+Araç sonucunda hesap satırı (`Hesap: child`) JSON'dan sonra ayrı bir parça olarak gelir;
+ilk parça her zaman saf JSON kalır. stdio ile iki hesap:
+
+```bash
+claude mcp add midas-personal -e MIDAS_ACCOUNT_LABEL=personal -e MIDAS_DATA_DIR=~/.local/share/mcp-midas/personal \
+  -e MIDAS_PHONE=5XXXXXXXXX -e MIDAS_PASSWORD=... -- node /mutlak/yol/mcp-midas/dist/index.js
+claude mcp add midas-child -e MIDAS_ACCOUNT_LABEL=child -e MIDAS_DATA_DIR=~/.local/share/mcp-midas/child \
+  -e MIDAS_PHONE=5YYYYYYYYY -e MIDAS_PASSWORD=... -- node /mutlak/yol/mcp-midas/dist/index.js
+```
+
+Şifreyi komut satırına yazmak yerine sır yöneticini kullanabilirsin. HTTP serviste her hesap
+için ayrı bir systemd birimi yaz; `MIDAS_HTTP_PORT` ve `MIDAS_TOKEN_FILE`'ı da ayır.
+
+### Onay penceresini başka bir makinede açmak (isteğe bağlı)
+
+Varsayılan olarak onay penceresi yalnız sunucunun çalıştığı makinenin ekranında açılır ve bu
+bölümdeki ayarların hiçbiri kendiliğinden açılmaz. Sunucuyu ekranına bakmadığın bir makinede
+çalıştırıyorsan (örneğin evdeki küçük bir sunucu) ya da pencerenin aynı anda bir makinede daha
+açılmasını istiyorsan, servis ortamında şu komutları verebilirsin. Hepsi JSON dizidir, kabuk
+kullanılmaz:
+
+| Değişken | Ne yapar |
+| --- | --- |
+| `MIDAS_CONFIRM_REMOTE` | Onay penceresini başka bir yerde de açan komut. Pencere burada ve orada aynı anda açılır; gösterilen bir pencerede verilen ilk Evet, Hayır ya da zaman aşımı karar olur, öteki pencere kapatılır |
+| `MIDAS_CONFIRM_REMOTE_CLOSE` | İsteğe bağlı: karar öteki pencereden gelince uzaktaki pencereyi kapatan komut (bağlantıyı kesmek ona ulaşmayabilir) |
+| `MIDAS_CONFIRM_LOCAL` | Yerel onay penceresi komutunun yerine geçer. O zaman bu makinede ekran gerekmez, kdialog ve zenity yedekleri çalışmaz |
+| `MIDAS_CONFIRM_LOCAL_CLOSE` | İsteğe bağlı: `MIDAS_CONFIRM_LOCAL` ile açılan pencereyi kapatan komut |
+
+Komut öteki makinede **aynı onay penceresini** (`onay/onay.py`) çalıştırmalıdır: sunucu
+önizlemeyi stdin'den verir ve çıktıyı yerel pencereyle aynı katı kuralla okur. Yalnız
+`ACILDI` satırı, `SONUC evet` ve 0 çıkış kodu birlikte Evet'tir; başka her şey Hayır ya da
+hatadır. Örnek (öteki makinede de bu depo ve PySide6 kurulu; hangi komutun çalışacağını
+anahtar belirler, bkz. güven modeli):
+
+```ini
+Environment='MIDAS_CONFIRM_REMOTE=["ssh","-i","/etc/mcp-midas/onay_ed25519","kullanici@masaustu"]'
+```
+
+Hiç açılamayan pencere (makine kapalı, ssh bağlanamadı) beklenmez, öteki pencerenin cevabı
+geçerlidir; iki taraf da açılamazsa sonuç hata olur ve emir gönderilmez. Geçersiz bir değer
+yok sayılmaz: her onay isteği hata döner. Hangi pencerenin karar verdiği (`onay` ya da
+`onay-remote`) ve yapılandırılmış komutun kendisi denetim günlüğüne yazılır. Güven modeli için
+aşağıdaki [Başka makinede onay: güven modeli](#başka-makinede-onay-güven-modeli) bölümünü oku.
 
 ## Araçlar
 
@@ -286,7 +361,7 @@ paketindeki kâr al/zarar durdur satış formunun gönderdiğiyle aynıdır.
   Emir isteği 401 alırsa otomatik yinelenmez; yeni çağrı yeni onay ister.
 - **Denetim günlüğü.** Her deneme ve sonucu `.midas-orders.log.jsonl` dosyasına 0600
   izinle, kimlik bilgisine benzeyen alanlar ayıklanarak yazılır; hangi pencerenin açıldığı
-  da kaydedilir.
+  ve ayarlanmışsa onay komutu da kaydedilir.
 
 <p>
   <img src="docs/vitrin/onay-iptal-koyu.png" alt="Koyu temada İPTAL onay penceresi: üstte başlık çubuğu yerine geçen, kapı işaretli ve kapat düğmeli künye şeridi, kırmızı sinyal bandı ve ince geri sayım çubuğu, emrin şimdiki ve sonraki durumu, taralı kapaklı Evet düğmesi ve odaklı, mavi dolgulu Hayır düğmesi" width="49%">
@@ -294,6 +369,33 @@ paketindeki kâr al/zarar durdur satış formunun gönderdiğiyle aynıdır.
 </p>
 
 <sub>Pencereler örnek veriyle çekildi; hesap ve emir kimlikleri gerçek değildir.</sub>
+
+### Başka makinede onay: güven modeli
+
+Varsayılan söz şudur: bir emir yalnız sunucunun çalıştığı makinedeki bir pencerede onaylanır.
+`MIDAS_CONFIRM_REMOTE` ya da `MIDAS_CONFIRM_LOCAL` verildiğinde bu güven yer değiştirir.
+Komut yerel pencere kadar güvenilir sayılır; sunucu onun çıktısını sorgulamaz, yalnız
+protokole uyup uymadığına bakar. Bundan sonra onayları şunlar belirler:
+
+- servisin yapılandırmasını (systemd birimi, `.env`) değiştirebilen herkes,
+- öteki makineyi yöneten herkes,
+- iki makine arasındaki bağlantıyı yöneten her şey (ör. ssh anahtarları).
+
+Bu ayarlar araç şemasından, MCP isteğinden ya da çalışma anında değiştirilebilen bir dosyadan
+okunmaz; yalnız sunucu süreci başlarken ortamından gelir. Ajan onları göremez ve değiştiremez.
+Yine de komutu yazan kişi, pencere yerine Evet basan bir betik de yazabilir; bunu engelleyen
+şey kodun kendisi değil, servis yapılandırmasına kimin dokunabildiğidir.
+
+ssh kullanıyorsan yalnız bu iş için ayrı bir anahtar üret ve öteki makinede
+`authorized_keys` içinde onu tek komuta kilitle:
+
+```text
+command="/usr/bin/python3 /mutlak/yol/mcp-midas/onay/onay.py",no-port-forwarding,no-agent-forwarding,no-X11-forwarding,no-pty ssh-ed25519 AAAA... midas-onay
+```
+
+Komut öteki makinede grafik oturumuna ulaşmalıdır (`DISPLAY`/`WAYLAND_DISPLAY`); bunu o
+makinenin kendi oturumundan başlatılan küçük bir sarmalayıcıyla çözebilirsin. Aynı anahtar
+SMS kodu penceresi için de kullanılacaksa ona ayrı bir anahtar ve ayrı bir `command=` ver.
 
 Onay penceresi Linux masaüstü için yazıldı. Pencere açılamayan bir ortamda emir araçları
 hiçbir emri gönderemez. Hassas dosyalar, kapsam ve açık bildirme yolu:

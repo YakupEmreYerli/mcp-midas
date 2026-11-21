@@ -16,6 +16,14 @@ desteklenen emirleri yalnızca yerel insan onayından sonra gönderebilir.
   günlüğüne yazılır. Bir sonraki pencereye yalnız önceki hiç açılamadıysa geçilir.
   Araç şemasına, ortama veya yapılandırmaya `confirmed`, `approve`, test modu ya da
   sayfanın/ajanın cevap verebileceği bir kanal (HTTP, dosya, env) eklenmez.
+- **Başka makinede onay yalnız operatör açarsa.** `MIDAS_CONFIRM_REMOTE` (aynı pencereyi
+  başka yerde de açar, gösterilen pencerede ilk Evet/Hayır/zaman aşımı karar olur) ve
+  `MIDAS_CONFIRM_LOCAL` (yerel pencere komutunun yerine geçer, kdialog/zenity çalışmaz)
+  yalnız sunucunun başlangıç ortamından okunur; kendiliğinden algılama ya da başka yol
+  eklenmez. Komut öteki makinede aynı `onay/onay.py`'yi çalıştırır ve çıktısı aynı katı
+  protokolle okunur. Kullanılan komut ve kararı veren pencere (`onay`/`onay-remote`) denetim
+  günlüğüne yazılır. Geçersiz değer yok sayılmaz, onay hata (ret) döner. Güven modeli
+  SECURITY.md ve README'de; değiştirirsen üçünü birlikte güncelle.
 - **Canlı emir testi yapılmaz.** Geliştirme, test ve inceleme sırasında mutation çalıştırma,
   Midas'a gerçek emir gönderme veya canlı `order-test` yazma/çalıştırma. Bir mutation 401
   alırsa oturumu yenile ama otomatik yeniden gönderme; yeni çağrı yeni onay ister.
@@ -33,7 +41,14 @@ desteklenen emirleri yalnızca yerel insan onayından sonra gönderebilir.
   giriş akışı çalışır (tarayıcı `MIDAS_LOGIN_WINDOW` kipine göre, varsayılan gizli pencere)
   ve istek bir kez yinelenir; mutation otomatik yinelenmez. Canlı tutma döngüsü hiçbir
   koşulda giriş başlatmaz, düşmüş oturumu yalnız loglar. `get_session_status` da hiçbir
-  koşulda giriş başlatmaz.
+  koşulda giriş başlatmaz; `MIDAS_KEEPALIVE_HOURS=0` iken servis kendi kendine tarayıcı
+  açmaz. Boştaki tarayıcı `MIDAS_IDLE_CLOSE_MINUTES` (varsayılan 10) sonra durumu kaydedip
+  kapanır; giriş sürerken kapanmaz. SMS kodu (`MIDAS_LOGIN_METHOD=sms`) SMS kodu penceresiyle
+  (`onay/sms.py`) ya da `MIDAS_SMS_CODE_COMMAND` ile sorulur; kod loga, bildirime, hata
+  mesajına girmez.
+- **Hesaplar karışmaz.** Birden çok hesap ayrı süreçtir (`MIDAS_DATA_DIR`, port, token,
+  kimlik bilgisi). `MIDAS_ACCOUNT_LABEL` sunucu adında, yönergede, her araç sonucunda (JSON'dan
+  sonra ayrı parça; `content[0]` saf JSON kalır) ve onay penceresinde görünür.
 
 ## Hisse ve fon analizi
 

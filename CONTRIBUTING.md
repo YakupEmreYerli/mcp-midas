@@ -1,24 +1,72 @@
 # Katkı
 
+Katkıya açığız: hata düzeltmesi, test, belge (README.en.md dahil), macOS ya da Windows'ta
+deneme raporu ve Midas web uygulaması değiştiğinde bozulan bir aracın tespiti. Proje tek
+kişinin gönüllü emeğiyle yürüyor; büyük bir değişikliğe başlamadan önce issue açıp konuş.
+
+Kabul edilmeyenler:
+
+- onay kapısını gevşeten ya da atlatan her şey (aşağıdaki kurallara bak),
+- emir araçlarını varsayılan olarak açan ya da canlı emirle test eden değişiklikler,
+- testte Midas kimlik bilgisi ya da gerçek hesap gerektiren her şey,
+- kişisel portföy verisi, kişisel strateji ya da yatırım tavsiyesi içeren içerik.
+
 ## Kurulum
 
+Gerekenler: Node.js 20 ya da 22 (CI ikisini de sınar) ve git. Testler için Midas hesabı,
+kimlik bilgisi, `.env` ya da tarayıcı gerekmez.
+
 ```bash
+git clone https://github.com/YakupEmreYerli/mcp-midas.git
+cd mcp-midas
 npm ci
-npx playwright install chromium
 npm run build
 npm test
 ```
 
-Node.js 20 ve 22 CI'da sınanır. Onay penceresini denemek için sistem Python'unda PySide6 ve
-QtWebEngine gerekir; yoksa `kdialog` ya da `zenity` kullanılır.
+Bağımlılıklar indikten sonra derleme ve testler birkaç saniye sürer. Çıktı şöyle biter:
+
+```text
+# tests 130
+# pass 130
+# fail 0
+```
+
+Test sayısı zamanla artar; önemli olan `fail 0`. Sunucuyu gerçekten çalıştıracaksan ayrıca
+`npx playwright install chromium` gerekir. Onay penceresini denemek için sistem
+Python'unda PySide6 ve QtWebEngine gerekir; yoksa `kdialog` ya da `zenity` kullanılır.
+
+## Ne üzerinde çalışılır
+
+[`good first issue`](https://github.com/YakupEmreYerli/mcp-midas/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+etiketli issue'lar yeni gelenler için ayrılmıştır. Üstlenmek için issue'ya yorum yaz;
+14 gün içinde pull request ya da ara durum gelmezse issue yeniden boşa çıkar. Uygun bir şey
+yoksa yapmak istediğini anlatan bir issue aç.
 
 ## Göndermeden önce
 
-- `npm run build` ve `npm test` temiz geçmeli. Testler Midas'a bağlanmaz.
+- `npm run build` ve `npm test` temiz geçmeli; CI aynı iki komutu Node.js 20 ve 22'de çalıştırır.
+  Testler Midas'a bağlanmaz.
 - Commit mesajları Türkçe, ne yapıldığını somut söyleyen bir başlık; gövdede neden.
 - Kod yorumları, araç açıklamaları ve kullanıcıya dönen mesajlar Türkçe. Tanımlayıcılar,
   JSON alan adları ve araç adları İngilizce kalır.
+- Kullanıcının fark edeceği bir değişiklikse pull request açıklamasına bir satır yaz; bakımcı
+  bunu [CHANGELOG.md](CHANGELOG.md)'ye taşır. Araç adı, argüman, ortam değişkeni, onay
+  protokolü ya da denetim günlüğü değişiyorsa [RELEASES.md](RELEASES.md)'deki uyum kurallarına bak.
 - `AGENTS.md` ile `CLAUDE.md` ikizdir; birini değiştirirsen diğerini de değiştir.
+- CLA ya da `Signed-off-by` satırı istenmez; katkın projenin [MIT lisansıyla](LICENSE) yayımlanır.
+
+## Gönderdikten sonra
+
+- İlk yanıt genelde bir hafta içinde gelir.
+- Fork'tan gelen ilk pull request'te CI'ın çalışması için bakımcının onayı gerekir; bu yüzden
+  CI biraz gecikebilir.
+- Pull request'te "Allow edits by maintainers" açık kalsın; küçük bir eksik kalırsa bakımcı
+  tamamlayıp birleştirebilir.
+- Dış katkılar merge commit ile birleştirilir, yazarlığın korunur. Kullanıcıya görünen her
+  katkı CHANGELOG'da GitHub kullanıcı adınla anılır.
+- İki hafta yanıt gelmezse pull request'e yorum yazarak hatırlat. Takıldığın bir yer olursa
+  da pull request'e ya da issue'ya yaz.
 
 ## Değişmeyen kurallar
 

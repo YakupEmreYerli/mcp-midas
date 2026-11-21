@@ -54,19 +54,74 @@ test("canlı tutma geçerli oturumu başsız açar ve durumu kaydeder", async ()
   const { s, calls } = fakeSession(true);
   const result = await s.keepAlive();
   assert.equal(result.status, "alive");
-  assert.deepEqual(calls, ["launch:headless", "saveState", "saveState"]);
+  assert.deepEqual(calls, ["launch:headless", "saveState", "saveState", "close"]);
+  assert.equal(s.isStarted(), false, "yoklama bitince tarayıcı kapanmalı");
   assert.ok(!calls.includes("interactiveLogin"));
 });
 
-test("açık oturumda canlı tutma yalnız yoklar; 401 olursa bir kez yeniden yükler", async () => {
+test("oturum 401 verirse canlı tutma bir kez yeniden yükler, düzelmezse tarayıcıyı kapatır", async () => {
   const { s, calls } = fakeSession(true);
-  await s.keepAlive();
+  await s.ensureStarted();
   calls.length = 0;
   let answers = [false, false];
   s.isAuthenticated = async () => answers.shift() ?? false;
   assert.deepEqual(await s.keepAlive(), { status: "logged-out" });
-  assert.deepEqual(calls, ["reload"]);
+  assert.deepEqual(calls, ["reload", "close"]);
+  assert.equal(s.isStarted(), false, "düşmüş oturumun tarayıcısı kapanmalı");
   assert.ok(!calls.includes("interactiveLogin"));
+  s.close();
+});
+
+test("canlı tutma kendi açtığı tarayıcıyı kapatır, araç çağrısının açtığını kapatmaz", async () => {
+  const { s, calls } = fakeSession(true);
+  assert.equal((await s.keepAlive()).status, "alive");
+  assert.ok(calls.includes("close"), "kimsenin kullanmadığı tarayıcı yoklama bitince kapanmalı");
+  assert.equal(s.isStarted(), false);
+
+  calls.length = 0;
+  await s.ensureStarted();
+  assert.equal((await s.keepAlive()).status, "alive");
+  assert.equal(s.isStarted(), true, "araç çağrısının açık tarayıcısı canlı tutmayla kapanmamalı");
+  assert.ok(!calls.includes("close"));
+  assert.ok(!calls.includes("interactiveLogin"));
+  s.close();
+});
+
+test("MIDAS_IDLE_CLOSE_MINUTES=0 iken canlı tutma tarayıcıyı açık bırakır (eski davranış)", async () => {
+  const { s, calls } = fakeSession(true);
+  s.idleCloseMs = 0;
+  assert.equal((await s.keepAlive()).status, "alive");
+  assert.equal(s.isStarted(), true);
+  assert.ok(!calls.includes("close"));
+});
+
+test("araç çağrısının açtığı tarayıcı boşta kalınca durumu kaydedip kapanır, yeni çağrı sessizce yeniden açar", async () => {
+  const { s, calls } = fakeSession(true);
+  s.idleCloseMs = 100;
+  await s.ensureStarted();
+  assert.equal(s.isStarted(), true, "çağrı sırasında tarayıcı açık kalmalı");
+  calls.length = 0;
+
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  assert.equal(s.isStarted(), false, "boşta süre dolunca tarayıcı kapanmalı");
+  assert.deepEqual(calls, ["saveState", "close"], "kapanmadan önce son token'lar kaydedilmeli");
+
+  await s.ensureStarted();
+  assert.equal(s.isStarted(), true, "yeni çağrı tarayıcıyı yeniden açmalı");
+  assert.ok(!calls.includes("interactiveLogin"), "kayıtlı oturumla yeniden açılış giriş istememeli");
+  s.close();
+});
+
+test("art arda gelen çağrılar boşta kapanmayı erteler", async () => {
+  const { s } = fakeSession(true);
+  s.idleCloseMs = 200;
+  await s.ensureStarted();
+  await new Promise((resolve) => setTimeout(resolve, 120));
+  await s.getPage();
+  await new Promise((resolve) => setTimeout(resolve, 120));
+  assert.equal(s.isStarted(), true, "aradaki çağrı süreyi sıfırlamalı");
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  assert.equal(s.isStarted(), false, "son çağrıdan sonra süre dolunca kapanmalı");
 });
 
 test("araç çağrısının açılışı düşmüş oturumda giriş akışına gider", async () => {

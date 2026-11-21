@@ -104,9 +104,39 @@ export class MidasSession {
   private readonly headless: boolean;
   /** Açık bağlam gizlenmiş giriş penceresi mi; kapanışta KWin betikleri kaldırılır. */
   private hiddenWindow = false;
+  /**
+   * Son kullanımdan bu kadar süre geçince tarayıcı kapanır. Oturum diske kaydedildiği için
+   * sonraki çağrı sessizce açılır, yeniden giriş istenmez. 0 kapatır (tarayıcı açık kalır).
+   */
+  private idleCloseMs = config.idleCloseMs;
+  /** Boşta kapanma zamanlayıcısı; her kullanımda yeniden kurulur. */
+  private idleTimer: NodeJS.Timeout | null = null;
 
   constructor(options: { headless?: boolean } = {}) {
     this.headless = options.headless ?? config.headless;
+  }
+
+  private clearIdleTimer(): void {
+    if (this.idleTimer) clearTimeout(this.idleTimer);
+    this.idleTimer = null;
+  }
+
+  /** Tarayıcı kullanıldı: boşta kapanma süresini baştan başlatır. Giriş ya da açılış sürerken kapanmaz. */
+  private touch(): void {
+    this.clearIdleTimer();
+    if (this.idleCloseMs <= 0 || this.starting || !this.isStarted()) return;
+    this.idleTimer = setTimeout(() => {
+      this.idleTimer = null;
+      if (this.starting || !this.isStarted()) return;
+      void this.closeIdle();
+    }, this.idleCloseMs);
+    this.idleTimer.unref();
+  }
+
+  /** Boştaki tarayıcıyı son token'ları kaydedip kapatır; hata vermez. */
+  private async closeIdle(): Promise<void> {
+    if (!this.onLoginScreen()) await this.persistState();
+    await this.shutdownBrowser();
   }
 
   /** Yeni açılışı tek seferlik paylaşılan iş olarak başlatır. */
@@ -119,9 +149,11 @@ export class MidasSession {
 
   /** Tarayıcı açık ve oturumlu değilse açar; gerekirse giriş akışını çalıştırır. */
   async ensureStarted(): Promise<void> {
-    if (await this.awaitPendingStart()) return;
-    if (this.isStarted()) return;
-    return this.starting ?? this.share(() => this.start());
+    if (!(await this.awaitPendingStart()) && !this.isStarted()) {
+      await (this.starting ?? this.share(() => this.start()));
+    }
+    // Gerçek bir araç çağrısı tarayıcıyı kullandı: boşta kapanma süresi bundan sonra işler.
+    this.touch();
   }
 
   /**
@@ -129,15 +161,15 @@ export class MidasSession {
    * `starting` üzerinden bu tek görünür giriş akışını paylaşır.
    */
   async reauthenticate(): Promise<void> {
-    if (await this.awaitPendingStart()) return;
-    // Bekleme sırasında başka bir çağıran girişi başlatmış olabilir; ona katılınır.
-    return (
-      this.starting ??
-      this.share(async () => {
-        await this.shutdownBrowser();
-        await this.start();
-      })
-    );
+    if (!(await this.awaitPendingStart())) {
+      // Bekleme sırasında başka bir çağıran girişi başlatmış olabilir; ona katılınır.
+      await (this.starting ??
+        this.share(async () => {
+          await this.shutdownBrowser();
+          await this.start();
+        }));
+    }
+    this.touch();
   }
 
   /**
@@ -246,6 +278,7 @@ export class MidasSession {
 
   /** Tarayıcıyı kapatır ve sayfaya bağlı her şeyi unutur; hata vermez. */
   private async shutdownBrowser(): Promise<void> {
+    this.clearIdleTimer();
     const ctx = this.context;
     this.context = null;
     this.page = null;
@@ -574,7 +607,8 @@ export class MidasSession {
    */
   async keepAlive(): Promise<KeepAliveResult> {
     if (this.starting) return { status: "skipped", reason: "giriş ya da açılış sürüyor" };
-    if (!this.isStarted()) {
+    const probeOnly = !this.isStarted();
+    if (probeOnly) {
       try {
         await this.ensureStartedQuietly();
       } catch (error) {
@@ -582,13 +616,23 @@ export class MidasSession {
         throw error;
       }
     }
-    if (this.onLoginScreen()) return { status: "logged-out" };
+    if (this.onLoginScreen()) return this.closeLoggedOut();
     if (!(await this.isAuthenticated())) {
       await this.page!.reload({ waitUntil: "domcontentloaded" });
       await this.page!.waitForTimeout(SETTLE_MS);
-      if (this.onLoginScreen() || !(await this.isAuthenticated())) return { status: "logged-out" };
+      if (this.onLoginScreen() || !(await this.isAuthenticated())) return this.closeLoggedOut();
     }
-    return { status: "alive", expiry: await this.persistState() };
+    const expiry = await this.persistState();
+    // Yalnız yoklama için açılan tarayıcı boşuna açık kalmaz. Bir araç çağrısı onu bu arada
+    // kullandıysa (zamanlayıcı kurulduysa) dokunulmaz; kapanışını boşta kalma süresi yönetir.
+    if (probeOnly && this.idleCloseMs > 0 && !this.idleTimer) await this.shutdownBrowser();
+    return { status: "alive", expiry };
+  }
+
+  /** Düşmüş oturumun tarayıcısı kapatılır; sonraki araç çağrısı tam açılış ve giriş yapar. */
+  private async closeLoggedOut(): Promise<KeepAliveResult> {
+    await this.shutdownBrowser();
+    return { status: "logged-out" };
   }
 
   /**
@@ -617,6 +661,8 @@ export class MidasSession {
       }
       throw error;
     }
+    // Durum sorgusu için açılan tarayıcı da boşta kalınca kapanır.
+    this.touch();
     return { status: "logged-in", browser: this.isStarted(), checked: "quiet-start", expiry: this.readSavedExpiry() };
   }
 
@@ -632,6 +678,7 @@ export class MidasSession {
 
   /** Son token'ları kaydedip tarayıcıyı kapatır; yeniden başlatma bayat görüntüyle açılmasın. */
   async close(): Promise<void> {
+    this.clearIdleTimer();
     if (!this.starting && this.isStarted() && !this.onLoginScreen()) await this.persistState();
     const ctx = this.context;
     this.context = null;

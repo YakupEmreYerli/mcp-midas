@@ -4,6 +4,7 @@ import {
   askSmsCode,
   DEFAULT_KEEPALIVE_HOURS,
   extractSmsCode,
+  parseIdleCloseMs,
   hiddenLaunchArgs,
   kwinHideScript,
   kwinRevealScript,
@@ -90,4 +91,13 @@ test("SMS kodu komutu iptal ederse, hata verirse ya da kod yazmazsa null döner"
   assert.equal(await askSmsCode([node, "-e", 'process.stdout.write("tamam")'], { hesapEtiketi: null, sureSn: 60 }, 10_000), null);
   assert.equal(await askSmsCode(["/nonexistent/sms-command"], { hesapEtiketi: null, sureSn: 60 }, 10_000), null);
   assert.equal(await askSmsCode([node, "-e", "setTimeout(()=>{},5000)"], { hesapEtiketi: null, sureSn: 60 }, 300), null);
+});
+
+test("boşta kapanma süresi varsayılan 10 dakikadır, 0 kapatır, geçersiz değer reddedilir", () => {
+  assert.equal(parseIdleCloseMs(undefined), 10 * 60_000);
+  assert.equal(parseIdleCloseMs(" "), 10 * 60_000);
+  assert.equal(parseIdleCloseMs("0"), 0);
+  assert.equal(parseIdleCloseMs("2.5"), 150_000);
+  assert.throws(() => parseIdleCloseMs("-1"), /MIDAS_IDLE_CLOSE_MINUTES/);
+  assert.throws(() => parseIdleCloseMs("on"), /MIDAS_IDLE_CLOSE_MINUTES/);
 });

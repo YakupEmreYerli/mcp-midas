@@ -3,7 +3,7 @@ import { mkdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { config as loadDotenv } from "dotenv";
-import { parseKeepAliveMs, parseLoginMethod, parseLoginWindowMode } from "./login-window.js";
+import { parseIdleCloseMs, parseKeepAliveMs, parseLoginMethod, parseLoginWindowMode } from "./login-window.js";
 import { parseAccountLabel, resolveDataPaths } from "./instance.js";
 import { parseCommandSetting } from "./command-setting.js";
 
@@ -44,6 +44,8 @@ export const config = {
   smsCodeCommand: parseCommandSetting("MIDAS_SMS_CODE_COMMAND", env.MIDAS_SMS_CODE_COMMAND),
   /** HTTP servisinde canlı tutma aralığı (MIDAS_KEEPALIVE_HOURS, varsayılan 4 sa; 0 kapatır). */
   keepAliveMs: parseKeepAliveMs(env.MIDAS_KEEPALIVE_HOURS),
+  /** Boştaki tarayıcının kapanma süresi (MIDAS_IDLE_CLOSE_MINUTES, varsayılan 10 dk; 0 kapatır). */
+  idleCloseMs: parseIdleCloseMs(env.MIDAS_IDLE_CLOSE_MINUTES),
   /** Birden çok hesapta hesabın okunur adı (MIDAS_ACCOUNT_LABEL); sonuçlarda ve onay penceresinde görünür. */
   accountLabel: parseAccountLabel(env.MIDAS_ACCOUNT_LABEL),
   /** Chromium'un kalıcı profil klasörü (MIDAS_DATA_DIR verilirse onun altında). */

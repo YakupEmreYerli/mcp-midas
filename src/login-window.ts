@@ -74,6 +74,21 @@ export function parseLoginWindowMode(value: string | undefined): LoginWindowMode
   throw new Error(`MIDAS_LOGIN_WINDOW geçersiz: "${value}". Geçerli değerler: ${LOGIN_WINDOW_MODES.join(", ")}`);
 }
 
+export const DEFAULT_IDLE_CLOSE_MINUTES = 10;
+
+/**
+ * `MIDAS_IDLE_CLOSE_MINUTES`: son araç çağrısından bu kadar dakika sonra tarayıcı kapanır;
+ * oturum diske kaydedildiği için sonraki çağrı onu sessizce yeniden açar. 0 kapatır.
+ */
+export function parseIdleCloseMs(value: string | undefined): number {
+  const raw = (value ?? "").trim();
+  const minutes = raw === "" ? DEFAULT_IDLE_CLOSE_MINUTES : Number(raw);
+  if (!Number.isFinite(minutes) || minutes < 0) {
+    throw new Error(`MIDAS_IDLE_CLOSE_MINUTES sıfır ya da pozitif bir sayı olmalı: "${value}"`);
+  }
+  return Math.round(minutes * 60_000);
+}
+
 /** Saat cinsinden aralığı milisaniyeye çevirir; 0 döngüyü kapatır. */
 export function parseKeepAliveMs(value: string | undefined): number {
   const raw = (value ?? "").trim();

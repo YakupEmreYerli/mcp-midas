@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import * as midas from "./midas.js";
@@ -9,6 +10,9 @@ import { session } from "./session.js";
 import { config } from "./config.js";
 import { accountLine, serverInstructions, serverName } from "./instance.js";
 import { defineMessages, language } from "./i18n.js";
+
+/** Sunucunun bildirdiği sürüm; package.json'dan okunur (src/ ve dist/ aynı derinlikte), elle eskimez. */
+export const SERVER_VERSION: string = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
 
 /** Araç ve argüman açıklamaları. Araç, argüman ve JSON alan adları dilden bağımsızdır. */
 const D = defineMessages(
@@ -243,7 +247,7 @@ export function createServer(options: ServerOptions = {}): McpServer {
   const lang = language();
   const d = D(lang);
   const instructions = serverInstructions(label, lang);
-  const server = new McpServer({ name: serverName(label), version: "0.3.0" }, instructions ? { instructions } : undefined);
+  const server = new McpServer({ name: serverName(label), version: SERVER_VERSION }, instructions ? { instructions } : undefined);
 
   // Hesap satırı JSON'dan sonra ayrı bir metin parçasıdır: ilk parça her zaman saf JSON kalır,
   // sonucu ayrıştıran istemciler (content[0]) etkilenmez.

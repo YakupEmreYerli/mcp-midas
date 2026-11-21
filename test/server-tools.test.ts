@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
@@ -92,4 +93,15 @@ test("okuma araçları isteğe bağlı market ipucu alır, emir araçları almaz
     const props = tools.find((t) => t.name === name)!.inputSchema.properties as Record<string, any>;
     assert.ok(!("market" in props), `${name} market ipucu almamalı`);
   }
+});
+
+test("sunucu package.json'daki sürümü bildirir", async () => {
+  const { version } = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+  const server = createServer();
+  const client = new Client({ name: "test", version: "0.0.0" });
+  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+  await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+  assert.equal(client.getServerVersion()?.version, version);
+  await client.close();
+  await server.close();
 });

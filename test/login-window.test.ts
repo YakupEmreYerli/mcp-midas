@@ -5,6 +5,7 @@ import {
   DEFAULT_KEEPALIVE_HOURS,
   extractSmsCode,
   parseIdleCloseMs,
+  resolveSmsCodeCommand,
   hiddenLaunchArgs,
   kwinHideScript,
   kwinRevealScript,
@@ -100,4 +101,14 @@ test("boşta kapanma süresi varsayılan 10 dakikadır, 0 kapatır, geçersiz de
   assert.equal(parseIdleCloseMs("2.5"), 150_000);
   assert.throws(() => parseIdleCloseMs("-1"), /MIDAS_IDLE_CLOSE_MINUTES/);
   assert.throws(() => parseIdleCloseMs("on"), /MIDAS_IDLE_CLOSE_MINUTES/);
+});
+
+test("SMS kodu: ayarlı komut önce gelir; yoksa yerel masaüstünde depodaki pencere, masaüstü yoksa elle", () => {
+  const script = "/opt/mcp-midas/onay/sms.py";
+  const all = () => true;
+  assert.deepEqual(resolveSmsCodeCommand(["/usr/local/bin/my-sms-window"], {}, script, all), ["/usr/local/bin/my-sms-window"]);
+  assert.deepEqual(resolveSmsCodeCommand(null, { WAYLAND_DISPLAY: "wayland-0" }, script, all), ["/usr/bin/python3", script]);
+  assert.deepEqual(resolveSmsCodeCommand(null, { DISPLAY: ":0" }, script, (f) => f === script), ["python3", script]);
+  assert.equal(resolveSmsCodeCommand(null, {}, script, all), null);
+  assert.equal(resolveSmsCodeCommand(null, { DISPLAY: ":0" }, script, () => false), null);
 });

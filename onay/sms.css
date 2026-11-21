@@ -1,0 +1,55 @@
+/* SMS kodu penceresi: onay.css'in üstüne eklenir (sms.py ikisini birleştirir). Belirteçler,
+   şerit, bant, sayaç ve düğme temeli onay penceresiyle ortaktır; yalnız farklar burada. */
+
+/* Bilgi tonu: bu bir emir değil, giriş adımı. Bant marka mavisi, güvenlik renkleri kullanılmaz. */
+.panel[data-ton="bilgi"] { --bant: var(--mavi); --bant-yazi: var(--mavi-yazi); --ton: var(--mavi); }
+:root[data-theme="koyu"] .panel[data-ton="bilgi"] { --ton: var(--serit-vurgu); }
+
+.panel[data-ton="bilgi"] .sinyal { font-size: 40px; }
+
+.icerik { padding-bottom: 6px; }
+
+.kod-alan { display: grid; gap: 8px; }
+.kod-etiket {
+  font-size: 12px; font-weight: 600; letter-spacing: 0.04em;
+  color: var(--soluk); text-transform: uppercase;
+}
+.kod {
+  width: 100%;
+  height: 68px;
+  padding: 0 18px;
+  border: 2px solid var(--cizgi-guclu);
+  border-radius: var(--r);
+  background: var(--yuzey);
+  color: var(--murekkep);
+  font-family: var(--rakam);
+  font-size: 36px; font-weight: 700;
+  letter-spacing: 0.32em;
+  text-align: center;
+  caret-color: var(--ton);
+  user-select: text;
+}
+.kod::placeholder { color: var(--cizgi); letter-spacing: 0.32em; }
+.kod:focus { outline: 3px solid var(--odak); outline-offset: 3px; }
+.kod-not { font-size: 12.5px; color: var(--soluk); }
+
+.sms-dugmeler { grid-template-columns: 1fr 1.25fr; }
+
+/* İptal: ikincil, çerçeveli. Gönder: marka mavisi, kod geçerli olana dek kapalı. */
+.iptal {
+  border: 2px solid var(--cizgi-guclu);
+  background: transparent;
+  color: var(--murekkep);
+  font-size: 16px; font-weight: 700;
+}
+.iptal:hover { background: color-mix(in srgb, var(--murekkep) 6%, transparent); }
+.gonder {
+  border: 0;
+  background: var(--mavi);
+  color: var(--mavi-yazi);
+  font-size: 17px; font-weight: 700;
+  transition: filter 150ms ease-out, opacity 150ms ease-out;
+}
+.gonder:hover:not(:disabled) { filter: brightness(1.1); }
+.gonder:active:not(:disabled) { filter: brightness(0.92); }
+.gonder:disabled { opacity: 0.4; cursor: not-allowed; }

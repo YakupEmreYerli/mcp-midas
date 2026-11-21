@@ -49,6 +49,24 @@ export function extractSmsCode(output: string): string | null {
 }
 
 /**
+ * SMS kodunu soracak komut: `MIDAS_SMS_CODE_COMMAND` verildiyse o; verilmediyse ve yerel masaüstü
+ * varsa depodaki SMS kodu penceresi (onay/sms.py); ikisi de yoksa null (kod Midas penceresine
+ * elle yazılır).
+ */
+export function resolveSmsCodeCommand(
+  configured: string[] | null,
+  env: NodeJS.ProcessEnv,
+  smsScript: string,
+  exists: (file: string) => boolean = fs.existsSync
+): string[] | null {
+  if (configured) return configured;
+  if (!env.DISPLAY && !env.WAYLAND_DISPLAY) return null;
+  if (!exists(smsScript)) return null;
+  // Sistem Python'u PySide6 + QtWebEngine taşır; systemd servisinin PATH'ine güvenilmez.
+  return [exists("/usr/bin/python3") ? "/usr/bin/python3" : "python3", smsScript];
+}
+
+/**
  * SMS kodunu soran komutu çalıştırır (`MIDAS_SMS_CODE_COMMAND`). Komuta stdin'den JSON verilir
  * (`hesapEtiketi`, `sureSn`); komut kodu stdout'a yazıp 0 ile çıkar. İptal, hata, zaman aşımı
  * ya da kod olmayan çıktı null döner. Kod hiçbir yere yazılmaz; çağıran yalnız sayfaya yazar.

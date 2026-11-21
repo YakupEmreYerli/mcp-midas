@@ -1,10 +1,12 @@
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { chromium, type BrowserContext, type Page } from "playwright";
 import { config } from "./config.js";
 import { describeAuthExpiry, type AuthExpiry } from "./auth-expiry.js";
 import {
   askSmsCode,
   hiddenLaunchArgs,
+  resolveSmsCodeCommand,
   KWIN_HIDE_PLUGIN,
   KWIN_REVEAL_PLUGIN,
   kwinHideScript,
@@ -46,6 +48,9 @@ export interface SessionStatus {
 const LOGIN_TITLE = config.accountLabel ? `Midas girişi (Hesap: ${config.accountLabel})` : "Midas girişi";
 
 const SUBMIT_READY = "button[type=submit]:not([disabled])";
+
+/** Depodaki SMS kodu penceresi (src/ ve dist/ aynı derinlikte). */
+const SMS_WINDOW = fileURLToPath(new URL("../onay/sms.py", import.meta.url));
 
 /**
  * Başsız Chromium kendini "HeadlessChrome" diye tanıtır ve istemci ipuçlarını göndermez;
@@ -505,8 +510,9 @@ export class MidasSession {
 
   /**
    * Kullanıcının Midas mobil uygulamasındaki bildirimi onaylamasını bekler. `sms` yolunda mobil
-   * onay ekranında "SMS ile giriş yap" seçilir, pencere öne getirilir ve kullanıcının gelen kodu
-   * pencereye yazması beklenir; kod koda ya da loga hiç girmez.
+   * onay ekranında "SMS ile giriş yap" seçilir; kod SMS kodu penceresiyle (ya da
+   * `MIDAS_SMS_CODE_COMMAND` ile) sorulur, olmazsa Midas penceresi öne getirilir ve kodu
+   * kullanıcının oraya yazması beklenir. Kod koda ya da loga hiç girmez.
    */
   private async awaitApproval(): Promise<void> {
     const page = this.page!;
@@ -530,12 +536,12 @@ export class MidasSession {
   }
 
   /**
-   * `MIDAS_SMS_CODE_COMMAND` varsa kodu o komuta sorar ve sayfadaki ilk görünür kutuya yazar.
-   * Kod ne loga ne bildirime girer. Komut yoksa, iptal edilirse ya da kod gelmezse false döner;
-   * kod o zaman Midas penceresine elle yazılır.
+   * Kodu `MIDAS_SMS_CODE_COMMAND`'a, o yoksa yerel masaüstünde SMS kodu penceresine sorar ve
+   * sayfadaki ilk görünür kutuya yazar. Kod ne loga ne bildirime girer. Komut yoksa, iptal
+   * edilirse ya da kod gelmezse false döner; kod o zaman Midas penceresine elle yazılır.
    */
   private async typeSmsCodeFromCommand(giveUpAt: number): Promise<boolean> {
-    const command = config.smsCodeCommand;
+    const command = resolveSmsCodeCommand(config.smsCodeCommand, process.env, SMS_WINDOW);
     if (!command) return false;
     const timeoutMs = Math.max(10_000, giveUpAt - Date.now() - 30_000);
     const code = await askSmsCode(command, { hesapEtiketi: config.accountLabel, sureSn: Math.floor(timeoutMs / 1000) - 5 }, timeoutMs);

@@ -23,6 +23,9 @@ Güvenlik:
 - Önizleme metni HTML'e JSON olarak gömülür, JS yalnız textContent ile yazar.
 - Evet ancak düğme basılı tutulunca gelir; pencere açıldıktan sonraki ilk 0,6 sn'de
   gelen Evet yok sayılır (önceki bir tıklamanın sızması).
+
+Dil: modeldeki `dil` alanı (tr | en); pencere dili kendisi seçmez, böylece ssh ile açılan uzak
+pencere de sunucunun dilinde açılır. `dil` yoksa (eski sunucu) Türkçe.
 """
 
 from __future__ import annotations
@@ -49,6 +52,50 @@ FONTS = {
 }
 LOGO = HERE.parent / "docs" / "brand"
 APP_ID = "midas-mcp-onay"  # Wayland app_id / X11 WM_CLASS; onay/masaustu-kur.sh aynı adla .desktop kurar
+
+# Python tarafının metinleri (pencere başlığı ve hata sebepleri). Sayfanın metinleri onay.js'te.
+METIN = {
+    "tr": {
+        "baslik": "midas-mcp emir onayı",
+        "hesap": "Hesap",
+        "tema": "--tema acik|koyu olmalı",
+        "dil": "--dil tr|en olmalı",
+        "secenek": "bilinmeyen seçenek: {flag}",
+        "veri_yok": "stdin'de önizleme verisi yok",
+        "veri_gecersiz": "önizleme verisi geçersiz",
+        "qt_yok": "PySide6/QtWebEngine yüklenemedi: {error}",
+        "sayfa_yuklenemedi": "onay sayfası yüklenemedi",
+        "sayfa_hazir_degil": "onay sayfası 10 sn içinde hazır olmadı",
+        "beklenmedik": "pencere beklenmedik biçimde kapandı",
+    },
+    "en": {
+        "baslik": "midas-mcp order approval",
+        "hesap": "Account",
+        "tema": "--tema must be acik or koyu",
+        "dil": "--dil must be tr or en",
+        "secenek": "unknown option: {flag}",
+        "veri_yok": "no preview data on stdin",
+        "veri_gecersiz": "invalid preview data",
+        "qt_yok": "couldn't load PySide6/QtWebEngine: {error}",
+        "sayfa_yuklenemedi": "couldn't load the approval page",
+        "sayfa_hazir_degil": "the approval page wasn't ready within 10 seconds",
+        "beklenmedik": "the window closed unexpectedly",
+    },
+}
+_lang = "tr"
+
+
+def set_language(value: object) -> str:
+    """Geçerli bir dil verilmişse seçer; yoksa (eski sunucu) Türkçe kalır."""
+    global _lang
+    if value in METIN:
+        _lang = str(value)
+    return _lang
+
+
+def t(key: str, **values: object) -> str:
+    return METIN[_lang][key].format(**values)
+
 
 _decided = False
 
@@ -106,32 +153,40 @@ workspace.windowList().forEach(izle);
 """
 
 
-def parse_args(argv: list[str]) -> tuple[str | None, int]:
+def parse_args(argv: list[str]) -> tuple[str | None, int, str | None]:
     theme: str | None = None
     seconds = MAX_SECONDS
+    lang: str | None = None
     rest = list(argv)
     while rest:
         flag = rest.pop(0)
         if flag == "--tema" and rest:
             value = rest.pop(0)
             if value not in ("acik", "koyu"):
-                raise ValueError("--tema acik|koyu olmalı")
+                raise ValueError(t("tema"))
             theme = value
+        elif flag == "--dil" and rest:
+            # Yalnız deneme ve önizleme görüntüsü için; sunucu dili modelle (stdin) verir.
+            lang = rest.pop(0)
+            if lang not in METIN:
+                raise ValueError(t("dil"))
         elif flag == "--sure" and rest:
             # Yalnız kısaltmak için (deneme); 120 sn üst sınırdır.
             seconds = max(1, min(MAX_SECONDS, int(rest.pop(0))))
         else:
-            raise ValueError(f"bilinmeyen seçenek: {flag}")
-    return theme, seconds
+            raise ValueError(t("secenek", flag=flag))
+    return theme, seconds, lang
 
 
 def read_model() -> dict:
     raw = sys.stdin.read()
     if not raw.strip():
-        raise ValueError("stdin'de önizleme verisi yok")
+        raise ValueError(t("veri_yok"))
     model = json.loads(raw)
+    if isinstance(model, dict):
+        set_language(model.get("dil"))
     if not isinstance(model, dict) or model.get("islem") not in ("ALIŞ", "SATIŞ", "İPTAL", "DEĞİŞTİR"):
-        raise ValueError("önizleme verisi geçersiz")
+        raise ValueError(t("veri_gecersiz"))
     return model
 
 
@@ -144,8 +199,11 @@ def embed_json(model: dict) -> str:
 
 def main() -> None:
     try:
-        theme, seconds = parse_args(sys.argv[1:])
+        theme, seconds, lang = parse_args(sys.argv[1:])
         model = read_model()
+        if lang:
+            set_language(lang)
+        model["dil"] = _lang  # sayfa (onay.js) da aynı dili kullansın
         template = (HERE / "onay.html").read_text(encoding="utf-8")
         css = (HERE / "onay.css").read_text(encoding="utf-8")
         script = (HERE / "onay.js").read_text(encoding="utf-8")
@@ -186,7 +244,7 @@ def main() -> None:
         from PySide6.QtWebEngineWidgets import QWebEngineView
         from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout
     except Exception as error:  # noqa: BLE001
-        fail(f"PySide6/QtWebEngine yüklenemedi: {error}")
+        fail(t("qt_yok", error=error))
         return
 
     app = QApplication(sys.argv[:1])
@@ -213,6 +271,7 @@ def main() -> None:
         .replace("__JS__", script)
         .replace("__NONCE__", nonce)
         .replace("__TEMA__", theme)
+        .replace("__DIL__", _lang)
         .replace("__VERI__", embed_json(model))
     )
 
@@ -302,9 +361,10 @@ def main() -> None:
     layout.setContentsMargins(0, 0, 0, 0)
     layout.addWidget(view)
 
-    title = f"midas-mcp emir onayı — {model.get('islem', '')} {model.get('sembol', '')}".strip()
+    band = model.get("islemYazi") or model.get("islem", "")
+    title = f"{t('baslik')} — {band} {model.get('sembol', '')}".strip()
     if model.get("hesapEtiketi"):
-        title += f" — Hesap: {model['hesapEtiketi']}"
+        title += f" — {t('hesap')}: {model['hesapEtiketi']}"
     window.setWindowTitle(title)
     # Çerçevesiz pencere: başlık çubuğu sayfanın künye şerididir (taşıma + kapat = Hayır).
     # Köşeler ve gölge sayfada çizilir, bu yüzden pencere ve sayfa zemini şeffaftır.
@@ -396,19 +456,19 @@ def main() -> None:
 
     def on_loaded(ok: bool) -> None:
         if not ok:
-            fail("onay sayfası yüklenemedi")
+            fail(t("sayfa_yuklenemedi"))
 
     page.loadFinished.connect(on_loaded)
     QShortcut(QKeySequence(Qt.Key.Key_Escape), window, activated=lambda: finish(1, "hayir"))
 
     # Sayfa 10 sn içinde hazır demezse pencere açılamamış sayılır (hata, ret değil).
-    QTimer.singleShot(10_000, lambda: None if shown_at else fail("onay sayfası 10 sn içinde hazır olmadı"))
+    QTimer.singleShot(10_000, lambda: None if shown_at else fail(t("sayfa_hazir_degil")))
 
     window.resize(WIDTH, 720)  # sayfa gösterilmeden önce gerçek genişlikte ölçülsün
     page.setHtml(html, QUrl("about:blank"))
     app.exec()
     if not _decided:
-        fail("pencere beklenmedik biçimde kapandı")
+        fail(t("beklenmedik"))
 
 
 if __name__ == "__main__":

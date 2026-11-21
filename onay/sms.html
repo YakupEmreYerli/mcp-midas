@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="tr" data-theme="__TEMA__">
+<html lang="__DIL__" data-theme="__TEMA__">
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-__NONCE__'; script-src 'nonce-__NONCE__'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
@@ -11,9 +11,9 @@
   <div class="serit" id="serit">
     <span class="marka"><svg class="marka-kapi" viewBox="30 30 68 68" aria-hidden="true" focusable="false"><rect class="direk" x="30" y="30" width="14" height="68" rx="7"/><rect class="direk" x="84" y="30" width="14" height="68" rx="7"/><circle class="nokta" cx="64" cy="64" r="13"/></svg>midas<b>-mcp</b></span>
     <span class="serit-sag">
-      <span class="serit-hesap" id="serit-hesap" hidden>Hesap <b id="hesap-etiketi"></b></span>
-      <span class="serit-not" id="serit-not">Midas girişi</span>
-      <button type="button" class="kapat" id="kapat" tabindex="-1" aria-label="Kapat: İptal" title="Kapat: İptal">
+      <span class="serit-hesap" id="serit-hesap" hidden><span data-metin="hesap">Hesap</span> <b id="hesap-etiketi"></b></span>
+      <span class="serit-not" id="serit-not" data-metin="seritNot">Midas girişi</span>
+      <button type="button" class="kapat" id="kapat" tabindex="-1" aria-label="Kapat: İptal" title="Kapat: İptal" data-metin-etiket="kapat">
         <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7"/></svg>
       </button>
     </span>
@@ -24,31 +24,31 @@
         <path class="piktogram-ucgen" d="M8 6h32a4 4 0 0 1 4 4v22a4 4 0 0 1-4 4H20l-9 8v-8H8a4 4 0 0 1-4-4V10a4 4 0 0 1 4-4z"/>
         <path class="piktogram-isaret" d="M14 18.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zm10 0a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zm10 0a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5z"/>
       </svg>
-      <h1 class="sinyal">SMS KODU</h1>
+      <h1 class="sinyal" data-metin="baslik">SMS KODU</h1>
     </div>
-    <div class="sayac" role="timer" aria-label="Kalan süre">
+    <div class="sayac" role="timer" aria-label="Kalan süre" data-metin-etiket="kalanSure">
       <span class="sayac-deger" id="sayac">8:00</span>
-      <span class="sayac-not">sonra iptal</span>
+      <span class="sayac-not" data-metin="sayacNot">sonra iptal</span>
     </div>
     <div class="ray" aria-hidden="true"><span class="ray-dolu" id="ray"></span></div>
   </header>
 
   <section class="icerik">
-    <p class="ozet">Telefonuna Midas'tan gelen kodu yaz. Giriş kendiliğinden tamamlanır.</p>
+    <p class="ozet" data-metin="ozet">Telefonuna Midas'tan gelen kodu yaz. Giriş kendiliğinden tamamlanır.</p>
     <label class="kod-alan">
-      <span class="kod-etiket">SMS kodu</span>
+      <span class="kod-etiket" data-metin="kodEtiket">SMS kodu</span>
       <input class="kod" id="kod" type="text" inputmode="numeric" autocomplete="one-time-code"
              maxlength="8" spellcheck="false" placeholder="••••••" aria-describedby="kod-not">
-      <span class="kod-not" id="kod-not">Boşluk ve harfler kendiliğinden atılır.</span>
+      <span class="kod-not" id="kod-not" data-metin="kodNot">Boşluk ve harfler kendiliğinden atılır.</span>
     </label>
   </section>
 
   <footer class="eylem">
     <div class="dugmeler sms-dugmeler">
-      <button type="button" class="iptal" id="iptal">İptal</button>
-      <button type="button" class="gonder" id="gonder" disabled>Kodu gönder</button>
+      <button type="button" class="iptal" id="iptal" data-metin="iptal">İptal</button>
+      <button type="button" class="gonder" id="gonder" disabled data-metin="gonder">Kodu gönder</button>
     </div>
-    <p class="ipucu">Enter kodu gönderir. Esc, pencereyi kapatmak ya da süre dolması iptal sayılır.</p>
+    <p class="ipucu" data-metin="ipucu">Enter kodu gönderir. Esc, pencereyi kapatmak ya da süre dolması iptal sayılır.</p>
   </footer>
 </main>
 <script type="application/json" id="veri">__VERI__</script>

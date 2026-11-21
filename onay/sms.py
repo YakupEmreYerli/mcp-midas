@@ -6,9 +6,10 @@ masaüstünde kendiliğinden, başka bir yerde `MIDAS_SMS_CODE_COMMAND` ile (ör
 Onay penceresiyle (onay.py) aynı yapı ve görünüm: QtWebEngine, tek parça data: URL, CSP nonce,
 gömülü Geist / Geist Mono, çerçevesiz pencere, künye şeridi ve geri sayım bandı.
 
-Girdi (isteğe bağlı, stdin JSON): {"hesapEtiketi": "...", "sureSn": 480}. Seçenekler:
+Girdi (isteğe bağlı, stdin JSON): {"hesapEtiketi": "...", "sureSn": 480, "dil": "tr"}. Seçenekler:
 --tema acik|koyu, --sure <sn>, --hesap <etiket> (stdin'deki değer önce gelir; ikisi de yoksa
-MIDAS_ACCOUNT_LABEL).
+MIDAS_ACCOUNT_LABEL), --dil tr|en (stdin'deki `dil` önce gelir; ikisi de yoksa Türkçe). Pencere
+dili kendisi seçmez: ssh ile açılan uzak pencere de sunucunun dilinde açılır.
 
 Çıkış protokolü:
     stdout: yalnız kod (4-8 rakam) ve satır sonu   çıkış kodu 0
@@ -38,6 +39,42 @@ DEFAULT_SECONDS = 480  # src/session.ts: SMS kodu için 8 dakika
 MAX_SECONDS = 900
 CODE = re.compile(r"^\d{4,8}$")
 
+# Python tarafının metinleri (pencere başlığı ve hata sebepleri). Sayfanın metinleri sms.js'te.
+METIN = {
+    "tr": {
+        "on_ek": "sms penceresi",
+        "baslik": "midas-mcp SMS kodu",
+        "hesap": "Hesap",
+        "tema": "--tema acik|koyu olmalı",
+        "dil": "--dil tr|en olmalı",
+        "secenek": "bilinmeyen seçenek: {flag}",
+        "nesne": "stdin verisi JSON nesnesi olmalı",
+        "qt_yok": "PySide6/QtWebEngine yüklenemedi: {error}",
+        "sayfa_yuklenemedi": "sayfa yüklenemedi",
+        "sayfa_hazir_degil": "sayfa 10 sn içinde hazır olmadı",
+        "beklenmedik": "pencere beklenmedik biçimde kapandı",
+    },
+    "en": {
+        "on_ek": "sms window",
+        "baslik": "midas-mcp SMS code",
+        "hesap": "Account",
+        "tema": "--tema must be acik or koyu",
+        "dil": "--dil must be tr or en",
+        "secenek": "unknown option: {flag}",
+        "nesne": "stdin data must be a JSON object",
+        "qt_yok": "couldn't load PySide6/QtWebEngine: {error}",
+        "sayfa_yuklenemedi": "couldn't load the page",
+        "sayfa_hazir_degil": "the page wasn't ready within 10 seconds",
+        "beklenmedik": "the window closed unexpectedly",
+    },
+}
+_lang = "tr"
+
+
+def t(key: str, **values: object) -> str:
+    return METIN[_lang][key].format(**values)
+
+
 _done = False
 _cleanup: list = []
 
@@ -61,26 +98,30 @@ def finish(code: int, output: str = "") -> None:
 
 
 def fail(reason: object) -> None:
-    sys.stderr.write(f"sms penceresi: {' '.join(str(reason).split())[:300]}\n")
+    sys.stderr.write(f"{t('on_ek')}: {' '.join(str(reason).split())[:300]}\n")
     finish(2)
 
 
 def parse_args(argv: list[str]) -> dict:
-    options: dict = {"tema": None, "sure": None, "hesap": None}
+    options: dict = {"tema": None, "sure": None, "hesap": None, "dil": None}
     rest = list(argv)
     while rest:
         flag = rest.pop(0)
         if flag == "--tema" and rest:
             value = rest.pop(0)
             if value not in ("acik", "koyu"):
-                raise ValueError("--tema acik|koyu olmalı")
+                raise ValueError(t("tema"))
             options["tema"] = value
         elif flag == "--sure" and rest:
             options["sure"] = int(rest.pop(0))
         elif flag == "--hesap" and rest:
             options["hesap"] = rest.pop(0)
+        elif flag == "--dil" and rest:
+            options["dil"] = rest.pop(0)
+            if options["dil"] not in METIN:
+                raise ValueError(t("dil"))
         else:
-            raise ValueError(f"bilinmeyen seçenek: {flag}")
+            raise ValueError(t("secenek", flag=flag))
     return options
 
 
@@ -93,7 +134,7 @@ def read_input() -> dict:
         return {}
     data = json.loads(raw)
     if not isinstance(data, dict):
-        raise ValueError("stdin verisi JSON nesnesi olmalı")
+        raise ValueError(t("nesne"))
     return data
 
 
@@ -107,9 +148,13 @@ def clean_label(value: object) -> str | None:
 
 
 def main() -> None:
+    global _lang
     try:
         options = parse_args(sys.argv[1:])
         data = read_input()
+        lang = data.get("dil") if data.get("dil") in METIN else options["dil"]
+        if lang in METIN:
+            _lang = lang
         label = clean_label(data.get("hesapEtiketi")) or clean_label(options["hesap"]) or clean_label(
             os.environ.get("MIDAS_ACCOUNT_LABEL")
         )
@@ -150,7 +195,7 @@ def main() -> None:
         from PySide6.QtWebEngineWidgets import QWebEngineView
         from PySide6.QtWidgets import QApplication, QVBoxLayout, QWidget
     except Exception as error:  # noqa: BLE001
-        fail(f"PySide6/QtWebEngine yüklenemedi: {error}")
+        fail(t("qt_yok", error=error))
         return
 
     app = QApplication(sys.argv[:1])
@@ -176,7 +221,8 @@ def main() -> None:
         .replace("__JS__", script)
         .replace("__NONCE__", nonce)
         .replace("__TEMA__", theme)
-        .replace("__VERI__", embed_json({"hesapEtiketi": label, "sureSn": seconds}))
+        .replace("__DIL__", _lang)
+        .replace("__VERI__", embed_json({"hesapEtiketi": label, "sureSn": seconds, "dil": _lang}))
     )
 
     class Guard(QWebEngineUrlRequestInterceptor):
@@ -261,7 +307,7 @@ def main() -> None:
     layout.setContentsMargins(0, 0, 0, 0)
     layout.addWidget(view)
 
-    window.setWindowTitle("midas-mcp SMS kodu" + (f" — Hesap: {label}" if label else ""))
+    window.setWindowTitle(t("baslik") + (f" — {t('hesap')}: {label}" if label else ""))
     window.setWindowFlags(
         Qt.WindowType.Window | Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint
     )
@@ -331,15 +377,15 @@ def main() -> None:
             # Yalnız geliştirme: pencerenin kendi görüntüsü.
             QTimer.singleShot(1500, lambda: window.grab().save(shot))
 
-    page.loadFinished.connect(lambda ok: None if ok else fail("sayfa yüklenemedi"))
+    page.loadFinished.connect(lambda ok: None if ok else fail(t("sayfa_yuklenemedi")))
     QShortcut(QKeySequence(Qt.Key.Key_Escape), window, activated=lambda: finish(1))
-    QTimer.singleShot(10_000, lambda: None if shown else fail("sayfa 10 sn içinde hazır olmadı"))
+    QTimer.singleShot(10_000, lambda: None if shown else fail(t("sayfa_hazir_degil")))
 
     window.resize(WIDTH, 560)
     page.setHtml(html, QUrl("about:blank"))
     app.exec()
     if not _done:
-        fail("pencere beklenmedik biçimde kapandı")
+        fail(t("beklenmedik"))
 
 
 if __name__ == "__main__":

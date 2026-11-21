@@ -9,6 +9,19 @@ import { execFile } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { defineMessages, type Lang } from "./i18n.js";
+
+const M = defineMessages(
+  {
+    invalid: (name: string, value: string | undefined, allowed: string) =>
+      `${name} geçersiz: "${value}". Geçerli değerler: ${allowed}`,
+    notNegative: (name: string, value: string | undefined) => `${name} sıfır ya da pozitif bir sayı olmalı: "${value}"`,
+  },
+  {
+    invalid: (name, value, allowed) => `${name} is invalid: "${value}". Valid values: ${allowed}`,
+    notNegative: (name, value) => `${name} must be zero or a positive number: "${value}"`,
+  }
+);
 
 /**
  * Giriş gerektiğinde tarayıcının nasıl açılacağı.
@@ -39,7 +52,7 @@ export function parseLoginMethod(value: string | undefined): LoginMethod {
   const v = (value ?? "").trim().toLowerCase();
   if (!v) return "push";
   if (v === "push" || v === "sms") return v;
-  throw new Error(`MIDAS_LOGIN_METHOD geçersiz: "${value}". Geçerli değerler: push, sms`);
+  throw new Error(M().invalid("MIDAS_LOGIN_METHOD", value, "push, sms"));
 }
 
 /** SMS kodu (4-8 rakam) komut çıktısında; rakamlar arasındaki boşluk ve tire kabul edilir. Yoksa null. */
@@ -68,12 +81,12 @@ export function resolveSmsCodeCommand(
 
 /**
  * SMS kodunu soran komutu çalıştırır (`MIDAS_SMS_CODE_COMMAND`). Komuta stdin'den JSON verilir
- * (`hesapEtiketi`, `sureSn`); komut kodu stdout'a yazıp 0 ile çıkar. İptal, hata, zaman aşımı
+ * (`hesapEtiketi`, `sureSn`, `dil`); komut kodu stdout'a yazıp 0 ile çıkar. İptal, hata, zaman aşımı
  * ya da kod olmayan çıktı null döner. Kod hiçbir yere yazılmaz; çağıran yalnız sayfaya yazar.
  */
 export function askSmsCode(
   command: string[],
-  input: { hesapEtiketi: string | null; sureSn: number },
+  input: { hesapEtiketi: string | null; sureSn: number; dil: Lang },
   timeoutMs: number
 ): Promise<string | null> {
   return new Promise((resolve) => {
@@ -89,7 +102,7 @@ export function parseLoginWindowMode(value: string | undefined): LoginWindowMode
   const v = (value ?? "").trim().toLowerCase();
   if (!v) return "hidden";
   if ((LOGIN_WINDOW_MODES as readonly string[]).includes(v)) return v as LoginWindowMode;
-  throw new Error(`MIDAS_LOGIN_WINDOW geçersiz: "${value}". Geçerli değerler: ${LOGIN_WINDOW_MODES.join(", ")}`);
+  throw new Error(M().invalid("MIDAS_LOGIN_WINDOW", value, LOGIN_WINDOW_MODES.join(", ")));
 }
 
 export const DEFAULT_IDLE_CLOSE_MINUTES = 10;
@@ -102,7 +115,7 @@ export function parseIdleCloseMs(value: string | undefined): number {
   const raw = (value ?? "").trim();
   const minutes = raw === "" ? DEFAULT_IDLE_CLOSE_MINUTES : Number(raw);
   if (!Number.isFinite(minutes) || minutes < 0) {
-    throw new Error(`MIDAS_IDLE_CLOSE_MINUTES sıfır ya da pozitif bir sayı olmalı: "${value}"`);
+    throw new Error(M().notNegative("MIDAS_IDLE_CLOSE_MINUTES", value));
   }
   return Math.round(minutes * 60_000);
 }
@@ -112,7 +125,7 @@ export function parseKeepAliveMs(value: string | undefined): number {
   const raw = (value ?? "").trim();
   const hours = raw === "" ? DEFAULT_KEEPALIVE_HOURS : Number(raw);
   if (!Number.isFinite(hours) || hours < 0) {
-    throw new Error(`MIDAS_KEEPALIVE_HOURS sıfır ya da pozitif bir sayı olmalı: "${value}"`);
+    throw new Error(M().notNegative("MIDAS_KEEPALIVE_HOURS", value));
   }
   if (hours === 0) return 0;
   // Dakikadan kısa aralık Atlas'ı gereksiz yere yoklar; alt sınır 5 dakika.

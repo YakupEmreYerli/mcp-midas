@@ -4,6 +4,39 @@
 // innerHTML kullanılmaz, kod hiçbir yere yazdırılmaz (console dahil).
 
 (function () {
+  // Sayfanın metinleri. Dili sunucu stdin'deki `dil` ile verir; sayfa dili kendisi seçmez.
+  // İki dil aynı anahtarları taşır (test/i18n.test.ts denetler). METIN-BAŞI
+  const METIN = {
+    tr: {
+      hesap: "Hesap",
+      seritNot: "Midas girişi",
+      kapat: "Kapat: İptal",
+      baslik: "SMS KODU",
+      kalanSure: "Kalan süre",
+      sayacNot: "sonra iptal",
+      ozet: "Telefonuna Midas'tan gelen kodu yaz. Giriş kendiliğinden tamamlanır.",
+      kodEtiket: "SMS kodu",
+      kodNot: "Boşluk ve harfler kendiliğinden atılır.",
+      iptal: "İptal",
+      gonder: "Kodu gönder",
+      ipucu: "Enter kodu gönderir. Esc, pencereyi kapatmak ya da süre dolması iptal sayılır.",
+    },
+    en: {
+      hesap: "Account",
+      seritNot: "Midas sign-in",
+      kapat: "Close: Cancel",
+      baslik: "SMS CODE",
+      kalanSure: "Time left",
+      sayacNot: "then cancel",
+      ozet: "Enter the code Midas sent to your phone. Sign-in finishes on its own.",
+      kodEtiket: "SMS code",
+      kodNot: "Spaces and letters are removed as you type.",
+      iptal: "Cancel",
+      gonder: "Send code",
+      ipucu: "Enter sends the code. Esc, closing the window or running out of time cancels.",
+    },
+  };
+  // METIN-SONU
   const $ = (id) => document.getElementById(id);
   let bitti = false;
   let sira = 0;
@@ -21,6 +54,13 @@
     veri = JSON.parse($("veri").textContent) || {};
   } catch (hata) {
     veri = {};
+  }
+
+  const M = METIN[veri.dil] || METIN.tr; // dil yoksa (eski sunucu, elle çalıştırma) Türkçe
+  for (const el of document.querySelectorAll("[data-metin]")) el.textContent = M[el.dataset.metin];
+  for (const el of document.querySelectorAll("[data-metin-etiket]")) {
+    el.setAttribute("aria-label", M[el.dataset.metinEtiket]);
+    if (el.hasAttribute("title")) el.title = M[el.dataset.metinEtiket];
   }
 
   if (veri.hesapEtiketi) {

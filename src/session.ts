@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { chromium, type BrowserContext, type Page } from "playwright";
 import { config } from "./config.js";
 import { describeAuthExpiry, type AuthExpiry } from "./auth-expiry.js";
+import { defineMessages, language } from "./i18n.js";
 import {
   askSmsCode,
   hiddenLaunchArgs,
@@ -29,7 +30,7 @@ export type KeepAliveResult =
 /** Sessiz açılışta kayıtlı oturum geçersizse fırlatılır; görünür giriş başlatılmaz. */
 export class SessionUnavailable extends Error {
   constructor() {
-    super("Kayıtlı Midas oturumu geçersiz; giriş bir sonraki araç çağrısına bırakıldı.");
+    super(M().sessionUnavailable);
     this.name = "SessionUnavailable";
   }
 }
@@ -44,8 +45,57 @@ export interface SessionStatus {
   expiry: AuthExpiry | null;
 }
 
+const M = defineMessages(
+  {
+    sessionUnavailable: "Kayıtlı Midas oturumu geçersiz; giriş bir sonraki araç çağrısına bırakıldı.",
+    title: "Midas girişi",
+    titleAccount: (label: string) => `Midas girişi (Hesap: ${label})`,
+    verifyTitle: (title: string) => `${title}: doğrulama gerekiyor`,
+    verifyBody: "Açılan pencerede doğrulamayı tamamla, sonra telefonundaki bildirimi onayla.",
+    signInByHand: "Açılan Midas penceresinde giriş yap.",
+    approvePush: "Telefonundaki Midas bildirimini onayla.",
+    typeSms: "Telefonuna gelen SMS kodunu açılan Midas penceresine yaz.",
+    smsTimeout: "SMS kodu 8 dakika içinde girilmedi.",
+    pushTimeout: "Bildirim 3 dakika içinde onaylanmadı.",
+    failedTitle: (title: string) => `${title} yapılamadı`,
+    retryNext: (what: string) => `${what} Sonraki istekte giriş yeniden başlar.`,
+    timedOut: (what: string) => `Midas girişi zaman aşımına uğradı: ${what}`,
+    turnstileLog: "giriş: Turnstile başsız doğrulanamadı; form gönderilmedi, gizli pencereye geçiliyor",
+    formNotSent: "Midas giriş formu gönderilemedi: doğrulama (Turnstile) tamamlanmadı.",
+    stillRejected: "Midas girişi tamamlandı ama API oturumu hâlâ reddediyor (HTTP 401).",
+    smsCommandLog: "giriş: SMS kodu komuttan alınamadı; kod Midas penceresine elle yazılmalı",
+    noRid: "Uygulamanın x-midas-rid başlığı gözlenemedi; oturum geçersiz olabilir.",
+    noMemberUid: "midas:member-uid okunamadı; giriş yapılmamış olabilir.",
+    busy: "giriş ya da açılış sürüyor",
+  },
+  {
+    sessionUnavailable: "The saved Midas session is no longer valid; sign-in is left to the next tool call.",
+    title: "Midas sign-in",
+    titleAccount: (label) => `Midas sign-in (Account: ${label})`,
+    verifyTitle: (title) => `${title}: verification needed`,
+    verifyBody: "Complete the verification in the window that opened, then approve the notification on your phone.",
+    signInByHand: "Sign in to Midas in the window that opened.",
+    approvePush: "Approve the Midas notification on your phone.",
+    typeSms: "Type the SMS code from your phone into the Midas window that opened.",
+    smsTimeout: "The SMS code wasn't entered within 8 minutes.",
+    pushTimeout: "The notification wasn't approved within 3 minutes.",
+    failedTitle: (title) => `${title} failed`,
+    retryNext: (what) => `${what} Sign-in starts again with the next request.`,
+    timedOut: (what) => `Midas sign-in timed out: ${what}`,
+    turnstileLog: "login: couldn't pass Turnstile headless; form not submitted, switching to the hidden window",
+    formNotSent: "Couldn't submit the Midas sign-in form: the verification (Turnstile) wasn't completed.",
+    stillRejected: "Midas sign-in finished, but the API still rejects the session (HTTP 401).",
+    smsCommandLog: "login: got no SMS code from the command; the code has to be typed into the Midas window",
+    noRid: "Didn't see the app's x-midas-rid header; the session may be invalid.",
+    noMemberUid: "Couldn't read midas:member-uid; the account may not be signed in.",
+    busy: "sign-in or startup in progress",
+  }
+);
+
 /** Masaüstü bildirim başlığı; birden çok hesapta hangi hesabın giriş istediği görünür. */
-const LOGIN_TITLE = config.accountLabel ? `Midas girişi (Hesap: ${config.accountLabel})` : "Midas girişi";
+function loginTitle(): string {
+  return config.accountLabel ? M().titleAccount(config.accountLabel) : M().title;
+}
 
 const SUBMIT_READY = "button[type=submit]:not([disabled])";
 
@@ -250,7 +300,7 @@ export class MidasSession {
         await this.assertAuthenticated();
         return;
       }
-      console.error("giriş: Turnstile başsız doğrulanamadı; form gönderilmedi, gizli pencereye geçiliyor");
+      console.error(M().turnstileLog);
       await this.shutdownBrowser();
       mode = "hidden";
     }
@@ -261,15 +311,11 @@ export class MidasSession {
     let submitted = await this.submitLoginForm(30_000);
     if (!submitted && mode === "hidden") {
       await this.revealLoginWindow();
-      notifyDesktop(
-        `${LOGIN_TITLE}: doğrulama gerekiyor`,
-        "Açılan pencerede doğrulamayı tamamla, sonra telefonundaki bildirimi onayla.",
-        "critical"
-      );
+      notifyDesktop(M().verifyTitle(loginTitle()), M().verifyBody, "critical");
       submitted = await this.submitLoginForm(120_000);
     }
     if (!submitted) {
-      throw new Error("Midas giriş formu gönderilemedi: doğrulama (Turnstile) tamamlanmadı.");
+      throw new Error(M().formNotSent);
     }
     await this.awaitApproval();
     await this.assertAuthenticated();
@@ -277,7 +323,7 @@ export class MidasSession {
 
   private async assertAuthenticated(): Promise<void> {
     if (!(await this.isAuthenticated())) {
-      throw new Error("Midas girişi tamamlandı ama API oturumu hâlâ reddediyor (HTTP 401).");
+      throw new Error(M().stillRejected);
     }
   }
 
@@ -476,7 +522,7 @@ export class MidasSession {
     await phoneField.waitFor({ timeout: 30_000 });
     if (!hasCredentials()) {
       if (this.hiddenWindow) await this.revealLoginWindow();
-      notifyDesktop(LOGIN_TITLE, "Açılan Midas penceresinde giriş yap.", "critical");
+      notifyDesktop(loginTitle(), M().signInByHand, "critical");
       return true;
     }
     await phoneField.fill(config.phone);
@@ -497,7 +543,7 @@ export class MidasSession {
       return false;
     }
     await page.click(SUBMIT_READY);
-    if (config.loginMethod === "push") notifyDesktop(LOGIN_TITLE, "Telefonundaki Midas bildirimini onayla.");
+    if (config.loginMethod === "push") notifyDesktop(loginTitle(), M().approvePush);
     return true;
   }
 
@@ -528,11 +574,11 @@ export class MidasSession {
       switched = true;
       if (await this.typeSmsCodeFromCommand(giveUpAt)) continue;
       if (this.hiddenWindow) await this.revealLoginWindow();
-      notifyDesktop(LOGIN_TITLE, "Telefonuna gelen SMS kodunu açılan Midas penceresine yaz.", "critical");
+      notifyDesktop(loginTitle(), M().typeSms, "critical");
     }
-    const what = sms ? "SMS kodu 8 dakika içinde girilmedi." : "Bildirim 3 dakika içinde onaylanmadı.";
-    notifyDesktop(`${LOGIN_TITLE} yapılamadı`, `${what} Sonraki istekte giriş yeniden başlar.`, "critical");
-    throw new Error(`Midas girişi zaman aşımına uğradı: ${what}`);
+    const what = sms ? M().smsTimeout : M().pushTimeout;
+    notifyDesktop(M().failedTitle(loginTitle()), M().retryNext(what), "critical");
+    throw new Error(M().timedOut(what));
   }
 
   /**
@@ -544,9 +590,9 @@ export class MidasSession {
     const command = resolveSmsCodeCommand(config.smsCodeCommand, process.env, SMS_WINDOW);
     if (!command) return false;
     const timeoutMs = Math.max(10_000, giveUpAt - Date.now() - 30_000);
-    const code = await askSmsCode(command, { hesapEtiketi: config.accountLabel, sureSn: Math.floor(timeoutMs / 1000) - 5 }, timeoutMs);
+    const code = await askSmsCode(command, { hesapEtiketi: config.accountLabel, sureSn: Math.floor(timeoutMs / 1000) - 5, dil: language() }, timeoutMs);
     if (!code) {
-      console.error("giriş: SMS kodu komuttan alınamadı; kod Midas penceresine elle yazılmalı");
+      console.error(M().smsCommandLog);
       return false;
     }
     const page = this.page!;
@@ -571,14 +617,14 @@ export class MidasSession {
       await page.reload({ waitUntil: "domcontentloaded" });
       if (await pollUntil(page, seen)) return;
     }
-    throw new Error("Uygulamanın x-midas-rid başlığı gözlenemedi; oturum geçersiz olabilir.");
+    throw new Error(M().noRid);
   }
 
   /** Üye kimliği uygulamanın localStorage'ından okunur; portföy sorguları bunu ister. */
   private async loadMemberUid(): Promise<void> {
     const stored = await this.page!.evaluate(`window.localStorage.getItem("midas:member-uid")`);
     if (typeof stored !== "string" || !stored) {
-      throw new Error("midas:member-uid okunamadı; giriş yapılmamış olabilir.");
+      throw new Error(M().noMemberUid);
     }
     this.memberId = stored;
   }
@@ -612,7 +658,7 @@ export class MidasSession {
    * oturum düşmüşse yalnız "logged-out" döner, giriş bir sonraki gerçek araç çağrısına kalır.
    */
   async keepAlive(): Promise<KeepAliveResult> {
-    if (this.starting) return { status: "skipped", reason: "giriş ya da açılış sürüyor" };
+    if (this.starting) return { status: "skipped", reason: M().busy };
     const probeOnly = !this.isStarted();
     if (probeOnly) {
       try {

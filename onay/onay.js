@@ -5,6 +5,43 @@
 // innerHTML kullanılmaz.
 
 (function () {
+  // Sayfanın sabit metinleri. Dili sunucu modelle verir (veri.dil); sayfa dili kendisi seçmez.
+  // İki dil aynı anahtarları taşır (test/i18n.test.ts denetler). METIN-BAŞI
+  const METIN = {
+    tr: {
+      hesap: "Hesap",
+      seritNot: "ajanın isteği · senin kararın",
+      kapat: "Kapat: Hayır",
+      kalanSure: "Kalan süre",
+      sayacNot: "sonra Hayır",
+      simdi: "Şimdi",
+      alan: "Alan",
+      sonra: "Sonra",
+      basiliTut: "basılı tutun",
+      ipucu: ["Esc, pencereyi kapatmak ya da süre dolması: ", "Hayır", ". Evet için düğmeyi basılı tutun; Enter onaylamaz."],
+      ayni: "aynı",
+      emir: "Emir",
+      alis: "Alış",
+      satis: "Satış",
+    },
+    en: {
+      hesap: "Account",
+      seritNot: "the agent asks · you decide",
+      kapat: "Close: No",
+      kalanSure: "Time left",
+      sayacNot: "then No",
+      simdi: "Now",
+      alan: "Field",
+      sonra: "After",
+      basiliTut: "press and hold",
+      ipucu: ["Esc, closing the window or running out of time: ", "No", ". Press and hold for Yes; Enter never approves."],
+      ayni: "same",
+      emir: "Order",
+      alis: "Buy",
+      satis: "Sell",
+    },
+  };
+  // METIN-SONU
   const TUTMA_MS = 900; // Evet'in kalkması için basılı tutma süresi
   const KILIT_MS = 700; // pencere açıldıktan sonra Evet'in kilitli kaldığı süre
 
@@ -30,10 +67,22 @@
 
   const metin = (id, deger) => { $(id).textContent = deger == null ? "" : String(deger); };
 
+  // ---------- Dil ----------
+  const M = METIN[veri.dil] || METIN.tr; // dil yoksa (eski sunucu) Türkçe
+  for (const el of document.querySelectorAll("[data-metin]")) el.textContent = M[el.dataset.metin];
+  for (const el of document.querySelectorAll("[data-metin-etiket]")) {
+    el.setAttribute("aria-label", M[el.dataset.metinEtiket]);
+    if (el.hasAttribute("title")) el.title = M[el.dataset.metinEtiket];
+  }
+  const ipucu = $("ipucu");
+  const vurgu = document.createElement("strong");
+  vurgu.textContent = M.ipucu[1];
+  ipucu.replaceChildren(M.ipucu[0], vurgu, M.ipucu[2]);
+
   // ---------- Çizim ----------
   const panel = $("panel");
   panel.dataset.ton = veri.ton;
-  metin("islem", veri.islem);
+  metin("islem", veri.islemYazi || veri.islem);
   if (veri.hesapEtiketi) {
     // Birden çok hesapta emrin hangi hesaba gittiği şeritte, ilk bakışta görünür.
     metin("hesap-etiketi", veri.hesapEtiketi);
@@ -62,7 +111,7 @@
     kunye.appendChild(el);
   };
   etiket(veri.pazar);
-  etiket(veri.yon === "SATIŞ" ? "Satış" : "Alış", veri.yon);
+  etiket(veri.yon === "SATIŞ" ? M.satis : M.alis, veri.yon);
   etiket(veri.emirTipi);
 
   const satirlar = Array.isArray(veri.satirlar) ? veri.satirlar : [];
@@ -96,7 +145,7 @@
       alan.textContent = d.etiket;
       const yeni = document.createElement("td");
       yeni.className = "d-yeni";
-      yeni.textContent = d.degisti ? d.yeni : "aynı";
+      yeni.textContent = d.degisti ? d.yeni : M.ayni;
       if (!d.degisti) yeni.title = d.yeni;
       tr.append(eski, alan, yeni);
       dgovde.appendChild(tr);
@@ -114,8 +163,8 @@
     span.appendChild(code);
     kimlik.appendChild(span);
   };
-  kimlikSatiri("Emir", veri.emirNo);
-  kimlikSatiri("Hesap", veri.hesap);
+  kimlikSatiri(M.emir, veri.emirNo);
+  kimlikSatiri(M.hesap, veri.hesap);
 
   // ---------- Geri sayım ----------
   // Python pencereyi gösterince midasGoster() çağırır; sayaç ve Evet kilidi o andan başlar.

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="tr" data-theme="__TEMA__">
+<html lang="__DIL__" data-theme="__TEMA__">
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-__NONCE__'; script-src 'nonce-__NONCE__'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
@@ -11,9 +11,9 @@
   <div class="serit" id="serit">
     <span class="marka"><svg class="marka-kapi" viewBox="30 30 68 68" aria-hidden="true" focusable="false"><rect class="direk" x="30" y="30" width="14" height="68" rx="7"/><rect class="direk" x="84" y="30" width="14" height="68" rx="7"/><circle class="nokta" cx="64" cy="64" r="13"/></svg>midas<b>-mcp</b></span>
     <span class="serit-sag">
-      <span class="serit-hesap" id="serit-hesap" hidden>Hesap <b id="hesap-etiketi"></b></span>
-      <span class="serit-not" id="serit-not">ajanın isteği · senin kararın</span>
-      <button type="button" class="kapat" id="kapat" tabindex="-1" aria-label="Kapat: Hayır" title="Kapat: Hayır">
+      <span class="serit-hesap" id="serit-hesap" hidden><span data-metin="hesap">Hesap</span> <b id="hesap-etiketi"></b></span>
+      <span class="serit-not" id="serit-not" data-metin="seritNot">ajanın isteği · senin kararın</span>
+      <button type="button" class="kapat" id="kapat" tabindex="-1" aria-label="Kapat: Hayır" title="Kapat: Hayır" data-metin-etiket="kapat">
         <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7"/></svg>
       </button>
     </span>
@@ -26,9 +26,9 @@
       </svg>
       <h1 class="sinyal" id="islem">&nbsp;</h1>
     </div>
-    <div class="sayac" role="timer" aria-label="Kalan süre">
+    <div class="sayac" role="timer" aria-label="Kalan süre" data-metin-etiket="kalanSure">
       <span class="sayac-deger" id="sayac">2:00</span>
-      <span class="sayac-not">sonra Hayır</span>
+      <span class="sayac-not" data-metin="sayacNot">sonra Hayır</span>
     </div>
     <div class="ray" aria-hidden="true"><span class="ray-dolu" id="ray"></span></div>
   </header>
@@ -44,7 +44,7 @@
 
     <table class="degisim" id="degisim" hidden>
       <thead>
-        <tr><th scope="col" class="d-eski">Şimdi</th><th scope="col" class="d-alan"><span class="gorunmez">Alan</span></th><th scope="col" class="d-yeni">Sonra</th></tr>
+        <tr><th scope="col" class="d-eski" data-metin="simdi">Şimdi</th><th scope="col" class="d-alan"><span class="gorunmez" data-metin="alan">Alan</span></th><th scope="col" class="d-yeni" data-metin="sonra">Sonra</th></tr>
       </thead>
       <tbody id="degisim-govde"></tbody>
     </table>
@@ -77,7 +77,7 @@
         </svg>
         <span class="evet-dolgu" aria-hidden="true"></span>
         <span class="evet-yazi" id="evet-yazi"></span>
-        <span class="evet-not" id="evet-not">basılı tutun</span>
+        <span class="evet-not" id="evet-not" data-metin="basiliTut">basılı tutun</span>
       </button>
       <button type="button" class="hayir" id="hayir"></button>
     </div>

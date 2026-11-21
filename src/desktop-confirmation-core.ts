@@ -7,6 +7,7 @@ import {
 } from "./order-approval.js";
 import { parseAccountLabel } from "./instance.js";
 import { parseCommandSetting } from "./command-setting.js";
+import { defineMessages, language, type Lang } from "./i18n.js";
 
 // Onay zinciri: tasarımlı pencere (onay/onay.py) → kdialog → zenity → "unavailable".
 // Bir sonraki araca yalnızca önceki araç HİÇ açılamadıysa geçilir; kullanıcının
@@ -63,7 +64,54 @@ export interface GateOptions {
   onayScript: string;
 }
 
-const TITLE = "midas-mcp emir onayı";
+const M = defineMessages(
+  {
+    title: "midas-mcp emir onayı",
+    titleAccount: (label: string) => `Hesap: ${label}`,
+    commandMissing: "komut bulunamadı",
+    cannotStart: (message: string) => `başlatılamadı: ${message}`,
+    signal: (name: string) => `sinyal ${name}`,
+    exitCode: (code: number | null) => `çıkış kodu ${code}`,
+    notOpenedInTime: "pencere zamanında açılmadı",
+    onayWindow: "onay penceresi",
+    kdialogUnexpected: (choice: string) => `kdialog beklenmeyen seçim döndü: ${choice || "boş"}`,
+    kdialogHint: `Onay için "Evet, gönder" satırını seçip Tamam'a basın.`,
+    kdialogNo: "Hayır, gönderme",
+    kdialogYes: "Evet, gönder",
+    zenityYes: "Evet",
+    zenityNo: "Hayır",
+    noDesktop: "masaüstü oturumu yok (DISPLAY/WAYLAND_DISPLAY boş)",
+    genericError: "hata",
+    notFoundLocal: "onay komutu bulunamadı",
+    notFoundChain: "onay penceresi, kdialog ve zenity bulunamadı",
+  },
+  {
+    title: "midas-mcp order approval",
+    titleAccount: (label) => `Account: ${label}`,
+    commandMissing: "command not found",
+    cannotStart: (message) => `couldn't start: ${message}`,
+    signal: (name) => `signal ${name}`,
+    exitCode: (code) => `exit code ${code}`,
+    notOpenedInTime: "window didn't open in time",
+    onayWindow: "approval window",
+    kdialogUnexpected: (choice) => `kdialog returned an unexpected choice: ${choice || "empty"}`,
+    kdialogHint: `To approve, select "Yes, send" and press OK.`,
+    kdialogNo: "No, don't send",
+    kdialogYes: "Yes, send",
+    zenityYes: "Yes",
+    zenityNo: "No",
+    noDesktop: "no desktop session (DISPLAY and WAYLAND_DISPLAY are empty)",
+    genericError: "error",
+    notFoundLocal: "approval command not found",
+    notFoundChain: "couldn't find the approval window, kdialog or zenity",
+  }
+);
+
+/** Onay penceresinin başlığı; birden çok hesapta hesap adı da görünür. */
+export function dialogTitle(accountLabel: string | null = null, lang: Lang = language()): string {
+  const text = M(lang);
+  return accountLabel ? `${text.title} — ${text.titleAccount(accountLabel)}` : text.title;
+}
 const TIMEOUT_MS = CONFIRMATION_TIMEOUT_SECONDS * 1000;
 const CLOSE_TIMEOUT_MS = 15_000;
 
@@ -153,12 +201,12 @@ function tail(text: string, max = 300): string {
 
 function spawnFailure(result: ProcessResult): DialogAttempt | null {
   if (!result.spawnError) return null;
-  if (result.spawnError.code === "ENOENT") return { outcome: "missing", shown: false, detail: "komut bulunamadı" };
-  return { outcome: "error", shown: false, detail: `başlatılamadı: ${result.spawnError.message}` };
+  if (result.spawnError.code === "ENOENT") return { outcome: "missing", shown: false, detail: M().commandMissing };
+  return { outcome: "error", shown: false, detail: M().cannotStart(result.spawnError.message) };
 }
 
 function exitDescription(result: ProcessResult): string {
-  return result.signal ? `sinyal ${result.signal}` : `çıkış kodu ${result.code}`;
+  return result.signal ? M().signal(result.signal) : M().exitCode(result.code);
 }
 
 /**
@@ -175,7 +223,7 @@ export function interpretOnay(result: ProcessResult): DialogAttempt {
   if (result.timedOut) {
     return shown
       ? { outcome: "timeout", shown }
-      : { outcome: "error", shown, detail: "pencere zamanında açılmadı" };
+      : { outcome: "error", shown, detail: M().notOpenedInTime };
   }
   if (result.code === 0 && verdict === "evet" && shown) return { outcome: "approved", shown };
   if (result.code === 1 && verdict === "hayir" && shown) return { outcome: "rejected", shown };
@@ -184,7 +232,7 @@ export function interpretOnay(result: ProcessResult): DialogAttempt {
   return {
     outcome: "error",
     shown,
-    detail: `onay penceresi ${exitDescription(result)}${reason ? `: ${reason}` : ""}`,
+    detail: `${M().onayWindow} ${exitDescription(result)}${reason ? `: ${reason}` : ""}`,
   };
 }
 
@@ -201,7 +249,7 @@ export function interpretKdialog(result: ProcessResult): DialogAttempt {
   const choice = result.stdout.trim();
   if (result.code === 0 && choice === "evet") return { outcome: "approved", shown: true };
   if (result.code === 0 && choice === "hayir") return { outcome: "rejected", shown: true };
-  if (result.code === 0) return { outcome: "error", shown: true, detail: `kdialog beklenmeyen seçim döndü: ${tail(choice, 60) || "boş"}` };
+  if (result.code === 0) return { outcome: "error", shown: true, detail: M().kdialogUnexpected(tail(choice, 60)) };
   if (result.code === 1 && KDIALOG_USAGE_ERROR.test(result.stderr)) {
     // Geçersiz bayrak: pencere hiç açılmadı; bu kullanıcı reddi değildir.
     return { outcome: "error", shown: false, detail: `kdialog ${tail(result.stderr)}` };
@@ -220,28 +268,30 @@ export function interpretZenity(result: ProcessResult): DialogAttempt {
   return { outcome: "error", shown: false, detail: `zenity ${exitDescription(result)}${result.stderr ? `: ${tail(result.stderr)}` : ""}` };
 }
 
-export function kdialogArgs(message: string, title = TITLE): string[] {
+export function kdialogArgs(message: string, title = dialogTitle(), lang: Lang = language()): string[] {
+  const text = M(lang);
   return [
     "--title",
     title,
     "--default",
     "hayir",
     "--menu",
-    `${message}\n\nOnay için "Evet, gönder" satırını seçip Tamam'a basın.`,
+    `${message}\n\n${text.kdialogHint}`,
     "hayir",
-    "Hayır, gönderme",
+    text.kdialogNo,
     "evet",
-    "Evet, gönder",
+    text.kdialogYes,
   ];
 }
 
-export function zenityArgs(message: string, title = TITLE): string[] {
+export function zenityArgs(message: string, title = dialogTitle(), lang: Lang = language()): string[] {
+  const text = M(lang);
   return [
     "--question",
     `--title=${title}`,
     `--text=${message}`,
-    "--ok-label=Evet",
-    "--cancel-label=Hayır",
+    `--ok-label=${text.zenityYes}`,
+    `--cancel-label=${text.zenityNo}`,
     "--default-cancel",
     `--timeout=${CONFIRMATION_TIMEOUT_SECONDS}`,
     "--no-wrap",
@@ -254,7 +304,6 @@ export function createDesktopConfirmationGate(
   options: GateOptions
 ) {
   const accountLabel = parseAccountLabel(environment.MIDAS_ACCOUNT_LABEL);
-  const title = accountLabel ? `${TITLE} — Hesap: ${accountLabel}` : TITLE;
   // Geçersiz komut ayarı sessizce yok sayılmaz: her onay isteği hata (yine ret) döner.
   let commands: Record<"local" | "localClose" | "remote" | "remoteClose", string[] | null>;
   let settingError: string | null = null;
@@ -275,23 +324,26 @@ export function createDesktopConfirmationGate(
   const raw = async (preview: ApprovalPreview): Promise<ConfirmationOutcome> => {
     if (settingError) return { decision: "error", dialog: null, detail: settingError, attempts: [] };
     if (!commands.local && !environment.DISPLAY && !environment.WAYLAND_DISPLAY) {
-      return { decision: "unavailable", dialog: null, detail: "masaüstü oturumu yok (DISPLAY/WAYLAND_DISPLAY boş)", attempts: [] };
+      return { decision: "unavailable", dialog: null, detail: M().noDesktop, attempts: [] };
     }
-    const message = formatApprovalMessage(preview, accountLabel);
+    // Dil her onayda okunur; pencereye modelle (stdin) gider, pencere kendisi seçmez.
+    const lang = language();
+    const title = dialogTitle(accountLabel, lang);
+    const message = formatApprovalMessage(preview, accountLabel, lang);
     const chain: Array<{ spec: DialogSpec; interpret: (result: ProcessResult) => DialogAttempt }> = [
       {
         spec: {
           tool: "onay",
           command: options.pythonPath,
           args: [options.onayScript],
-          stdin: JSON.stringify(buildDialogModel(preview, accountLabel)),
+          stdin: JSON.stringify(buildDialogModel(preview, accountLabel, lang)),
           // Pencere kendi 120 sn sayacını tutar; bu süre yalnızca asılmaya karşı yedek.
           timeoutMs: TIMEOUT_MS + 15_000,
         },
         interpret: interpretOnay,
       },
-      { spec: { tool: "kdialog", command: "kdialog", args: kdialogArgs(message, title), timeoutMs: TIMEOUT_MS }, interpret: interpretKdialog },
-      { spec: { tool: "zenity", command: "zenity", args: zenityArgs(message, title), timeoutMs: TIMEOUT_MS + 5_000 }, interpret: interpretZenity },
+      { spec: { tool: "kdialog", command: "kdialog", args: kdialogArgs(message, title, lang), timeoutMs: TIMEOUT_MS }, interpret: interpretKdialog },
+      { spec: { tool: "zenity", command: "zenity", args: zenityArgs(message, title, lang), timeoutMs: TIMEOUT_MS + 5_000 }, interpret: interpretZenity },
     ];
 
     if (commands.local) {
@@ -340,12 +392,12 @@ export function createDesktopConfirmationGate(
       return {
         decision: "error",
         dialog: null,
-        detail: errors.map((item) => `${item.tool}: ${item.detail ?? "hata"}`).join("; "),
+        detail: errors.map((item) => `${item.tool}: ${item.detail ?? M(lang).genericError}`).join("; "),
         attempts,
       };
     }
-    const tried = commands.local ? "onay komutu" : "onay penceresi, kdialog ve zenity";
-    return { decision: "unavailable", dialog: null, detail: `${tried} bulunamadı`, attempts };
+    const detail = commands.local ? M(lang).notFoundLocal : M(lang).notFoundChain;
+    return { decision: "unavailable", dialog: null, detail, attempts };
   };
 
   return createConfirmationQueue(raw);

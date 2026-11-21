@@ -1,3 +1,5 @@
+import { defineMessages } from "./i18n.js";
+
 export type ConfirmationDecision = "approved" | "rejected" | "timeout" | "unavailable" | "error";
 
 export interface ApprovalPreview {
@@ -56,19 +58,45 @@ function normalizeOutcome(value: ConfirmationDecision | ConfirmationOutcome): Co
   return typeof value === "string" ? { decision: value } : value;
 }
 
+const M = defineMessages(
+  {
+    where: (dialog: string) => ` (pencere: ${dialog})`,
+    rejected: (where: string) => `İşlem gönderilmedi: onay penceresinde Hayır seçildi${where}.`,
+    timeout: (where: string) => `İşlem gönderilmedi: onay penceresi 120 sn içinde cevaplanmadı${where}.`,
+    unavailable: (detail: string | undefined) =>
+      `İşlem gönderilmedi: onay penceresi açılamadı: ${detail ?? "masaüstü oturumu ya da pencere aracı yok"}.`,
+    error: (detail: string | undefined, where: string) =>
+      `İşlem gönderilmedi: onay penceresi açılamadı: ${detail ?? "bilinmeyen hata"}${where}.`,
+    other: (decision: string) => `İşlem gönderilmedi: masaüstü onayı ${decision}.`,
+    changed: (reason: string | undefined) =>
+      `Onaydan sonra işlem koşulları değişti; işlem gönderilmedi${reason ? `: ${reason}` : "."}`,
+  },
+  {
+    where: (dialog) => ` (window: ${dialog})`,
+    rejected: (where) => `Order not sent: No was chosen in the approval window${where}.`,
+    timeout: (where) => `Order not sent: the approval window got no answer within 120 seconds${where}.`,
+    unavailable: (detail) =>
+      `Order not sent: the approval window couldn't open: ${detail ?? "no desktop session or dialog tool"}.`,
+    error: (detail, where) => `Order not sent: the approval window couldn't open: ${detail ?? "unknown error"}${where}.`,
+    other: (decision) => `Order not sent: desktop approval returned ${decision}.`,
+    changed: (reason) => `Order not sent: conditions changed after approval${reason ? `: ${reason}` : "."}`,
+  }
+);
+
 export function denialMessage(outcome: ConfirmationOutcome): string {
-  const where = outcome.dialog ? ` (pencere: ${outcome.dialog})` : "";
+  const text = M();
+  const where = outcome.dialog ? text.where(outcome.dialog) : "";
   switch (outcome.decision) {
     case "rejected":
-      return `İşlem gönderilmedi: onay penceresinde Hayır seçildi${where}.`;
+      return text.rejected(where);
     case "timeout":
-      return `İşlem gönderilmedi: onay penceresi 120 sn içinde cevaplanmadı${where}.`;
+      return text.timeout(where);
     case "unavailable":
-      return `İşlem gönderilmedi: onay penceresi açılamadı: ${outcome.detail ?? "masaüstü oturumu ya da pencere aracı yok"}.`;
+      return text.unavailable(outcome.detail);
     case "error":
-      return `İşlem gönderilmedi: onay penceresi açılamadı: ${outcome.detail ?? "bilinmeyen hata"}${where}.`;
+      return text.error(outcome.detail, where);
     default:
-      return `İşlem gönderilmedi: masaüstü onayı ${outcome.decision}.`;
+      return text.other(outcome.decision);
   }
 }
 
@@ -140,9 +168,7 @@ export async function executeWithApproval<T>({
       details: validation,
     });
     if (!validation.ok) {
-      throw new ApprovalDeniedError(
-        `Onaydan sonra işlem koşulları değişti; işlem gönderilmedi${validation.reason ? `: ${validation.reason}` : "."}`
-      );
+      throw new ApprovalDeniedError(M().changed(validation.reason));
     }
   }
 

@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html) in the 0.x range.
 See [RELEASES.md](RELEASES.md) for what each number promises and which versions get fixes.
 
-## [0.4.0] - Unreleased
+## [0.4.0] - 2026-11-21
 
 Several accounts side by side, optional approval on another machine, and a quieter browser.
 No setting has to change: without the new variables the server behaves like 0.3.0, except
@@ -95,5 +95,5 @@ desktop.
 - The TEFAS fund buy tool, because Midas Atlas does not offer fund buying.
 - Screening and backtest scripts the server did not use.
 
-[0.4.0]: https://github.com/YakupEmreYerli/mcp-midas/compare/v0.3.0...HEAD
+[0.4.0]: https://github.com/YakupEmreYerli/mcp-midas/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/YakupEmreYerli/mcp-midas/releases/tag/v0.3.0

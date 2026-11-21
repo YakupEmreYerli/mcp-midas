@@ -1,6 +1,6 @@
 {
   "name": "mcp-midas",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Midas aracı kurumunun Atlas web uygulaması için resmî olmayan MCP sunucusu (Playwright ile)",
   "author": "Yakup Emre Yerli",
   "license": "MIT",

@@ -1,8 +1,6 @@
 <h1>
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/yazi-koyu.svg">
-    <img src="docs/brand/yazi-acik.svg" alt="midas-mcp" height="40">
-  </picture>
+  <img src="docs/brand/yazi-acik.svg#gh-light-mode-only" alt="midas-mcp" height="40">
+  <img src="docs/brand/yazi-koyu.svg#gh-dark-mode-only" alt="midas-mcp" height="40">
 </h1>
 
 [![CI](https://github.com/YakupEmreYerli/mcp-midas/actions/workflows/ci.yml/badge.svg)](https://github.com/YakupEmreYerli/mcp-midas/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-4959EA)](LICENSE) [![Node.js 20+](https://img.shields.io/badge/Node.js-20%2B-0A0D2A?logo=nodedotjs&logoColor=22D67E)](https://nodejs.org) [![Orders: off by default](https://img.shields.io/badge/orders-off%20by%20default-F4C24D)](#turning-on-order-tools) [![Midas: unofficial](https://img.shields.io/badge/Midas-unofficial-8E95C8)](#unofficial)

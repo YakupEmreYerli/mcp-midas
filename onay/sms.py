@@ -8,8 +8,9 @@ gömülü Geist / Geist Mono, çerçevesiz pencere, künye şeridi ve geri sayı
 
 Girdi (isteğe bağlı, stdin JSON): {"hesapEtiketi": "...", "sureSn": 480, "dil": "tr"}. Seçenekler:
 --tema acik|koyu, --sure <sn>, --hesap <etiket> (stdin'deki değer önce gelir; ikisi de yoksa
-MIDAS_ACCOUNT_LABEL), --dil tr|en (stdin'deki `dil` önce gelir; ikisi de yoksa Türkçe). Pencere
-dili kendisi seçmez: ssh ile açılan uzak pencere de sunucunun dilinde açılır.
+MIDAS_ACCOUNT_LABEL), --dil tr|en. Dil: stdin'deki `dil` (sunucu onu yalnız `MIDAS_LANG` açıkça
+verilmişse gönderir), sonra --dil, ikisi de yoksa pencerenin açıldığı cihazın dili (dil.py). Böylece
+ssh ile başka bir makinede açılan pencere o makinenin dilinde açılır.
 
 Çıkış protokolü:
     stdout: yalnız kod (4-8 rakam) ve satır sonu   çıkış kodu 0
@@ -33,6 +34,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+import dil  # noqa: E402
 from onay import APP_ID, FONTS, KWIN_SCRIPT, LOGO, WIDTH, embed_json  # noqa: E402
 
 DEFAULT_SECONDS = 480  # src/session.ts: SMS kodu için 8 dakika
@@ -147,14 +149,21 @@ def clean_label(value: object) -> str | None:
     return label[:40]
 
 
-def main() -> None:
+def choose_language(data: dict, cli_lang: str | None, locale_files=dil.LOCALE_FILES) -> str:
+    """stdin'deki `dil`, sonra --dil, sonra cihazın dili. `locale_files` yalnız testler için verilir."""
+    if data.get("dil") in METIN:
+        return data["dil"]
+    if cli_lang in METIN:
+        return cli_lang
+    return dil.device_language(locale_files=locale_files)
+
+
+def main(locale_files=dil.LOCALE_FILES) -> None:
     global _lang
     try:
         options = parse_args(sys.argv[1:])
         data = read_input()
-        lang = data.get("dil") if data.get("dil") in METIN else options["dil"]
-        if lang in METIN:
-            _lang = lang
+        _lang = choose_language(data, options["dil"], locale_files)
         label = clean_label(data.get("hesapEtiketi")) or clean_label(options["hesap"]) or clean_label(
             os.environ.get("MIDAS_ACCOUNT_LABEL")
         )

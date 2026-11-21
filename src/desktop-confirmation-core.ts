@@ -1,4 +1,4 @@
-import { buildDialogModel, CONFIRMATION_TIMEOUT_SECONDS, formatApprovalMessage } from "./confirmation-view.js";
+import { buildWindowModel, CONFIRMATION_TIMEOUT_SECONDS, formatApprovalMessage } from "./confirmation-view.js";
 import {
   createConfirmationQueue,
   type ApprovalPreview,
@@ -7,7 +7,7 @@ import {
 } from "./order-approval.js";
 import { parseAccountLabel } from "./instance.js";
 import { parseCommandSetting } from "./command-setting.js";
-import { defineMessages, language, type Lang } from "./i18n.js";
+import { defineMessages, forcedLanguage, language, type Lang } from "./i18n.js";
 
 // Onay zinciri: tasarımlı pencere (onay/onay.py) → kdialog → zenity → "unavailable".
 // Bir sonraki araca yalnızca önceki araç HİÇ açılamadıysa geçilir; kullanıcının
@@ -326,7 +326,9 @@ export function createDesktopConfirmationGate(
     if (!commands.local && !environment.DISPLAY && !environment.WAYLAND_DISPLAY) {
       return { decision: "unavailable", dialog: null, detail: M().noDesktop, attempts: [] };
     }
-    // Dil her onayda okunur; pencereye modelle (stdin) gider, pencere kendisi seçmez.
+    // Dil her onayda okunur. kdialog/zenity sunucuda açılır, sunucunun dilindedir. Tasarımlı pencere
+    // başka bir makinede de açılabilir: MIDAS_LANG verilmemişse model iki dili taşır ve pencere
+    // kendi cihazının dilini seçer.
     const lang = language();
     const title = dialogTitle(accountLabel, lang);
     const message = formatApprovalMessage(preview, accountLabel, lang);
@@ -336,7 +338,7 @@ export function createDesktopConfirmationGate(
           tool: "onay",
           command: options.pythonPath,
           args: [options.onayScript],
-          stdin: JSON.stringify(buildDialogModel(preview, accountLabel, lang)),
+          stdin: JSON.stringify(buildWindowModel(preview, accountLabel, forcedLanguage())),
           // Pencere kendi 120 sn sayacını tutar; bu süre yalnızca asılmaya karşı yedek.
           timeoutMs: TIMEOUT_MS + 15_000,
         },

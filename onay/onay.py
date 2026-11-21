@@ -24,8 +24,11 @@ Güvenlik:
 - Evet ancak düğme basılı tutulunca gelir; pencere açıldıktan sonraki ilk 0,6 sn'de
   gelen Evet yok sayılır (önceki bir tıklamanın sızması).
 
-Dil: modeldeki `dil` alanı (tr | en); pencere dili kendisi seçmez, böylece ssh ile açılan uzak
-pencere de sunucunun dilinde açılır. `dil` yoksa (eski sunucu) Türkçe.
+Dil: sunucuda `MIDAS_LANG` açıkça verilmişse model `dil` (tr | en) taşır, o geçerlidir. Verilmemişse
+model dile bağlı metinleri `metinler.tr` ve `metinler.en` içinde taşır; pencere kendi cihazının
+dilini bulur (dil.py: LC_ALL → LC_MESSAGES → LANG, boşsa /etc/locale.conf) ve o dilin metinlerini
+kullanır. Böylece ssh ile başka bir makinede açılan pencere o makinenin dilinde açılır. Ne `dil`
+ne `metinler` taşıyan eski model, eskisi gibi Türkçe çizilir.
 """
 
 from __future__ import annotations
@@ -39,6 +42,10 @@ import time
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+if str(HERE) not in sys.path:
+    sys.path.insert(0, str(HERE))  # python -I ile çalıştırılsa da dil.py bulunsun
+
+import dil  # noqa: E402
 MAX_SECONDS = 120
 MIN_SECONDS_BEFORE_YES = 0.6
 PANEL_WIDTH = 560
@@ -86,7 +93,7 @@ _lang = "tr"
 
 
 def set_language(value: object) -> str:
-    """Geçerli bir dil verilmişse seçer; yoksa (eski sunucu) Türkçe kalır."""
+    """Geçerli bir dil verilmişse seçer; değilse dil değişmez."""
     global _lang
     if value in METIN:
         _lang = str(value)
@@ -166,7 +173,7 @@ def parse_args(argv: list[str]) -> tuple[str | None, int, str | None]:
                 raise ValueError(t("tema"))
             theme = value
         elif flag == "--dil" and rest:
-            # Yalnız deneme ve önizleme görüntüsü için; sunucu dili modelle (stdin) verir.
+            # Yalnız deneme ve önizleme görüntüsü için; modeldeki `dil`in ve cihaz dilinin önüne geçer.
             lang = rest.pop(0)
             if lang not in METIN:
                 raise ValueError(t("dil"))
@@ -183,11 +190,41 @@ def read_model() -> dict:
     if not raw.strip():
         raise ValueError(t("veri_yok"))
     model = json.loads(raw)
-    if isinstance(model, dict):
-        set_language(model.get("dil"))
     if not isinstance(model, dict) or model.get("islem") not in ("ALIŞ", "SATIŞ", "İPTAL", "DEĞİŞTİR"):
         raise ValueError(t("veri_gecersiz"))
     return model
+
+
+# İki dilli modelde `metinler.<dil>` içinden alınan alanlar (src/confirmation-view.ts: LOCALIZED_FIELDS).
+# Yalnız bunlar alınır; işlem, yön, süre gibi yapısal alanlar dilden bağımsız ve tektir.
+LOCALIZED_FIELDS = ("islemYazi", "ozet", "yonYazi", "emirTipi", "satirlar", "tutar", "degisiklikler", "soru", "evet", "hayir")
+
+
+def choose_language(model: dict, cli_lang: str | None, locale_files=dil.LOCALE_FILES) -> str:
+    """--dil, sonra modeldeki `dil` (sunucuda MIDAS_LANG), sonra iki dilli modelde cihazın dili.
+
+    Ne `dil` ne `metinler` taşıyan eski model Türkçedir. `locale_files` yalnız testler için verilir.
+    """
+    if cli_lang in METIN:
+        return cli_lang
+    if model.get("dil") in METIN:
+        return model["dil"]
+    if "metinler" in model:
+        return dil.device_language(locale_files=locale_files)
+    return "tr"
+
+
+def localize(model: dict, lang: str) -> dict:
+    """İki dilli modelden seçilen dilin metinlerini düz alanlara yazar; sayfa tek dilli model görür."""
+    flat = dict(model)
+    texts = flat.pop("metinler", None)
+    if texts is not None:
+        chosen = texts.get(lang) if isinstance(texts, dict) else None
+        if not isinstance(chosen, dict):
+            raise ValueError(t("veri_gecersiz"))
+        flat.update({key: chosen[key] for key in LOCALIZED_FIELDS if key in chosen})
+    flat["dil"] = lang  # sayfa (onay.js) da aynı dili kullansın
+    return flat
 
 
 def embed_json(model: dict) -> str:
@@ -197,13 +234,11 @@ def embed_json(model: dict) -> str:
         .replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
 
 
-def main() -> None:
+def main(locale_files=dil.LOCALE_FILES) -> None:
     try:
         theme, seconds, lang = parse_args(sys.argv[1:])
         model = read_model()
-        if lang:
-            set_language(lang)
-        model["dil"] = _lang  # sayfa (onay.js) da aynı dili kullansın
+        model = localize(model, set_language(choose_language(model, lang, locale_files)))
         template = (HERE / "onay.html").read_text(encoding="utf-8")
         css = (HERE / "onay.css").read_text(encoding="utf-8")
         script = (HERE / "onay.js").read_text(encoding="utf-8")

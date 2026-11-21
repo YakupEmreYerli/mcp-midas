@@ -147,6 +147,36 @@ test("tasarımlı pencere önizlemeyi argv yerine stdin'den alır", async () => 
   assert.equal(JSON.parse(calls[0].stdin ?? "{}").sembol, "ASELS");
 });
 
+test("MIDAS_LANG yoksa pencere modeli iki dili taşır ve dil zorlamaz; kdialog/zenity sunucunun dilinde kalır", async () => {
+  const saved = process.env.MIDAS_LANG;
+  delete process.env.MIDAS_LANG;
+  const savedLang = process.env.LANG;
+  process.env.LANG = "en_US.UTF-8";
+  try {
+    const { calls, run } = scripted({ onay: result({ code: 2, stdout: "SONUC hata yok\n" }), kdialog: result({ code: 1 }) });
+    await createDesktopConfirmationGate(run, { DISPLAY: ":0" }, options)(preview);
+    const model = JSON.parse(calls[0].stdin ?? "{}");
+    assert.equal("dil" in model, false);
+    assert.equal(model.metinler.tr.soru, "Bu değişiklik Midas'a gönderilsin mi?");
+    assert.equal(model.metinler.en.soru, "Send this change to Midas?");
+    const kdialog = calls.find((call) => call.tool === "kdialog");
+    assert.ok(kdialog?.args.join(" ").includes("Send this change to Midas?"), "yedek pencere sunucunun dilinde");
+  } finally {
+    process.env.MIDAS_LANG = saved;
+    if (savedLang === undefined) delete process.env.LANG;
+    else process.env.LANG = savedLang;
+  }
+});
+
+test("MIDAS_LANG verilmişse pencere modeli o dilde, tek dilli ve dil alanıyla gider", async () => {
+  const { calls, run } = scripted({ onay: result({ code: 1, stdout: "ACILDI\nSONUC hayir\n" }) });
+  await createDesktopConfirmationGate(run, { DISPLAY: ":0" }, options)(preview);
+  const model = JSON.parse(calls[0].stdin ?? "{}");
+  assert.equal(model.dil, "tr");
+  assert.equal("metinler" in model, false);
+  assert.equal(model.soru, "Bu değişiklik Midas'a gönderilsin mi?");
+});
+
 test("tasarımlı pencere açılamazsa kdialog'a düşer", async () => {
   const { calls, run } = scripted({
     onay: result({ code: 1, stderr: "ModuleNotFoundError: PySide6" }),

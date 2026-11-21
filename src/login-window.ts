@@ -81,12 +81,13 @@ export function resolveSmsCodeCommand(
 
 /**
  * SMS kodunu soran komutu çalıştırır (`MIDAS_SMS_CODE_COMMAND`). Komuta stdin'den JSON verilir
- * (`hesapEtiketi`, `sureSn`, `dil`); komut kodu stdout'a yazıp 0 ile çıkar. İptal, hata, zaman aşımı
+ * (`hesapEtiketi`, `sureSn`; `dil` yalnız `MIDAS_LANG` açıkça verilmişse, yoksa pencere kendi
+ * cihazının dilini bulur); komut kodu stdout'a yazıp 0 ile çıkar. İptal, hata, zaman aşımı
  * ya da kod olmayan çıktı null döner. Kod hiçbir yere yazılmaz; çağıran yalnız sayfaya yazar.
  */
 export function askSmsCode(
   command: string[],
-  input: { hesapEtiketi: string | null; sureSn: number; dil: Lang },
+  input: { hesapEtiketi: string | null; sureSn: number; dil?: Lang | null },
   timeoutMs: number
 ): Promise<string | null> {
   return new Promise((resolve) => {
@@ -94,7 +95,8 @@ export function askSmsCode(
       resolve(error ? null : extractSmsCode(String(stdout)))
     );
     child.stdin?.on("error", () => undefined);
-    child.stdin?.end(JSON.stringify(input));
+    const { dil, ...rest } = input;
+    child.stdin?.end(JSON.stringify(dil ? { ...rest, dil } : rest));
   });
 }
 

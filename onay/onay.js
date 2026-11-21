@@ -5,7 +5,8 @@
 // innerHTML kullanılmaz.
 
 (function () {
-  // Sayfanın sabit metinleri. Dili sunucu modelle verir (veri.dil); sayfa dili kendisi seçmez.
+  // Sayfanın sabit metinleri. Dili onay.py seçer ve modele yazar (veri.dil): sunucunun MIDAS_LANG'i
+  // ya da pencerenin açıldığı cihazın dili. Sayfa dili kendisi bulmaz.
   // İki dil aynı anahtarları taşır (test/i18n.test.ts denetler). METIN-BAŞI
   const METIN = {
     tr: {
@@ -68,7 +69,7 @@
   const metin = (id, deger) => { $(id).textContent = deger == null ? "" : String(deger); };
 
   // ---------- Dil ----------
-  const M = METIN[veri.dil] || METIN.tr; // dil yoksa (eski sunucu) Türkçe
+  const M = METIN[veri.dil] || METIN.tr; // onay.py her zaman yazar; yoksa Türkçe
   for (const el of document.querySelectorAll("[data-metin]")) el.textContent = M[el.dataset.metin];
   for (const el of document.querySelectorAll("[data-metin-etiket]")) {
     el.setAttribute("aria-label", M[el.dataset.metinEtiket]);

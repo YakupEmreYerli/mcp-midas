@@ -89,6 +89,12 @@ test("SMS kodu komutu stdin'den hesap etiketini ve süreyi alır, kodu stdout'ta
   assert.equal(await askSmsCode([node, "-e", script], { hesapEtiketi: "child", sureSn: 60 }, 10_000), "654321");
 });
 
+test("SMS kodu komutuna dil yalnız verilmişse (MIDAS_LANG) gider; yoksa pencere cihazın dilini bulur", async () => {
+  const script = 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const v=JSON.parse(s);process.stdout.write("dil" in v?(v.dil==="en"?"222222":"333333"):"111111")})';
+  assert.equal(await askSmsCode([node, "-e", script], { hesapEtiketi: null, sureSn: 60, dil: null }, 10_000), "111111");
+  assert.equal(await askSmsCode([node, "-e", script], { hesapEtiketi: null, sureSn: 60, dil: "en" }, 10_000), "222222");
+});
+
 test("SMS kodu komutu iptal ederse, hata verirse ya da kod yazmazsa null döner", async () => {
   assert.equal(await askSmsCode([node, "-e", "process.exit(1)"], { hesapEtiketi: null, sureSn: 60 }, 10_000), null);
   assert.equal(await askSmsCode([node, "-e", 'process.stdout.write("123456");process.exit(2)'], { hesapEtiketi: null, sureSn: 60 }, 10_000), null);

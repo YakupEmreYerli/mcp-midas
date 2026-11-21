@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { chromium, type BrowserContext, type Page } from "playwright";
 import { config } from "./config.js";
 import { describeAuthExpiry, type AuthExpiry } from "./auth-expiry.js";
-import { defineMessages, language } from "./i18n.js";
+import { defineMessages, forcedLanguage } from "./i18n.js";
 import {
   askSmsCode,
   hiddenLaunchArgs,
@@ -590,7 +590,7 @@ export class MidasSession {
     const command = resolveSmsCodeCommand(config.smsCodeCommand, process.env, SMS_WINDOW);
     if (!command) return false;
     const timeoutMs = Math.max(10_000, giveUpAt - Date.now() - 30_000);
-    const code = await askSmsCode(command, { hesapEtiketi: config.accountLabel, sureSn: Math.floor(timeoutMs / 1000) - 5, dil: language() }, timeoutMs);
+    const code = await askSmsCode(command, { hesapEtiketi: config.accountLabel, sureSn: Math.floor(timeoutMs / 1000) - 5, dil: forcedLanguage() }, timeoutMs);
     if (!code) {
       console.error(M().smsCommandLog);
       return false;

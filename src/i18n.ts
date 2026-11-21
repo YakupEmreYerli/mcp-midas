@@ -22,6 +22,16 @@ export function resolveLanguage(env: Record<string, string | undefined> = proces
   return locale.startsWith("tr") ? "tr" : "en";
 }
 
+/**
+ * Operatörün `MIDAS_LANG` ile açıkça seçtiği dil; verilmemiş ya da geçersizse null. Onay ve SMS
+ * pencereleri bu dili yalnız açıkça seçilmişse alır; yoksa her pencere kendi cihazının dilini bulur
+ * (`onay/dil.py`), çünkü pencere sunucudan başka bir makinede açılabilir.
+ */
+export function forcedLanguage(env: Record<string, string | undefined> = process.env): Lang | null {
+  const explicit = env.MIDAS_LANG?.trim().toLowerCase();
+  return explicit === "tr" || explicit === "en" ? explicit : null;
+}
+
 /** Şu anki dil; `MIDAS_LANG` geçersizse İngilizce (hata, yapılandırma doğrulamasında görünür). */
 export function language(): Lang {
   try {

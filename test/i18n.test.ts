@@ -1,11 +1,13 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { LANGUAGES, language, messageTables, resolveLanguage } from "../src/i18n.js";
-import { buildDialogModel, formatApprovalMessage } from "../src/confirmation-view.js";
+import { forcedLanguage, LANGUAGES, language, messageTables, resolveLanguage } from "../src/i18n.js";
+import { buildDialogModel, buildWindowModel, formatApprovalMessage, LOCALIZED_FIELDS } from "../src/confirmation-view.js";
 import type { ApprovalPreview } from "../src/order-approval.js";
 
 // Araç listesi için tarayıcı açılmaz; boş değer yerel .env'nin bayrağı açmasını engeller.
@@ -46,6 +48,14 @@ test("geçersiz MIDAS_LANG çalışma anında İngilizceye düşer (açılışta
     if (saved === undefined) delete process.env.MIDAS_LANG;
     else process.env.MIDAS_LANG = saved;
   }
+});
+
+test("pencerelere dil yalnız MIDAS_LANG açıkça verilmişse zorlanır; yerel ve geçersiz değer zorlamaz", () => {
+  assert.equal(forcedLanguage({ MIDAS_LANG: "en", LANG: "tr_TR.UTF-8" }), "en");
+  assert.equal(forcedLanguage({ MIDAS_LANG: " TR " }), "tr");
+  assert.equal(forcedLanguage({ LANG: "tr_TR.UTF-8" }), null);
+  assert.equal(forcedLanguage({ MIDAS_LANG: "" }), null);
+  assert.equal(forcedLanguage({ MIDAS_LANG: "de" }), null);
 });
 
 // ---------- Tabloların iki dilde aynı anahtarları taşıması ----------
@@ -130,6 +140,85 @@ test("Python pencerelerinin (onay.py, sms.py) metin tablosu iki dilde aynı anah
   }
 });
 
+// ---------- Pencerenin cihaz dili (onay/dil.py) ----------
+
+function runPython(code: string, ...args: string[]): unknown {
+  const out = execFileSync(python!, [
+    "-I",
+    "-c",
+    "import json, sys; sys.path.insert(0, sys.argv[1]); " + code,
+    new URL("../onay", import.meta.url).pathname,
+    ...args,
+  ]).toString();
+  return JSON.parse(out);
+}
+
+test("pencere cihaz dilini LC_ALL → LC_MESSAGES → LANG, sonra yerel dosyalardan bulur", { skip: !python }, () => {
+  const dir = mkdtempSync(join(tmpdir(), "midas-dil-"));
+  try {
+    const conf = join(dir, "locale.conf");
+    const debian = join(dir, "default-locale");
+    const none = join(dir, "yok");
+    writeFileSync(conf, '# yorum\nLC_TIME=en_US.UTF-8\nLANG="tr_TR.UTF-8"\n');
+    writeFileSync(debian, "LANG=en_GB.UTF-8\n");
+    const cases: Array<[Record<string, string>, string[], string, string]> = [
+      [{ LC_ALL: "en_US.UTF-8", LC_MESSAGES: "tr_TR.UTF-8", LANG: "tr_TR.UTF-8" }, [conf], "en", "LC_ALL önce"],
+      [{ LC_MESSAGES: "tr_TR.UTF-8", LANG: "en_US.UTF-8" }, [], "tr", "sonra LC_MESSAGES"],
+      [{ LC_ALL: " ", LANG: "tr_TR.UTF-8" }, [], "tr", "boş değer atlanır"],
+      [{ LANG: "C" }, [conf], "en", "ortamda değer varsa dosyaya bakılmaz"],
+      [{}, [conf, debian], "tr", "ortam boşsa locale.conf"],
+      [{}, [none, debian], "en", "locale.conf yoksa /etc/default/locale"],
+      [{ LANG: "" }, [none, conf], "tr", "ikinci dosya da okunur"],
+      [{}, [none], "en", "hiçbiri yoksa İngilizce"],
+    ];
+    const result = runPython(
+      "import dil; cases = json.loads(sys.argv[2]); " +
+        "print(json.dumps([dil.device_language(env, files) for env, files, _, _ in cases]))",
+      JSON.stringify(cases)
+    ) as string[];
+    cases.forEach(([, , expected, why], index) => assert.equal(result[index], expected, why));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("onay.py dili seçer: --dil, modeldeki dil, iki dilli modelde cihaz; eski model Türkçe", { skip: !python }, () => {
+  const dir = mkdtempSync(join(tmpdir(), "midas-dil-"));
+  try {
+    const conf = join(dir, "locale.conf");
+    writeFileSync(conf, "LANG=tr_TR.UTF-8\n");
+    const dual = buildWindowModel(place, null, null);
+    const forced = buildWindowModel(place, null, "en");
+    const { dil: _dil, ...oldNoLang } = buildDialogModel(place, null, "tr");
+    const result = runPython(
+      "import os; [os.environ.pop(k, None) for k in ('LC_ALL', 'LC_MESSAGES', 'LANG')]; import onay, sms; " +
+        "dual, forced, old, conf = json.loads(sys.argv[2]); files = [conf]; " +
+        "pick = lambda m, cli=None: onay.choose_language(m, cli, files); " +
+        "print(json.dumps({" +
+        "'cihaz': pick(dual), 'cihazYok': onay.choose_language(dual, None, []), 'zorla': pick(forced), " +
+        "'cli': pick(forced, 'tr'), 'eski': pick(old), 'alanlar': onay.LOCALIZED_FIELDS, " +
+        "'yapisal': onay.localize({**dual, 'metinler': {'en': {'islem': 'ALIŞ', 'soru': 'x'}}}, 'en')['islem'], " +
+        "'duz': onay.localize(dual, 'en'), 'eskiDuz': onay.localize(old, 'tr'), " +
+        "'sms': [sms.choose_language({}, None, files), sms.choose_language({}, None, []), " +
+        "sms.choose_language({'dil': 'en'}, 'tr', files), sms.choose_language({}, 'en', files)]}))",
+      JSON.stringify([dual, forced, oldNoLang, conf])
+    ) as Record<string, unknown>;
+    assert.equal(result.cihaz, "tr", "ortam boş, locale.conf Türkçe");
+    assert.equal(result.cihazYok, "en");
+    assert.equal(result.zorla, "en", "sunucunun MIDAS_LANG'i cihazdan önce gelir");
+    assert.equal(result.cli, "tr");
+    assert.equal(result.eski, "tr", "dil ve metinler yoksa eskisi gibi Türkçe");
+    assert.deepEqual(result.alanlar, [...LOCALIZED_FIELDS], "onay.py ile confirmation-view.ts aynı alanları taşır");
+    assert.equal(result.yapisal, "SATIŞ", "metinler yapısal alanı değiştiremez");
+    // Seçilen dilin metinleri düz alanlara yazılır; sayfa eski biçimi görür.
+    assert.deepEqual(result.duz, buildDialogModel(place, null, "en"));
+    assert.deepEqual(result.eskiDuz, { ...oldNoLang, dil: "tr" });
+    assert.deepEqual(result.sms, ["tr", "en", "en", "en"]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 // ---------- Onay penceresi modeli iki dilde ----------
 
 const preview: ApprovalPreview = {
@@ -204,6 +293,31 @@ test("pencere modeli Türkçe çizer; aynı önizleme aynı yapıyı verir", () 
     assert.deepEqual(tr[key], en[key], key);
   }
   assert.equal(tr.satirlar.length, en.satirlar.length);
+});
+
+test("dil zorlanmamışsa pencere modeli dile bağlı metinleri iki dilde, yapısal alanları tek taşır", () => {
+  const model = buildWindowModel(place, "personal", null);
+  assert.ok(!("dil" in model));
+  assert.ok("metinler" in model);
+  const tr = buildDialogModel(place, "personal", "tr");
+  const en = buildDialogModel(place, "personal", "en");
+  for (const field of LOCALIZED_FIELDS) {
+    assert.deepEqual(model.metinler.tr[field], tr[field], `tr ${field}`);
+    assert.deepEqual(model.metinler.en[field], en[field], `en ${field}`);
+  }
+  assert.deepEqual(Object.keys(model.metinler).sort(), ["en", "tr"]);
+  // Yapısal alanlar tek; düz metin alanları metinler'i tanımayan eski pencere için Türkçe.
+  const { dil: _dil, ...flatTr } = tr;
+  const { metinler: _metinler, ...flat } = model;
+  assert.deepEqual(flat, flatTr);
+});
+
+test("MIDAS_LANG verilmişse pencere modeli tek dilli ve dil alanını taşır (eski biçim)", () => {
+  for (const lang of LANGUAGES) {
+    const model = buildWindowModel(place, null, lang);
+    assert.deepEqual(model, buildDialogModel(place, null, lang));
+    assert.ok(!("metinler" in model));
+  }
 });
 
 test("kdialog/zenity düz metni İngilizcede Türkçe arayüz sözcüğü taşımaz", () => {

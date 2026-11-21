@@ -3,7 +3,9 @@ import { defineMessages, language, locale, type Lang } from "./i18n.js";
 
 // Onay penceresinin gösterdiği her metin burada, saf fonksiyonlarla kurulur. Pencere
 // (onay/onay.py + onay.html) yalnızca bu modeli textContent ile çizer; HTML üretmez.
-// Pencerenin sabit metinleri (ipucu, sütun başlıkları…) onay.js'teki tablodadır; dili `dil` seçer.
+// Pencerenin sabit metinleri (ipucu, sütun başlıkları…) onay.js'teki tablodadır. Dili pencere
+// seçer (onay/onay.py): `MIDAS_LANG` verilmişse modeldeki `dil`, verilmemişse pencerenin açıldığı
+// cihazın yereli; bu yüzden pencereye giden model (buildWindowModel) dile bağlı metinleri iki dilde taşır.
 
 export type ActionLabel = "ALIŞ" | "SATIŞ" | "İPTAL" | "DEĞİŞTİR";
 export type Tone = "alis" | "tehlike" | "dikkat";
@@ -21,7 +23,7 @@ export interface DialogChange {
 }
 
 export interface DialogModel {
-  /** Pencerenin dili; pencere dili kendisi seçmez (uzak pencere de sunucunun dilinde açılır). */
+  /** Metinlerin dili. Pencereye yalnız `MIDAS_LANG` açıkça verilmişse gider (bkz. buildWindowModel). */
   dil: Lang;
   /** İşlem anahtarı; dilden bağımsızdır (pencere bunu doğrular). Gösterilen bant metni `islemYazi`. */
   islem: ActionLabel;
@@ -48,6 +50,32 @@ export interface DialogModel {
   hayir: string;
   sureSn: number;
 }
+
+/** Dile bağlı alanlar: sunucunun kurduğu metinler ve dile göre biçimlenmiş sayılar. */
+export const LOCALIZED_FIELDS = [
+  "islemYazi",
+  "ozet",
+  "yonYazi",
+  "emirTipi",
+  "satirlar",
+  "tutar",
+  "degisiklikler",
+  "soru",
+  "evet",
+  "hayir",
+] as const;
+
+export type LocalizedTexts = Pick<DialogModel, (typeof LOCALIZED_FIELDS)[number]>;
+
+/**
+ * Pencereye stdin'den giden model. Dil zorlanmışsa `dil` taşıyan tek dilli model; değilse `dil`
+ * yok, dile bağlı alanlar `metinler.tr` ve `metinler.en` içinde, pencere cihazının diline göre
+ * birini seçer. Düz alanlar o zaman Türkçedir: `metinler`i tanımayan eski bir onay.py kopyası
+ * (ör. uzak makinede güncellenmemiş) boş değil, eskisi gibi Türkçe bir pencere çizer.
+ */
+export type WindowModel =
+  | DialogModel
+  | (Omit<DialogModel, "dil"> & { metinler: Record<Lang, LocalizedTexts> });
 
 export const CONFIRMATION_TIMEOUT_SECONDS = 120;
 
@@ -340,6 +368,21 @@ export function buildDialogModel(
     hayir: text.no,
     sureSn: CONFIRMATION_TIMEOUT_SECONDS,
   };
+}
+
+function localizedTexts(model: LocalizedTexts): LocalizedTexts {
+  return Object.fromEntries(LOCALIZED_FIELDS.map((field) => [field, model[field]])) as LocalizedTexts;
+}
+
+export function buildWindowModel(
+  preview: ApprovalPreview,
+  accountLabel: string | null,
+  forced: Lang | null
+): WindowModel {
+  if (forced) return buildDialogModel(preview, accountLabel, forced);
+  const { dil: _tr, ...tr } = buildDialogModel(preview, accountLabel, "tr");
+  const en = buildDialogModel(preview, accountLabel, "en");
+  return { ...tr, metinler: { tr: localizedTexts(tr), en: localizedTexts(en) } };
 }
 
 // kdialog/zenity yedekleri için düz metin; aynı model, ham JSON yok.

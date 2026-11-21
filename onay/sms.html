@@ -39,16 +39,16 @@
       <span class="kod-etiket">SMS kodu</span>
       <input class="kod" id="kod" type="text" inputmode="numeric" autocomplete="one-time-code"
              maxlength="8" spellcheck="false" placeholder="••••••" aria-describedby="kod-not">
-      <span class="kod-not" id="kod-not">Yalnız rakam; Midas kodu genelde 6 hanelidir.</span>
+      <span class="kod-not" id="kod-not">Boşluk ve harfler kendiliğinden atılır.</span>
     </label>
   </section>
 
   <footer class="eylem">
     <div class="dugmeler sms-dugmeler">
       <button type="button" class="iptal" id="iptal">İptal</button>
-      <button type="button" class="gonder" id="gonder" disabled>Gönder</button>
+      <button type="button" class="gonder" id="gonder" disabled>Kodu gönder</button>
     </div>
-    <p class="ipucu">Enter kodu gönderir. Esc, pencereyi kapatmak ya da süre dolması: <strong>İptal</strong>.</p>
+    <p class="ipucu">Enter kodu gönderir. Esc, pencereyi kapatmak ya da süre dolması iptal sayılır.</p>
   </footer>
 </main>
 <script type="application/json" id="veri">__VERI__</script>

@@ -263,7 +263,7 @@ export class MidasSession {
       await this.revealLoginWindow();
       notifyDesktop(
         `${LOGIN_TITLE}: doğrulama gerekiyor`,
-        "Açılan tarayıcı penceresinde doğrulamayı tamamla; ardından telefonundaki bildirimi onayla.",
+        "Açılan pencerede doğrulamayı tamamla, sonra telefonundaki bildirimi onayla.",
         "critical"
       );
       submitted = await this.submitLoginForm(120_000);
@@ -531,7 +531,7 @@ export class MidasSession {
       notifyDesktop(LOGIN_TITLE, "Telefonuna gelen SMS kodunu açılan Midas penceresine yaz.", "critical");
     }
     const what = sms ? "SMS kodu 8 dakika içinde girilmedi." : "Bildirim 3 dakika içinde onaylanmadı.";
-    notifyDesktop(`${LOGIN_TITLE} başarısız`, what, "critical");
+    notifyDesktop(`${LOGIN_TITLE} yapılamadı`, `${what} Sonraki istekte giriş yeniden başlar.`, "critical");
     throw new Error(`Midas girişi zaman aşımına uğradı: ${what}`);
   }
 

@@ -64,7 +64,7 @@ cd mcp-midas
 npm ci
 npx playwright install chromium
 npm run build
-cp .env.example .env   # MIDAS_PHONE, MIDAS_PASSWORD; any secret manager that sets env vars works
+cp .env.example .env   # MIDAS_PHONE, MIDAS_PASSWORD (optional: leave empty to type them in the login window)
 npm run login          # visible browser; approve the push notification on your phone
 claude mcp add midas -- node /absolute/path/mcp-midas/dist/index.js
 ```

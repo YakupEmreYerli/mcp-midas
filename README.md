@@ -86,7 +86,7 @@ cp .env.example .env
 
 ```ini
 MIDAS_PHONE=5XXXXXXXXX      # ülke kodu olmadan cep telefonu
-MIDAS_PASSWORD=sifren
+MIDAS_PASSWORD=sifren       # ikisi de isteğe bağlı; boşsa giriş penceresinde kendin yazarsın
 HEADLESS=true
 MAX_ORDER_VALUE_TRY=10000   # ek tavan; masaüstü onayı her zaman gerekir
 # MIDAS_LOGIN_WINDOW=hidden # giriş tarayıcısı: hidden | visible | headless

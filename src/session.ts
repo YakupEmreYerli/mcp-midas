@@ -50,6 +50,11 @@ const SUBMIT_READY = "button[type=submit]:not([disabled])";
  */
 const CHROME_MAJOR = 151;
 const IS_MAC = process.platform === "darwin";
+
+/** Without MIDAS_PHONE and MIDAS_PASSWORD the login form is left to the user. */
+function hasCredentials(): boolean {
+  return Boolean(config.phone && config.password);
+}
 const DESKTOP_IDENTITY = {
   userAgent: IS_MAC
     ? "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) " +
@@ -189,6 +194,8 @@ export class MidasSession {
    * etkileşimi isterse pencere görünür yapılır ve masaüstü bildirimi gönderilir.
    */
   private async interactiveLogin(mode: LoginWindowMode): Promise<void> {
+    // Without credentials the user signs in by hand, which a headless browser cannot show.
+    if (mode === "headless" && !hasCredentials()) mode = "hidden";
     if (mode === "headless") {
       await this.openBrowser("headless", { fullChromium: true });
       if (!this.onLoginScreen() && (await this.isAuthenticated())) return;
@@ -421,8 +428,9 @@ export class MidasSession {
     const page = this.page!;
     const phoneField = page.locator("#phone").first();
     await phoneField.waitFor({ timeout: 30_000 });
-    if (!config.phone || !config.password) {
+    if (!hasCredentials()) {
       if (this.hiddenWindow) await this.revealLoginWindow();
+      notifyDesktop("Midas girişi", "Açılan Midas penceresinde giriş yap.", "critical");
       return true;
     }
     await phoneField.fill(config.phone);

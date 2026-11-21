@@ -42,6 +42,31 @@ export function parseLoginMethod(value: string | undefined): LoginMethod {
   throw new Error(`MIDAS_LOGIN_METHOD geçersiz: "${value}". Geçerli değerler: push, sms`);
 }
 
+/** SMS kodu (4-8 rakam) komut çıktısında; rakamlar arasındaki boşluk ve tire kabul edilir. Yoksa null. */
+export function extractSmsCode(output: string): string | null {
+  const digits = output.replace(/[\s-]/g, "");
+  return /^\d{4,8}$/.test(digits) ? digits : null;
+}
+
+/**
+ * SMS kodunu soran komutu çalıştırır (`MIDAS_SMS_CODE_COMMAND`). Komuta stdin'den JSON verilir
+ * (`hesapEtiketi`, `sureSn`); komut kodu stdout'a yazıp 0 ile çıkar. İptal, hata, zaman aşımı
+ * ya da kod olmayan çıktı null döner. Kod hiçbir yere yazılmaz; çağıran yalnız sayfaya yazar.
+ */
+export function askSmsCode(
+  command: string[],
+  input: { hesapEtiketi: string | null; sureSn: number },
+  timeoutMs: number
+): Promise<string | null> {
+  return new Promise((resolve) => {
+    const child = execFile(command[0], command.slice(1), { timeout: timeoutMs, maxBuffer: 4096 }, (error, stdout) =>
+      resolve(error ? null : extractSmsCode(String(stdout)))
+    );
+    child.stdin?.on("error", () => undefined);
+    child.stdin?.end(JSON.stringify(input));
+  });
+}
+
 export function parseLoginWindowMode(value: string | undefined): LoginWindowMode {
   const v = (value ?? "").trim().toLowerCase();
   if (!v) return "hidden";

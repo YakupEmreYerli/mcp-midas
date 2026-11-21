@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  askSmsCode,
   DEFAULT_KEEPALIVE_HOURS,
+  extractSmsCode,
   hiddenLaunchArgs,
   kwinHideScript,
   kwinRevealScript,
@@ -60,4 +62,32 @@ test("busctl betik kimliği ayrıştırılır, hata ve negatif kimlik yok sayıl
   assert.equal(parseBusctlInt("i -1"), null);
   assert.equal(parseBusctlInt(null), null);
   assert.equal(parseBusctlInt("b true"), null);
+});
+
+test("SMS kodu çıktıdaki 4-8 rakamdır; boşluk ve tire kabul edilir", () => {
+  assert.equal(extractSmsCode("123456\n"), "123456");
+  assert.equal(extractSmsCode(" 123 456 "), "123456");
+  assert.equal(extractSmsCode("123-456"), "123456");
+  assert.equal(extractSmsCode(""), null);
+  assert.equal(extractSmsCode("12"), null);
+  assert.equal(extractSmsCode("123456789"), null);
+  assert.equal(extractSmsCode("abc123"), null);
+});
+
+const node = process.execPath;
+
+test("SMS kodu komutu stdin'den hesap etiketini ve süreyi alır, kodu stdout'tan verir", async () => {
+  // Komut stdin'i doğrular; beklenen veri gelmezse kod yerine boş yazar.
+  const script =
+    'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const v=JSON.parse(s);' +
+    'process.stdout.write(v.hesapEtiketi==="child"&&v.sureSn===60?"654321\\n":"")})';
+  assert.equal(await askSmsCode([node, "-e", script], { hesapEtiketi: "child", sureSn: 60 }, 10_000), "654321");
+});
+
+test("SMS kodu komutu iptal ederse, hata verirse ya da kod yazmazsa null döner", async () => {
+  assert.equal(await askSmsCode([node, "-e", "process.exit(1)"], { hesapEtiketi: null, sureSn: 60 }, 10_000), null);
+  assert.equal(await askSmsCode([node, "-e", 'process.stdout.write("123456");process.exit(2)'], { hesapEtiketi: null, sureSn: 60 }, 10_000), null);
+  assert.equal(await askSmsCode([node, "-e", 'process.stdout.write("tamam")'], { hesapEtiketi: null, sureSn: 60 }, 10_000), null);
+  assert.equal(await askSmsCode(["/nonexistent/sms-command"], { hesapEtiketi: null, sureSn: 60 }, 10_000), null);
+  assert.equal(await askSmsCode([node, "-e", "setTimeout(()=>{},5000)"], { hesapEtiketi: null, sureSn: 60 }, 300), null);
 });

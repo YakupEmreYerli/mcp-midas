@@ -3,6 +3,7 @@ import { chromium, type BrowserContext, type Page } from "playwright";
 import { config } from "./config.js";
 import { describeAuthExpiry, type AuthExpiry } from "./auth-expiry.js";
 import {
+  askSmsCode,
   hiddenLaunchArgs,
   KWIN_HIDE_PLUGIN,
   KWIN_REVEAL_PLUGIN,
@@ -486,12 +487,37 @@ export class MidasSession {
       if (!(await button.count())) continue;
       await button.first().click();
       switched = true;
+      if (await this.typeSmsCodeFromCommand(giveUpAt)) continue;
       if (this.hiddenWindow) await this.revealLoginWindow();
       notifyDesktop(LOGIN_TITLE, "Telefonuna gelen SMS kodunu açılan Midas penceresine yaz.", "critical");
     }
     const what = sms ? "SMS kodu 8 dakika içinde girilmedi." : "Bildirim 3 dakika içinde onaylanmadı.";
     notifyDesktop(`${LOGIN_TITLE} başarısız`, what, "critical");
     throw new Error(`Midas girişi zaman aşımına uğradı: ${what}`);
+  }
+
+  /**
+   * `MIDAS_SMS_CODE_COMMAND` varsa kodu o komuta sorar ve sayfadaki ilk görünür kutuya yazar.
+   * Kod ne loga ne bildirime girer. Komut yoksa, iptal edilirse ya da kod gelmezse false döner;
+   * kod o zaman Midas penceresine elle yazılır.
+   */
+  private async typeSmsCodeFromCommand(giveUpAt: number): Promise<boolean> {
+    const command = config.smsCodeCommand;
+    if (!command) return false;
+    const timeoutMs = Math.max(10_000, giveUpAt - Date.now() - 30_000);
+    const code = await askSmsCode(command, { hesapEtiketi: config.accountLabel, sureSn: Math.floor(timeoutMs / 1000) - 5 }, timeoutMs);
+    if (!code) {
+      console.error("giriş: SMS kodu komuttan alınamadı; kod Midas penceresine elle yazılmalı");
+      return false;
+    }
+    const page = this.page!;
+    const box = page.locator("input:visible").first();
+    await box.waitFor({ state: "visible", timeout: 30_000 });
+    await box.click();
+    await page.keyboard.type(code, { delay: 80 });
+    await page.waitForTimeout(2000);
+    if (page.url().includes("/giris/")) await page.keyboard.press("Enter").catch(() => undefined);
+    return true;
   }
 
   /**

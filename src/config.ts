@@ -5,6 +5,7 @@ import { dirname, join, resolve } from "node:path";
 import { config as loadDotenv } from "dotenv";
 import { parseKeepAliveMs, parseLoginMethod, parseLoginWindowMode } from "./login-window.js";
 import { parseAccountLabel, resolveDataPaths } from "./instance.js";
+import { parseCommandSetting } from "./command-setting.js";
 
 /** Depo kökü (dist/ ya da src/ klasörünün bir üstü); yerel dosyalar burada tutulur. */
 export const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -39,6 +40,8 @@ export const config = {
   loginWindow: parseLoginWindowMode(env.MIDAS_LOGIN_WINDOW),
   /** Formdan sonraki doğrulama: push (telefon bildirimi, varsayılan) ya da sms (kodu kullanıcı pencereye yazar). */
   loginMethod: parseLoginMethod(env.MIDAS_LOGIN_METHOD),
+  /** SMS yolunda kodu soran komut (MIDAS_SMS_CODE_COMMAND, JSON dizi); yoksa kod Midas penceresine elle yazılır. */
+  smsCodeCommand: parseCommandSetting("MIDAS_SMS_CODE_COMMAND", env.MIDAS_SMS_CODE_COMMAND),
   /** HTTP servisinde canlı tutma aralığı (MIDAS_KEEPALIVE_HOURS, varsayılan 4 sa; 0 kapatır). */
   keepAliveMs: parseKeepAliveMs(env.MIDAS_KEEPALIVE_HOURS),
   /** Birden çok hesapta hesabın okunur adı (MIDAS_ACCOUNT_LABEL); sonuçlarda ve onay penceresinde görünür. */

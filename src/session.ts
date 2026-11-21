@@ -49,14 +49,17 @@ const SUBMIT_READY = "button[type=submit]:not([disabled])";
  * gibi görünmek için kullanıcı aracısı ve ipuçları elle verilir.
  */
 const CHROME_MAJOR = 151;
+const IS_MAC = process.platform === "darwin";
 const DESKTOP_IDENTITY = {
-  userAgent:
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) " +
-    `Chrome/${CHROME_MAJOR}.0.0.0 Safari/537.36`,
+  userAgent: IS_MAC
+    ? "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) " +
+      `Chrome/${CHROME_MAJOR}.0.0.0 Safari/537.36`
+    : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) " +
+      `Chrome/${CHROME_MAJOR}.0.0.0 Safari/537.36`,
   extraHTTPHeaders: {
     "sec-ch-ua": `"Chromium";v="${CHROME_MAJOR}", "Not=A?Brand";v="99"`,
     "sec-ch-ua-mobile": "?0",
-    "sec-ch-ua-platform": '"Windows"',
+    "sec-ch-ua-platform": IS_MAC ? '"macOS"' : '"Windows"',
   },
 };
 
@@ -418,6 +421,10 @@ export class MidasSession {
     const page = this.page!;
     const phoneField = page.locator("#phone").first();
     await phoneField.waitFor({ timeout: 30_000 });
+    if (!config.phone || !config.password) {
+      if (this.hiddenWindow) await this.revealLoginWindow();
+      return true;
+    }
     await phoneField.fill(config.phone);
     await page.locator("#password").first().fill(config.password);
     try {

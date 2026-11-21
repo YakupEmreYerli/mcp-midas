@@ -51,7 +51,7 @@ export function createServer(options: ServerOptions = {}): McpServer {
     name: string,
     description: string,
     inputSchema: S,
-    handler: (args: z.objectOutputType<S, z.ZodTypeAny>) => Promise<unknown>,
+    handler: (args: z.infer<z.ZodObject<S>>) => Promise<unknown>,
     annotations?: { readOnlyHint?: boolean; destructiveHint?: boolean; openWorldHint?: boolean }
   ) {
     server.registerTool(name, { description, inputSchema, annotations }, (async (args: any) => {

@@ -1,3 +1,5 @@
+**Türkçe** · [English](METHOD.en.md)
+
 # get_technicals nasıl hesaplıyor
 
 `get_technicals` aracının döndürdüğü her sayının kaynağı ve formülü. Kod:

@@ -1,3 +1,5 @@
+**Türkçe** · [English](CONTRIBUTING.en.md)
+
 # Katkı
 
 Katkıya açığız: hata düzeltmesi, test, belge (README.en.md dahil), macOS ya da Windows'ta
@@ -48,8 +50,9 @@ yoksa yapmak istediğini anlatan bir issue aç.
 - `npm run build` ve `npm test` temiz geçmeli; CI aynı iki komutu Node.js 20 ve 22'de çalıştırır.
   Testler Midas'a bağlanmaz.
 - Commit mesajları Türkçe, ne yapıldığını somut söyleyen bir başlık; gövdede neden.
-- Kod yorumları, araç açıklamaları ve kullanıcıya dönen mesajlar Türkçe. Tanımlayıcılar,
-  JSON alan adları ve araç adları İngilizce kalır.
+- Kod yorumları Türkçe. Araç açıklamaları ve kullanıcıya dönen mesajlar Türkçe ve İngilizce
+  yazılır (bkz. aşağıdaki "Türkçe ve İngilizce" bölümü). Tanımlayıcılar, JSON alan adları ve
+  araç adları İngilizce kalır.
 - Kullanıcının fark edeceği bir değişiklikse pull request açıklamasına bir satır yaz; bakımcı
   bunu [CHANGELOG.md](CHANGELOG.md)'ye taşır. Araç adı, argüman, ortam değişkeni, onay
   protokolü ya da denetim günlüğü değişiyorsa [RELEASES.md](RELEASES.md)'deki uyum kurallarına bak.
@@ -80,6 +83,22 @@ yoksa yapmak istediğini anlatan bir issue aç.
 - **Mutation otomatik yinelenmez.** Oturum düşerse okuma bir kez yinelenir, emir yinelenmez;
   yeni çağrı yeni onay ister.
 - Kimlik bilgisi, oturum dosyası, emir günlüğü ya da `discovery/` çıktısı commit'lenmez.
+
+## Türkçe ve İngilizce
+
+- Dili `MIDAS_LANG` (`tr` | `en`) belirler. Verilmezse sistem yereline bakılır (`LC_ALL`,
+  `LC_MESSAGES`, `LANG`): `tr` ile başlayan her değer Türkçe, geri kalan her şey İngilizcedir.
+- Kullanıcının ya da ajanın gördüğü her metin iki dilde de bulunur. TypeScript modülleri
+  metinlerini kodun yanında, `src/i18n.ts` içindeki `defineMessages(tr, en)` ile tanımlar;
+  `en` nesnesinin anahtarları `tr` ile birebir aynı olmalı. Eksik ya da fazla anahtarı derleme
+  yakalar, çalışma anında da `test/i18n.test.ts` denetler.
+- Pencereler dili kendisi seçmez, sunucu bildirir: onay penceresine stdin'den gelen onay
+  modelindeki `dil`, SMS penceresine stdin JSON'undaki `dil`. Sayfanın sabit metinleri
+  `onay/onay.js` ve `onay/sms.js` içindeki `METIN` tablosunda durur (`METIN-BAŞI` ile
+  `METIN-SONU` işaretleri arasında). Python tarafındaki pencere başlıkları ve hata gerekçeleri
+  `onay/onay.py` ile `onay/sms.py` içindeki `METIN` sözlüğündedir.
+- Araç adları, argüman adları ve JSON alan adları dile göre değişmez.
+- Türkçe metin bekleyen testler dosyanın başında `process.env.MIDAS_LANG = "tr"` ile dili sabitler.
 
 ## Depoya özgü tuzaklar
 

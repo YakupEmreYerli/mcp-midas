@@ -1,3 +1,5 @@
+**Türkçe** · [English](analiz-kurallari.en.md)
+
 # Hisse ve fon analizi: ajan yönergesi
 
 Kullanıcı bir hisseyi ya da fonu "analiz et", "bak", "tara", "karşılaştır" dediğinde bu

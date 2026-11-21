@@ -1,3 +1,5 @@
+**Türkçe** · [English](SECURITY.en.md)
+
 # Güvenlik
 
 Bu proje bir aracı kurum hesabına açılmış oturumu tutar ve emir gönderebilir. İki söz verir:

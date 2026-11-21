@@ -1,10 +1,90 @@
 # Güvenlik
 
+Bu proje bir aracı kurum hesabına açılmış oturumu tutar ve emir gönderebilir. İki söz verir:
+emir, değiştirme ve iptal insan onayı olmadan Midas'a gitmez; kimlik bilgileri ve oturum
+token'ları makineden çıkmaz. Bu iki sözü bozan her şey güvenlik açığıdır.
+
 ## Bildirim
 
-Güvenlik sorunlarını herkese açık issue olarak açma. Bunun yerine bu depodaki GitHub
-[özel güvenlik açığı bildirimini](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability)
-kullan.
+Açığı herkese açık issue, pull request ya da tartışma olarak yazma. Deponun Security
+sekmesindeki **Report a vulnerability** düğmesini kullan:
+<https://github.com/YakupEmreYerli/mcp-midas/security/advisories/new>
+([GitHub'ın özel bildirim belgesi](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability)).
+Düğmeyi göremiyorsan ayrıntı vermeden "güvenlik bildirimi için özel kanal" başlıklı bir
+issue aç; sana özel bir kanal açarız.
+
+Bildirime şunları ekle:
+
+- etkilenen sürüm ya da commit,
+- yayımlanmış bir sürümde tekrarlanabilen küçük bir kanıt (birim testi biçiminde olması en iyisi),
+- gördüğün etki ve varsa düzeltme önerin.
+
+Yapay zekâ aracı kullandıysan söyle ve sonucu kendin doğruladığını belirt. Tekrarlanabilir
+kanıtı olmayan bildirimler kapatılabilir.
+
+**Kanıtı canlı hesapla kurma.** Midas'a gerçek emir göndermek ya da başkasının hesabını ve
+Midas'ın sistemlerini denemek gerekmez, yapma. Emir yolu birim testlerinde sahte onaylayıcıyla
+sınanır (`test/order-approval.test.ts`, `test/desktop-confirmation.test.ts`); onay kapısını aşan bir yol bu testlerde de gösterilebilir.
+
+## Ne beklemelisin
+
+Projeyi tek kişi gönüllü olarak yürütüyor; süreler buna göre konuldu.
+
+- **Alındı yanıtı:** en geç 5 iş günü.
+- **İlk karar** (kabul, açık değil ya da ek bilgi gerekli): en geç 14 gün.
+- **Açıklama:** düzeltilmiş sürümü ve danışma notunu bildirimden sonraki 90 gün içinde
+  yayımlamayı hedefleriz; tarihi seninle birlikte belirleriz. Düzeltilmiş sürüm çıkmadan
+  danışma notu yayımlanmaz.
+
+## Desteklenen sürümler
+
+Güvenlik düzeltmeleri yalnız en son yayımlanan sürüme gelir. Hangi sürümlerin düzeltme
+aldığı [RELEASES.md](RELEASES.md) içindeki tabloda yazar; eski sürümde görülen açık, son
+sürümde de tekrarlanıyorsa kabul edilir.
+
+## Kapsam
+
+Kapsamda olanlar, belgelendiği gibi kullanılan son sürümde:
+
+- onay penceresinde Evet verilmeden bir emir, değiştirme ya da iptal isteğinin Midas'a
+  gitmesi; pencere hatasının, zaman aşımının ya da Esc'in Evet sayılması; onay protokolünün
+  (`ACILDI`, `SONUC evet`, çıkış kodu 0) yanlış okunması,
+- onaydan sonra önizlemeden farklı bir emrin (sembol, yön, miktar, fiyat, hesap) gönderilmesi,
+- `MIDAS_ORDERS_ENABLED=1` verilmeden emir araçlarının listelenmesi ya da çalışması,
+- emir isteğinin kendiliğinden yinelenmesi,
+- şifrenin, SMS kodunun ya da oturum token'larının loga, denetim günlüğüne, hata mesajına
+  veya araç sonucuna sızması; hassas dosyaların belgelenenden geniş izinle yazılması,
+- HTTP servisinin `127.0.0.1` dışında dinlemesi ya da `/mcp` isteğini geçerli token olmadan kabul etmesi,
+- önizleme verisinin onay ya da SMS penceresinde betik çalıştırabilmesi,
+- birden çok hesap kurulumunda bir hesabın verisinin ya da emrinin başka hesabın sürecine karışması.
+
+Kapsam dışı olanlar:
+
+- servis yapılandırmasını (ortam değişkenleri, `.env`, systemd birimi) değiştirebilen birinin
+  yapabildikleri; `MIDAS_CONFIRM_REMOTE`, `MIDAS_CONFIRM_LOCAL` ve `MIDAS_SMS_CODE_COMMAND`
+  komutlarının yapılandırıldığı gibi çalışması. Bu güvenin nereye taşındığı aşağıdaki güven
+  modelinde yazar.
+- aynı kullanıcı hesabına ya da root yetkisine sahip yerel bir saldırganın okuyabildikleri
+  (ör. `.midas-state.json`),
+- Midas'ın kendi uygulamasındaki ve sunucularındaki açıklar; bunları Midas'a bildir,
+- Midas'ın belgelenmemiş API'sinin değişmesiyle oluşan bozulmalar (normal issue aç),
+- teknik gösterge hesaplarındaki ve analiz yönergesindeki hatalar (`src/technicals.ts`,
+  `src/vwap.ts`, `src/inflation.ts`, `docs/analiz-kurallari.md`, `METHOD.md`); bunlar yatırım
+  tavsiyesi üretmez, normal issue olarak aç,
+- kodumuzun ulaşmadığı bağımlılık açıkları, desteklenmeyen sürümler, doğrulanmış kanıtı
+  olmayan otomatik tarayıcı çıktıları.
+
+## Danışma notları ve CVE
+
+Kabul edilen açıklar için danışma notunu deponun
+[Security Advisories](https://github.com/YakupEmreYerli/mcp-midas/security/advisories)
+sayfasında yayımlarız, CVE numarasını GitHub üzerinden isteriz ve önem derecesini CVSS 3.1
+temel ölçütleriyle veririz.
+
+## Teşekkür
+
+İstemediğin sürece adını danışma notunda ve [CHANGELOG.md](CHANGELOG.md) içinde anarız.
+Projenin ödül programı yoktur, bildirim için ödeme yapılmaz.
 
 ## Bu yazılım neye dokunuyor
 
@@ -15,13 +95,15 @@ noktalar:
 yalnızca `MIDAS_ORDERS_ENABLED=1` verildiğinde kaydedilir; aksi hâlde MCP araç listesinde
 hiç görünmez.
 
-**İşlemler yerel insan onayı ister.** Emir araçları açıkken sunucu desteklenen emir
+**İşlemler insan onayı ister.** Emir araçları açıkken sunucu desteklenen emir
 tiplerini verebilir, güncelleyebilir ve iptal edebilir; ama kendi süreci onay penceresini
 göstermeden (tasarımlı PySide6 penceresi; açılamazsa `kdialog`/`zenity`) ve kullanıcı
 **Evet**'i basılı tutmadan bu mutation'ları gönderemez. Varsayılan Hayır'dır; zaman aşımı,
 ekranın olmaması ve pencere hataları reddedilir. Pencere hataları kullanıcının Hayır'ı
 olarak değil, hata olarak bildirilir. MCP şemalarında onay ya da atlatma alanı yoktur;
-sunucu onaydan sonra enstrümanı ve fiyatı birebir yeniden doğrular.
+sunucu onaydan sonra enstrümanı ve fiyatı birebir yeniden doğrular. Pencere
+varsayılan olarak sunucunun çalıştığı makinede açılır; başka bir yerde açılması yalnız
+aşağıdaki ayarlarla olur.
 
 **Başka makinede onay isteğe bağlıdır ve güveni taşır.** Varsayılan söz şudur: bir emir yalnız
 sunucunun çalıştığı makinedeki bir pencerede onaylanır. Operatör servis ortamında
@@ -50,7 +132,8 @@ dizinine bir `.desktop` dosyası ve simge yazar (`~/.local/share/`), root isteme
 
 **Kimlik bilgileri makineden çıkmaz.** `MIDAS_PHONE` ve `MIDAS_PASSWORD` ortamdan okunur ve
 tek bir yerde kullanılır: Midas'ın kendi SSO formunu doldurmak (`src/session.ts`).
-Loglanmaz, önbelleğe alınmaz, başka bir yere gönderilmez. Koddaki tek ağ hedefleri
+Loglanmaz, önbelleğe alınmaz, başka bir yere gönderilmez. İkisi de isteğe bağlıdır;
+verilmezlerse giriş gerektiğinde Midas'ın giriş penceresi açılır ve bilgileri sen yazarsın. Koddaki tek ağ hedefleri
 `atlas.getmidas.com` ve `api.atlas.getmidas.com`'dur.
 
 **Üç dosya hassastır.** `.env` şifreni, `.midas-state.json` canlı oturum token'larını
@@ -61,10 +144,6 @@ profili de yereldir. Bunları commit'leme ya da kopyalama. `MIDAS_DATA_DIR` veri
 dosyalar ve profil o dizindedir (0700 izinle kurulur); her hesabın dizini ayrıdır.
 
 **HTTP servisi yalnız yerelde dinler.** `dist/http.js` yalnızca `127.0.0.1` üzerinde açılır
-ve `/mcp` isteklerini `~/.config/mcp-midas/token` dosyasındaki bearer token ile doğrular.
-
-## Kapsam
-
-Teknik gösterge hesaplarıyla (`src/technicals.ts`, `src/vwap.ts`, `src/inflation.ts`) ve
-analiz yönergesiyle (`docs/analiz-kurallari.md`, `METHOD.md`) ilgili bildirimler de kabul
-edilir; bunlar yatırım tavsiyesi üretmez.
+ve `/mcp` isteklerini bearer token ile doğrular. Token varsayılan olarak
+`~/.config/mcp-midas/token` dosyasındadır (`MIDAS_TOKEN_FILE` ile değişir); birden çok hesapta
+her sürecin portu ve token dosyası ayrıdır.

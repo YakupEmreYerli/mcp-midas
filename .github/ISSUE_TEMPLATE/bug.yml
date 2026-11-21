@@ -1,0 +1,50 @@
+name: Bug report
+description: Something does not work as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Remove your phone number, password, tokens, account numbers and portfolio data from everything you paste.
+        Security problems go to [private reporting](https://github.com/YakupEmreYerli/mcp-midas/security/advisories/new), not here.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Include the tool you called and the error or result you got.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: v0.4.0 or the output of git rev-parse --short HEAD
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Operating system and Node.js version
+      placeholder: Ubuntu 24.04, Node.js 22.11
+    validations:
+      required: true
+  - type: dropdown
+    id: transport
+    attributes:
+      label: How you run the server
+      options:
+        - stdio (started by the MCP client)
+        - HTTP service (dist/http.js)
+        - Not sure
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Server output around the problem, with personal data removed.
+      render: text

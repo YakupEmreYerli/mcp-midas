@@ -49,6 +49,12 @@ desteklenen emirleri yalnızca yerel insan onayından sonra gönderebilir.
 - **Hesaplar karışmaz.** Birden çok hesap ayrı süreçtir (`MIDAS_DATA_DIR`, port, token,
   kimlik bilgisi). `MIDAS_ACCOUNT_LABEL` sunucu adında, yönergede, her araç sonucunda (JSON'dan
   sonra ayrı parça; `content[0]` saf JSON kalır) ve onay penceresinde görünür.
+- **Metinler iki dilde.** Kullanıcının ya da ajanın gördüğü her metin (pencereler,
+  bildirimler, araç açıklamaları, hata mesajları) Türkçe ve İngilizce yazılır ve iki tabloya da
+  girer: TypeScript'te `defineMessages(tr, en)`, pencerelerde `onay.js`/`sms.js` ve
+  `onay.py`/`sms.py` içindeki `METIN`. Türkçe turkish-humanizer'a, iki dil de ux-writing'e
+  uyar. Hiçbir metin kullanıcının kurulumunu varsaymaz (ev sunucusu, ikinci makine, aile
+  hesabı gibi düzenler yalnız belgede "örneğin" diye geçer).
 
 ## Hisse ve fon analizi
 

@@ -49,22 +49,26 @@ const SUBMIT_READY = "button[type=submit]:not([disabled])";
  * gibi görünmek için kullanıcı aracısı ve ipuçları elle verilir.
  */
 const CHROME_MAJOR = 151;
-const IS_MAC = process.platform === "darwin";
+/** Each host claims its own OS, so the user agent matches what the browser really runs on. */
+const PLATFORM_IDENTITY: Record<string, { ua: string; hint: string }> = {
+  darwin: { ua: "Macintosh; Intel Mac OS X 10_15_7", hint: "macOS" },
+  linux: { ua: "X11; Linux x86_64", hint: "Linux" },
+  win32: { ua: "Windows NT 10.0; Win64; x64", hint: "Windows" },
+};
+const PLATFORM = PLATFORM_IDENTITY[process.platform] ?? PLATFORM_IDENTITY.win32;
 
 /** Without MIDAS_PHONE and MIDAS_PASSWORD the login form is left to the user. */
 function hasCredentials(): boolean {
   return Boolean(config.phone && config.password);
 }
 const DESKTOP_IDENTITY = {
-  userAgent: IS_MAC
-    ? "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) " +
-      `Chrome/${CHROME_MAJOR}.0.0.0 Safari/537.36`
-    : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) " +
-      `Chrome/${CHROME_MAJOR}.0.0.0 Safari/537.36`,
+  userAgent:
+    `Mozilla/5.0 (${PLATFORM.ua}) AppleWebKit/537.36 (KHTML, like Gecko) ` +
+    `Chrome/${CHROME_MAJOR}.0.0.0 Safari/537.36`,
   extraHTTPHeaders: {
     "sec-ch-ua": `"Chromium";v="${CHROME_MAJOR}", "Not=A?Brand";v="99"`,
     "sec-ch-ua-mobile": "?0",
-    "sec-ch-ua-platform": IS_MAC ? '"macOS"' : '"Windows"',
+    "sec-ch-ua-platform": `"${PLATFORM.hint}"`,
   },
 };
 

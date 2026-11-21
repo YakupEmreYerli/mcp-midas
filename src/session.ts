@@ -41,6 +41,9 @@ export interface SessionStatus {
   expiry: AuthExpiry | null;
 }
 
+/** Masaüstü bildirim başlığı; birden çok hesapta hangi hesabın giriş istediği görünür. */
+const LOGIN_TITLE = config.accountLabel ? `Midas girişi (Hesap: ${config.accountLabel})` : "Midas girişi";
+
 const SUBMIT_READY = "button[type=submit]:not([disabled])";
 
 /**
@@ -221,7 +224,7 @@ export class MidasSession {
     if (!submitted && mode === "hidden") {
       await this.revealLoginWindow();
       notifyDesktop(
-        "Midas girişi: doğrulama gerekiyor",
+        `${LOGIN_TITLE}: doğrulama gerekiyor`,
         "Açılan tarayıcı penceresinde doğrulamayı tamamla; ardından telefonundaki bildirimi onayla.",
         "critical"
       );
@@ -434,7 +437,7 @@ export class MidasSession {
     await phoneField.waitFor({ timeout: 30_000 });
     if (!hasCredentials()) {
       if (this.hiddenWindow) await this.revealLoginWindow();
-      notifyDesktop("Midas girişi", "Açılan Midas penceresinde giriş yap.", "critical");
+      notifyDesktop(LOGIN_TITLE, "Açılan Midas penceresinde giriş yap.", "critical");
       return true;
     }
     await phoneField.fill(config.phone);
@@ -455,7 +458,7 @@ export class MidasSession {
       return false;
     }
     await page.click(SUBMIT_READY);
-    if (config.loginMethod === "push") notifyDesktop("Midas girişi", "Telefonundaki Midas bildirimini onayla.");
+    if (config.loginMethod === "push") notifyDesktop(LOGIN_TITLE, "Telefonundaki Midas bildirimini onayla.");
     return true;
   }
 
@@ -484,10 +487,10 @@ export class MidasSession {
       await button.first().click();
       switched = true;
       if (this.hiddenWindow) await this.revealLoginWindow();
-      notifyDesktop("Midas girişi", "Telefonuna gelen SMS kodunu açılan Midas penceresine yaz.", "critical");
+      notifyDesktop(LOGIN_TITLE, "Telefonuna gelen SMS kodunu açılan Midas penceresine yaz.", "critical");
     }
     const what = sms ? "SMS kodu 8 dakika içinde girilmedi." : "Bildirim 3 dakika içinde onaylanmadı.";
-    notifyDesktop("Midas girişi başarısız", what, "critical");
+    notifyDesktop(`${LOGIN_TITLE} başarısız`, what, "critical");
     throw new Error(`Midas girişi zaman aşımına uğradı: ${what}`);
   }
 

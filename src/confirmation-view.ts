@@ -34,6 +34,8 @@ export interface DialogModel {
   degisiklikler: DialogChange[];
   emirNo: string | null;
   hesap: string;
+  /** Birden çok hesapta okunur hesap adı (MIDAS_ACCOUNT_LABEL); pencerenin şeridinde gösterilir. */
+  hesapEtiketi: string | null;
   soru: string;
   evet: string;
   hayir: string;
@@ -192,7 +194,7 @@ const QUESTIONS: Record<ActionLabel, { soru: string; evet: string }> = {
   DEĞİŞTİR: { soru: "Bu değişiklik Midas'a gönderilsin mi?", evet: "Evet, değiştir" },
 };
 
-export function buildDialogModel(preview: ApprovalPreview): DialogModel {
+export function buildDialogModel(preview: ApprovalPreview, accountLabel: string | null = null): DialogModel {
   const islem = actionOf(preview);
   const orderId = preview.oldValues?.uid;
   const allChanges = buildChanges(preview.oldValues, preview.newValues);
@@ -216,6 +218,7 @@ export function buildDialogModel(preview: ApprovalPreview): DialogModel {
     degisiklikler,
     emirNo: typeof orderId === "string" && orderId ? orderId : null,
     hesap: preview.accountUid,
+    hesapEtiketi: accountLabel,
     ...QUESTIONS[islem],
     hayir: "Hayır",
     sureSn: CONFIRMATION_TIMEOUT_SECONDS,
@@ -223,9 +226,10 @@ export function buildDialogModel(preview: ApprovalPreview): DialogModel {
 }
 
 // kdialog/zenity yedekleri için düz metin; aynı model, ham JSON yok.
-export function formatApprovalMessage(preview: ApprovalPreview): string {
-  const model = buildDialogModel(preview);
+export function formatApprovalMessage(preview: ApprovalPreview, accountLabel: string | null = null): string {
+  const model = buildDialogModel(preview, accountLabel);
   const lines = [
+    ...(model.hesapEtiketi ? [`HESAP: ${model.hesapEtiketi}`, ""] : []),
     `${model.islem} — ${model.sembol}`,
     model.ozet,
     "",

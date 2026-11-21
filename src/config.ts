@@ -1,7 +1,10 @@
 import { fileURLToPath } from "node:url";
+import { mkdirSync } from "node:fs";
+import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { config as loadDotenv } from "dotenv";
 import { parseKeepAliveMs, parseLoginMethod, parseLoginWindowMode } from "./login-window.js";
+import { parseAccountLabel, resolveDataPaths } from "./instance.js";
 
 /** Depo kökü (dist/ ya da src/ klasörünün bir üstü); yerel dosyalar burada tutulur. */
 export const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -9,6 +12,12 @@ export const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..
 loadDotenv({ path: join(PROJECT_ROOT, ".env") });
 
 const env = process.env;
+
+/** `MIDAS_DATA_DIR` yoksa oturum ve günlük dosyaları proje kökünde kalır (eski yerleri). */
+const dataPaths = resolveDataPaths(env.MIDAS_DATA_DIR, PROJECT_ROOT, homedir());
+if (env.MIDAS_DATA_DIR?.trim()) {
+  mkdirSync(dirname(dataPaths.stateFile), { recursive: true, mode: 0o700 });
+}
 
 /** Atlas web uygulaması ve onun GraphQL geçidi. */
 const ATLAS_ORIGIN = "https://atlas.getmidas.com";
@@ -32,11 +41,13 @@ export const config = {
   loginMethod: parseLoginMethod(env.MIDAS_LOGIN_METHOD),
   /** HTTP servisinde canlı tutma aralığı (MIDAS_KEEPALIVE_HOURS, varsayılan 4 sa; 0 kapatır). */
   keepAliveMs: parseKeepAliveMs(env.MIDAS_KEEPALIVE_HOURS),
-  /** Chromium'un kalıcı profil klasörü. */
-  sessionDir: join(PROJECT_ROOT, ".midas-session"),
+  /** Birden çok hesapta hesabın okunur adı (MIDAS_ACCOUNT_LABEL); sonuçlarda ve onay penceresinde görünür. */
+  accountLabel: parseAccountLabel(env.MIDAS_ACCOUNT_LABEL),
+  /** Chromium'un kalıcı profil klasörü (MIDAS_DATA_DIR verilirse onun altında). */
+  sessionDir: dataPaths.sessionDir,
   /** Çerez + localStorage anlık görüntüsü; Chromium'un atacağı oturum çerezleri dahil. */
-  stateFile: join(PROJECT_ROOT, ".midas-state.json"),
-  orderLogFile: join(PROJECT_ROOT, ".midas-orders.log.jsonl"),
+  stateFile: dataPaths.stateFile,
+  orderLogFile: dataPaths.orderLogFile,
   atlasUrl: `${ATLAS_ORIGIN}/`,
   graphqlUrl: `${GATEWAY_ORIGIN}/router-graphql`,
   /** x-client-version olarak gönderilir; yalnız gerçek bir web sürümüne benzemesi yeter. */

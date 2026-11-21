@@ -6,6 +6,8 @@ import { getTransactions, getTransactionFilters } from "./history.js";
 import { ordersEnabled } from "./tool-flags.js";
 import { candidateSummary } from "./symbol-resolution.js";
 import { session } from "./session.js";
+import { config } from "./config.js";
+import { accountLine, serverInstructions, serverName } from "./instance.js";
 
 export interface ServerOptions {
   /**
@@ -13,6 +15,11 @@ export interface ServerOptions {
    * `MIDAS_ORDERS_ENABLED=1`'dir; bu bayrak yoksa emir araçları hiç var olmaz.
    */
   ordersEnabled?: boolean;
+  /**
+   * Hesap etiketi (`MIDAS_ACCOUNT_LABEL`). Verilirse sunucu adında ve yönergesinde görünür,
+   * her araç sonucuna "Hesap: <etiket>" satırı ayrı bir parça olarak eklenir.
+   */
+  accountLabel?: string | null;
 }
 
 /**
@@ -22,16 +29,22 @@ export interface ServerOptions {
  */
 export function createServer(options: ServerOptions = {}): McpServer {
   const withOrders = options.ordersEnabled ?? ordersEnabled();
-  const server = new McpServer({ name: "midas-mcp", version: "0.3.0" });
+  const label = options.accountLabel === undefined ? config.accountLabel : options.accountLabel;
+  const instructions = serverInstructions(label);
+  const server = new McpServer({ name: serverName(label), version: "0.3.0" }, instructions ? { instructions } : undefined);
+
+  // Hesap satırı JSON'dan sonra ayrı bir metin parçasıdır: ilk parça her zaman saf JSON kalır,
+  // sonucu ayrıştıran istemciler (content[0]) etkilenmez.
+  const accountPart = label ? [{ type: "text" as const, text: accountLine(label) }] : [];
 
   /** Araçlar JSON metni döner; model yapılandırılmış, belirsizliği olmayan veri alır. */
   function json(value: unknown) {
-    return { content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }, ...accountPart] };
   }
 
   function failure(error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    return { content: [{ type: "text" as const, text: `Hata: ${message}` }], isError: true };
+    return { content: [{ type: "text" as const, text: `Hata: ${message}` }, ...accountPart], isError: true };
   }
 
   function tool<S extends z.ZodRawShape>(
@@ -70,7 +83,11 @@ export function createServer(options: ServerOptions = {}): McpServer {
     async () => {
       const result = await session.status();
       const limit = result.expiry ? (result.expiry.refreshTokenExp ?? result.expiry.refreshExpiry) : null;
-      return { ...result, refreshExpiresAt: limit === null ? null : new Date(limit).toISOString() };
+      return {
+        ...(label ? { account: label } : {}),
+        ...result,
+        refreshExpiresAt: limit === null ? null : new Date(limit).toISOString(),
+      };
     },
     { readOnlyHint: true, openWorldHint: false }
   );

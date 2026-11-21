@@ -303,6 +303,8 @@ def main() -> None:
     layout.addWidget(view)
 
     title = f"midas-mcp emir onayı — {model.get('islem', '')} {model.get('sembol', '')}".strip()
+    if model.get("hesapEtiketi"):
+        title += f" — Hesap: {model['hesapEtiketi']}"
     window.setWindowTitle(title)
     # Çerçevesiz pencere: başlık çubuğu sayfanın künye şerididir (taşıma + kapat = Hayır).
     # Köşeler ve gölge sayfada çizilir, bu yüzden pencere ve sayfa zemini şeffaftır.

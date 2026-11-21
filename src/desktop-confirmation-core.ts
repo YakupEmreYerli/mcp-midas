@@ -5,6 +5,7 @@ import {
   type ConfirmationOutcome,
   type DialogAttemptRecord,
 } from "./order-approval.js";
+import { parseAccountLabel } from "./instance.js";
 
 // Onay zinciri: tasarımlı pencere (onay/onay.py) → kdialog → zenity → "unavailable".
 // Bir sonraki araca yalnızca önceki araç HİÇ açılamadıysa geçilir; kullanıcının
@@ -136,10 +137,10 @@ export function interpretZenity(result: ProcessResult): DialogAttempt {
   return { outcome: "error", shown: false, detail: `zenity ${exitDescription(result)}${result.stderr ? `: ${tail(result.stderr)}` : ""}` };
 }
 
-export function kdialogArgs(message: string): string[] {
+export function kdialogArgs(message: string, title = TITLE): string[] {
   return [
     "--title",
-    TITLE,
+    title,
     "--default",
     "hayir",
     "--menu",
@@ -151,10 +152,10 @@ export function kdialogArgs(message: string): string[] {
   ];
 }
 
-export function zenityArgs(message: string): string[] {
+export function zenityArgs(message: string, title = TITLE): string[] {
   return [
     "--question",
-    `--title=${TITLE}`,
+    `--title=${title}`,
     `--text=${message}`,
     "--ok-label=Evet",
     "--cancel-label=Hayır",
@@ -169,25 +170,27 @@ export function createDesktopConfirmationGate(
   environment: Record<string, string | undefined>,
   options: GateOptions
 ) {
+  const accountLabel = parseAccountLabel(environment.MIDAS_ACCOUNT_LABEL);
+  const title = accountLabel ? `${TITLE} — Hesap: ${accountLabel}` : TITLE;
   const raw = async (preview: ApprovalPreview): Promise<ConfirmationOutcome> => {
     if (!environment.DISPLAY && !environment.WAYLAND_DISPLAY) {
       return { decision: "unavailable", dialog: null, detail: "masaüstü oturumu yok (DISPLAY/WAYLAND_DISPLAY boş)", attempts: [] };
     }
-    const message = formatApprovalMessage(preview);
+    const message = formatApprovalMessage(preview, accountLabel);
     const chain: Array<{ spec: DialogSpec; interpret: (result: ProcessResult) => DialogAttempt }> = [
       {
         spec: {
           tool: "onay",
           command: options.pythonPath,
           args: [options.onayScript],
-          stdin: JSON.stringify(buildDialogModel(preview)),
+          stdin: JSON.stringify(buildDialogModel(preview, accountLabel)),
           // Pencere kendi 120 sn sayacını tutar; bu süre yalnızca asılmaya karşı yedek.
           timeoutMs: TIMEOUT_MS + 15_000,
         },
         interpret: interpretOnay,
       },
-      { spec: { tool: "kdialog", command: "kdialog", args: kdialogArgs(message), timeoutMs: TIMEOUT_MS }, interpret: interpretKdialog },
-      { spec: { tool: "zenity", command: "zenity", args: zenityArgs(message), timeoutMs: TIMEOUT_MS + 5_000 }, interpret: interpretZenity },
+      { spec: { tool: "kdialog", command: "kdialog", args: kdialogArgs(message, title), timeoutMs: TIMEOUT_MS }, interpret: interpretKdialog },
+      { spec: { tool: "zenity", command: "zenity", args: zenityArgs(message, title), timeoutMs: TIMEOUT_MS + 5_000 }, interpret: interpretZenity },
     ];
 
     const attempts: DialogAttemptRecord[] = [];

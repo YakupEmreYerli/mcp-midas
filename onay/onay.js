@@ -34,6 +34,12 @@
   const panel = $("panel");
   panel.dataset.ton = veri.ton;
   metin("islem", veri.islem);
+  if (veri.hesapEtiketi) {
+    // Birden çok hesapta emrin hangi hesaba gittiği şeritte, ilk bakışta görünür.
+    metin("hesap-etiketi", veri.hesapEtiketi);
+    $("serit-hesap").hidden = false;
+    $("serit-not").hidden = true;
+  }
   metin("ozet", veri.ozet);
   metin("sembol", veri.sembol);
   metin("ad", veri.ad);

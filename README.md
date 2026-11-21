@@ -181,8 +181,13 @@ mesajları ve loglar Türkçe ya da İngilizcedir. Dili `MIDAS_LANG` (`tr` ya da
 Verilmezse sistem yereline bakılır (sırasıyla `LC_ALL`, `LC_MESSAGES`, `LANG`): `tr` ile
 başlıyorsa Türkçe, değilse İngilizce. Geçersiz bir değer sunucuyu açılışta durdurur.
 
-Pencereler dili kendileri seçmez, sunucudan alır. Bu yüzden başka bir makinede açılan onay
-ya da SMS kodu penceresi de, o makinenin yereli farklı olsa bile sunucuyla aynı dilde açılır.
+Onay ve SMS kodu pencereleri ise açıldıkları cihazın dilini kullanır. Pencere başka bir
+makinede açılıyorsa (örneğin ssh ile) o makinenin yereline bakar: önce `LC_ALL`, `LC_MESSAGES`,
+`LANG`; ssh ile açılan pencerede bunlar çoğu zaman boştur, o zaman `/etc/locale.conf` (yoksa
+`/etc/default/locale`) içindeki `LANG` geçerlidir. `MIDAS_LANG` verilmişse pencereler de o dilde
+açılır. Bildirimler, araç açıklamaları, hata mesajları ve kdialog/zenity yedekleri sunucuda
+üretildiği için sunucunun dilindedir.
+
 Araç adları, argüman adları ve JSON alanları dile göre değişmez.
 
 ### Giriş penceresi ve canlı tutma

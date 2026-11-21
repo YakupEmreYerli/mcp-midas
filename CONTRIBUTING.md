@@ -92,8 +92,12 @@ yoksa yapmak istediğini anlatan bir issue aç.
   metinlerini kodun yanında, `src/i18n.ts` içindeki `defineMessages(tr, en)` ile tanımlar;
   `en` nesnesinin anahtarları `tr` ile birebir aynı olmalı. Eksik ya da fazla anahtarı derleme
   yakalar, çalışma anında da `test/i18n.test.ts` denetler.
-- Pencereler dili kendisi seçmez, sunucu bildirir: onay penceresine stdin'den gelen onay
-  modelindeki `dil`, SMS penceresine stdin JSON'undaki `dil`. Sayfanın sabit metinleri
+- Onay ve SMS pencereleri dili açıldıkları cihaza göre seçer (`onay/dil.py`: `LC_ALL`,
+  `LC_MESSAGES`, `LANG`, üçü de boşsa `/etc/locale.conf`, yoksa `/etc/default/locale`).
+  `MIDAS_LANG` verilmişse sunucu dili `dil` alanıyla gönderir ve o geçerlidir. Dil zorlanmadığında
+  onay modeli dile bağlı metinleri `metinler.tr` ve `metinler.en` içinde taşır
+  (`buildWindowModel`); sunucuda çalışan bildirimler, hata mesajları ve kdialog/zenity yedekleri
+  sunucunun dilindedir. Sayfanın sabit metinleri
   `onay/onay.js` ve `onay/sms.js` içindeki `METIN` tablosunda durur (`METIN-BAŞI` ile
   `METIN-SONU` işaretleri arasında). Python tarafındaki pencere başlıkları ve hata gerekçeleri
   `onay/onay.py` ile `onay/sms.py` içindeki `METIN` sözlüğündedir.

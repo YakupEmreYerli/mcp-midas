@@ -99,8 +99,12 @@ describing what you'd like to do.
   strings next to the code with `defineMessages(tr, en)` from `src/i18n.ts`; the `en` object
   must have exactly the same keys as `tr`. The compiler catches missing or extra keys, and
   `test/i18n.test.ts` checks them again at run time.
-- The windows don't pick a language themselves; the server passes it in: `dil` in the approval
-  model the approval window reads from stdin, and `dil` in the SMS window's stdin JSON. Static
+- The approval and SMS windows pick their language from the device that shows them
+  (`onay/dil.py`: `LC_ALL`, `LC_MESSAGES`, `LANG`, and if all are empty `/etc/locale.conf`, then
+  `/etc/default/locale`). When `MIDAS_LANG` is set, the server sends it as `dil` and that wins.
+  Without it, the approval model carries the language-dependent strings under `metinler.tr` and
+  `metinler.en` (`buildWindowModel`). Notifications, error messages and the kdialog/zenity
+  fallbacks run on the server and use the server's language. Static
   page text lives in the `METIN` table in `onay/onay.js` and `onay/sms.js` (between the
   `METIN-BAŞI` and `METIN-SONU` markers). On the Python side, window titles and error reasons
   live in the `METIN` dict in `onay/onay.py` and `onay/sms.py`.

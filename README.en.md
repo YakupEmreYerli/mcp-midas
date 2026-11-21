@@ -183,9 +183,14 @@ picks the language. Without it the server looks at the system locale (`LC_ALL`, 
 `LC_MESSAGES`, then `LANG`): anything starting with `tr` means Turkish, everything else
 English. An invalid value stops the server at start-up.
 
-The windows don't pick a language themselves; they get it from the server. So an approval or
-SMS code window opened on another machine uses the server's language even when that
-machine's locale differs. Tool names, argument names and JSON fields never change with the
+The approval and SMS code windows use the language of the device that shows them. When a
+window opens on another machine (over ssh, for example), it looks at that machine's locale:
+`LC_ALL`, then `LC_MESSAGES`, then `LANG`; these are often empty in a window opened over ssh,
+and then `LANG` from `/etc/locale.conf` (or `/etc/default/locale`) applies. If `MIDAS_LANG` is
+set, the windows use that language too. Notifications, tool descriptions, error messages and
+the kdialog/zenity fallbacks are produced on the server, so they use the server's language.
+
+Tool names, argument names and JSON fields never change with the
 language.
 
 ### Login window and keep-alive

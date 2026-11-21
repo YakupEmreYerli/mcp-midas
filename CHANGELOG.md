@@ -17,10 +17,17 @@ See [RELEASES.md](RELEASES.md) for what each number promises and which versions 
   (`LC_ALL`, `LC_MESSAGES`, `LANG`: anything starting with `tr` is Turkish, everything else
   English). An invalid `MIDAS_LANG` stops the server at start-up. Tool names, argument names
   and JSON fields are the same in both languages.
-- The windows get the language from the server, so a window opened on another machine
-  matches the server. The approval model on stdin gains `dil`, `islemYazi` and `yonYazi`, and
-  the `MIDAS_SMS_CODE_COMMAND` stdin JSON gains `dil`. Existing fields are unchanged; a window
-  that gets no `dil` (an older server) stays Turkish.
+- The approval and SMS code windows use the language of the device that shows them, so a
+  window opened on another machine (for example over ssh) matches that machine. The window
+  reads `LC_ALL`, `LC_MESSAGES`, `LANG`, and when all three are empty, `LANG` from
+  `/etc/locale.conf` or `/etc/default/locale`. An explicit `MIDAS_LANG` on the server still
+  wins: the server then sends `dil` and the windows use it.
+- Without `MIDAS_LANG`, the approval model on stdin carries the language-dependent strings in
+  both languages under `metinler.tr` and `metinler.en` and has no `dil`; the flat fields stay
+  Turkish so an older copy of `onay.py` still draws a full window. With `MIDAS_LANG`, the model
+  is single-language and carries `dil`. Both forms gain `islemYazi` and `yonYazi`. The
+  `MIDAS_SMS_CODE_COMMAND` stdin JSON gains `dil` only when `MIDAS_LANG` is set. A model with
+  neither `dil` nor `metinler` (an older server) still renders in Turkish.
 - English versions of SECURITY, CONTRIBUTING, METHOD and the analysis guide, and a README.en
   on par with the Turkish README.
 

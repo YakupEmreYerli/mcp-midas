@@ -59,7 +59,7 @@ enabled, every order waits for your approval on the desktop.
 - **Turkish and English.** Windows, notifications, tool descriptions and error messages come
   in both languages; the system locale or `MIDAS_LANG` picks one.
 
-![Illustrative agent session: the user asks about September trades and the portfolio; the agent calls get_transactions and get_portfolio and returns a trade table and a summary, saying "I didn't place any order." The data is made up.](docs/vitrin/okuma.png)
+![Illustrative agent session: the user asks about September trades and the portfolio; the agent calls get_transactions and get_portfolio and returns a trade table and a summary, saying "I didn't place any order." The data is made up.](docs/vitrin/okuma.en.png)
 
 ## Setup
 
@@ -364,7 +364,7 @@ fields match what the take-profit/stop-loss sell form in the Atlas web bundle se
 
 ## Security
 
-![The five gates every order passes: the flag, a preview resolved from Midas, your approval on the desktop, revalidation after approval, and Midas; below, an audit log that records every step](docs/vitrin/emir-kapilari.png)
+![The five gates every order passes: the flag, a preview resolved from Midas, your approval on the desktop, revalidation after approval, and Midas; below, an audit log that records every step](docs/vitrin/emir-kapilari.en.png)
 
 - **Approval window.** Every order tool resolves the instrument and account from Midas,
   builds the preview from that data and opens a local window in the MCP server's own
@@ -389,11 +389,11 @@ fields match what the take-profit/stop-loss sell form in the Atlas web bundle se
   and, if set, the approval command.
 
 <p>
-  <img src="docs/vitrin/onay-iptal-koyu.png" alt="CANCEL approval window in the dark theme: a strip with the gate mark and a close button in place of a title bar, a red signal band with a thin countdown bar, the order's current and next state, a hatched, covered Yes button and a focused, filled blue No button" width="49%">
-  <img src="docs/vitrin/onay-iptal-acik.png" alt="The same CANCEL approval window in the light theme" width="49%">
+  <img src="docs/vitrin/onay-iptal-koyu.en.png" alt="CANCEL approval window in the dark theme: a strip with the gate mark and a close button in place of a title bar, a red signal band with a thin countdown bar, the order's current and next state, a hatched, covered Yes button and a focused, filled blue No button" width="49%">
+  <img src="docs/vitrin/onay-iptal-acik.en.png" alt="The same CANCEL approval window in the light theme" width="49%">
 </p>
 
-<sub>The windows were captured with sample data in Turkish; account and order IDs are not real.</sub>
+<sub>The windows were captured with sample data; account and order IDs are not real.</sub>
 
 ### Approving on another machine: trust model
 

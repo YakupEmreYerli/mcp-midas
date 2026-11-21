@@ -1,5 +1,6 @@
 <!doctype html>
-<!-- Vitrin: temsilî ajan oturumu (yalnız okuma). Veriler uydurmadır. Üret: node docs/brand/vitrin/render.mjs -->
+<!-- Vitrin: temsilî ajan oturumu (yalnız okuma). Veriler uydurmadır. Üret: node docs/brand/vitrin/render.mjs
+     Türkçe metin sayfada, İngilizcesi data-en (biçimli satırlarda data-en-html) özniteliğinde. -->
 <html lang="tr"><meta charset="utf-8"><link rel="stylesheet" href="ortak.css"><style>
 body{height:572px;padding:40px 48px 0}
 .oturum{border-radius:12px;background:#151A45;box-shadow:0 0 0 1px #262C63,0 30px 60px -30px rgb(0 0 0 / .7);overflow:hidden}
@@ -29,38 +30,38 @@ td.sym{color:#E1E4FF;font-weight:600}
 <div class="oturum">
   <div class="bas">
     <svg viewBox="30 30 68 68" aria-hidden="true"><rect x="30" y="30" width="14" height="68" rx="7" fill="#fff"/><rect x="84" y="30" width="14" height="68" rx="7" fill="#fff"/><circle cx="64" cy="64" r="13" fill="#4959EA"/></svg>
-    <span>ajan oturumu · <b>midas-mcp</b> (yalnız okuma)</span>
-    <span class="rozet">TEMSİLÎ · UYDURMA VERİ</span>
+    <span data-en-html="agent session · <b>midas-mcp</b> (read only)">ajan oturumu · <b>midas-mcp</b> (yalnız okuma)</span>
+    <span class="rozet" data-en="ILLUSTRATIVE · MADE-UP DATA">TEMSİLÎ · UYDURMA VERİ</span>
   </div>
   <div class="govde">
-    <div class="kim sen">sen</div>
-    <div class="cevap">Eylülde neler alıp sattım? Portföy bugün ne durumda?</div>
+    <div class="kim sen" data-en="you">sen</div>
+    <div class="cevap" data-en="What did I buy and sell in September? How is the portfolio doing today?">Eylülde neler alıp sattım? Portföy bugün ne durumda?</div>
 
-    <div class="kim ajan">ajan</div>
+    <div class="kim ajan" data-en="agent">ajan</div>
     <div>
       <div class="arac">get_transactions <span>from_date=2026-09-01 filter=orders</span></div>
-      <div class="ok"><i>✓</i>5 satır · 1 bekleyen · 1 iptal</div>
+      <div class="ok" data-en-html="<i>✓</i>5 rows · 1 pending · 1 canceled"><i>✓</i>5 satır · 1 bekleyen · 1 iptal</div>
       <table>
-        <thead><tr><th>tarih</th><th>sembol</th><th>yön</th><th>tip</th><th class="s">adet</th><th class="s">ort. fiyat</th><th class="s">tutar</th><th style="padding-left:18px">durum</th></tr></thead>
+        <thead><tr><th data-en="date">tarih</th><th data-en="symbol">sembol</th><th data-en="side">yön</th><th data-en="type">tip</th><th class="s" data-en="qty">adet</th><th class="s" data-en="avg. price">ort. fiyat</th><th class="s" data-en="amount">tutar</th><th style="padding-left:18px" data-en="status">durum</th></tr></thead>
         <tbody>
-          <tr><td>18.09 14:32</td><td class="sym">THYAO</td><td class="al">ALIŞ</td><td>LIMIT</td><td class="s">40</td><td class="s">₺298,75</td><td class="s">₺11.950,00</td><td class="d-bek" style="padding-left:18px">PENDING</td></tr>
-          <tr><td>16.09 10:05</td><td class="sym">ASELS</td><td class="sat">SATIŞ</td><td>LIMIT</td><td class="s">25</td><td class="s">₺121,40</td><td class="s">₺3.035,00</td><td class="d-tam" style="padding-left:18px">COMPLETED</td></tr>
-          <tr><td>11.09 11:47</td><td class="sym">KCHOL</td><td class="al">ALIŞ</td><td>MARKET</td><td class="s">15</td><td class="s">₺182,10</td><td class="s">₺2.731,50</td><td class="d-tam" style="padding-left:18px">COMPLETED</td></tr>
-          <tr><td>09.09 15:20</td><td class="sym">TCELL</td><td class="al">ALIŞ</td><td>LIMIT</td><td class="s">60</td><td class="s">₺94,15</td><td class="s">₺5.649,00</td><td class="d-tam" style="padding-left:18px">COMPLETED</td></tr>
-          <tr><td>03.09 09:58</td><td class="sym">SISE</td><td class="al">ALIŞ</td><td>LIMIT</td><td class="s">120</td><td class="s">₺41,20</td><td class="s">—</td><td class="d-ipt" style="padding-left:18px">CANCELLED</td></tr>
+          <tr><td>18.09 14:32</td><td class="sym">THYAO</td><td class="al" data-en="BUY">ALIŞ</td><td>LIMIT</td><td class="s">40</td><td class="s" data-en="₺298.75">₺298,75</td><td class="s" data-en="₺11,950.00">₺11.950,00</td><td class="d-bek" style="padding-left:18px">PENDING</td></tr>
+          <tr><td>16.09 10:05</td><td class="sym">ASELS</td><td class="sat" data-en="SELL">SATIŞ</td><td>LIMIT</td><td class="s">25</td><td class="s" data-en="₺121.40">₺121,40</td><td class="s" data-en="₺3,035.00">₺3.035,00</td><td class="d-tam" style="padding-left:18px">COMPLETED</td></tr>
+          <tr><td>11.09 11:47</td><td class="sym">KCHOL</td><td class="al" data-en="BUY">ALIŞ</td><td>MARKET</td><td class="s">15</td><td class="s" data-en="₺182.10">₺182,10</td><td class="s" data-en="₺2,731.50">₺2.731,50</td><td class="d-tam" style="padding-left:18px">COMPLETED</td></tr>
+          <tr><td>09.09 15:20</td><td class="sym">TCELL</td><td class="al" data-en="BUY">ALIŞ</td><td>LIMIT</td><td class="s">60</td><td class="s" data-en="₺94.15">₺94,15</td><td class="s" data-en="₺5,649.00">₺5.649,00</td><td class="d-tam" style="padding-left:18px">COMPLETED</td></tr>
+          <tr><td>03.09 09:58</td><td class="sym">SISE</td><td class="al" data-en="BUY">ALIŞ</td><td>LIMIT</td><td class="s">120</td><td class="s" data-en="₺41.20">₺41,20</td><td class="s">—</td><td class="d-ipt" style="padding-left:18px">CANCELLED</td></tr>
         </tbody>
       </table>
     </div>
 
-    <div class="kim ajan">ajan</div>
+    <div class="kim ajan" data-en="agent">ajan</div>
     <div>
       <div class="arac">get_portfolio</div>
-      <div class="ok"><i>✓</i>toplam ₺148.320,55 · gün <span style="color:#22D67E">+₺1.240,10 (%0,84)</span> · nakit ₺6.410,00</div>
+      <div class="ok" data-en-html="<i>✓</i>total ₺148,320.55 · today <span style=&quot;color:#22D67E&quot;>+₺1,240.10 (0.84%)</span> · cash ₺6,410.00"><i>✓</i>toplam ₺148.320,55 · gün <span style="color:#22D67E">+₺1.240,10 (%0,84)</span> · nakit ₺6.410,00</div>
     </div>
 
-    <div class="kim ajan">ajan</div>
-    <div class="cevap">Eylülde 3 alış ve 1 satış tamamlandı; SISE emrini 3 Eylül'de iptal etmişsin. THYAO için ₺298,75 limitli alış hâlâ bekliyor. Portföy bugün %0,84 yukarıda. <strong>Hiçbir emir göndermedim.</strong></div>
+    <div class="kim ajan" data-en="agent">ajan</div>
+    <div class="cevap" data-en-html="In September, 3 buys and 1 sell went through; you canceled the SISE order on 3 September. The THYAO limit buy at ₺298.75 is still pending. The portfolio is up 0.84% today. <strong>I didn't place any order.</strong>">Eylülde 3 alış ve 1 satış tamamlandı; SISE emrini 3 Eylül'de iptal etmişsin. THYAO için ₺298,75 limitli alış hâlâ bekliyor. Portföy bugün %0,84 yukarıda. <strong>Hiçbir emir göndermedim.</strong></div>
   </div>
 </div>
-<p class="not alt">Temsilî görsel: semboller gerçek, fiyat ve işlemler uydurmadır · <b>Resmî değildir</b> · Yatırım tavsiyesi değildir</p>
+<p class="not alt" data-en-html="Illustrative: real symbols, made-up prices and trades · <b>Unofficial</b> · Not investment advice">Temsilî görsel: semboller gerçek, fiyat ve işlemler uydurmadır · <b>Resmî değildir</b> · Yatırım tavsiyesi değildir</p>
 </html>

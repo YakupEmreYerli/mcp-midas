@@ -20,6 +20,8 @@ const runProcess: ProcessRunner = (spec) =>
     };
 
     const child = spawn(spec.command, spec.args, { stdio: ["pipe", "pipe", "pipe"], shell: false });
+    // Öteki pencere karar verdiyse bu pencere kapatılır.
+    spec.signal?.addEventListener("abort", () => child.kill("SIGTERM"), { once: true });
     const append = (current: string, chunk: Buffer) =>
       current.length >= OUTPUT_LIMIT ? current : (current + chunk.toString("utf8")).slice(0, OUTPUT_LIMIT);
     child.stdout.on("data", (chunk: Buffer) => (stdout = append(stdout, chunk)));

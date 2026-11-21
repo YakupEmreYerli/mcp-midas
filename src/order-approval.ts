@@ -37,6 +37,8 @@ export interface DialogAttemptRecord {
   tool: string;
   outcome: string;
   detail?: string;
+  /** Ortamdan yapılandırılmış onay komutu (MIDAS_CONFIRM_LOCAL/REMOTE); hangi komutun sorduğu kayda geçer. */
+  command?: string[];
 }
 
 // Kapının ayrıntılı sonucu: hangi pencere açıldı, neden. "error" ve "unavailable"

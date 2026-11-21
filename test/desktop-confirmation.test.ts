@@ -13,6 +13,7 @@ import {
   type ProcessResult,
 } from "../src/desktop-confirmation-core.js";
 import { buildDialogModel, formatApprovalMessage } from "../src/confirmation-view.js";
+import { parseCommandSetting } from "../src/command-setting.js";
 import { ApprovalDeniedError, executeWithApproval, type ApprovalPreview } from "../src/order-approval.js";
 
 const preview: ApprovalPreview = {
@@ -284,4 +285,179 @@ test("pencere modeli işlem tipini ve tehlike tonunu doğru seçer", () => {
     update.degisiklikler.map((row) => [row.etiket, row.degisti]),
     [["Adet", false], ["Kâr al", true], ["Zarar durdur", true]]
   );
+});
+
+// ---------- MIDAS_CONFIRM_REMOTE / MIDAS_CONFIRM_LOCAL ----------
+
+// Pencereleri sırası gelince cevap veren çalıştırıcı; abort edilen pencere öldürülmüş süreç gibi biter.
+function cueRunner(answers: Record<string, { delayMs: number; result: Partial<ProcessResult> } | "never">) {
+  const seen: DialogSpec[] = [];
+  const aborted: string[] = [];
+  const run = (spec: DialogSpec) =>
+    new Promise<ProcessResult>((resolve) => {
+      seen.push(spec);
+      const cue = answers[spec.command.startsWith("close") ? spec.command : spec.tool];
+      spec.signal?.addEventListener("abort", () => {
+        aborted.push(spec.tool);
+        resolve(result({ code: null, signal: "SIGTERM", stdout: "ACILDI\n" }));
+      });
+      if (!cue || cue === "never") return;
+      setTimeout(() => resolve(result(cue.result)), cue.delayMs);
+    });
+  return { run, seen, aborted };
+}
+
+const remoteEnv = {
+  DISPLAY: ":0",
+  MIDAS_CONFIRM_REMOTE: JSON.stringify(["ssh", "desk-b", "/usr/bin/python3", "/opt/mcp-midas/onay/onay.py"]),
+  MIDAS_CONFIRM_REMOTE_CLOSE: JSON.stringify(["close-remote"]),
+};
+
+function detailedOf(outcome: Awaited<ReturnType<ReturnType<typeof createDesktopConfirmationGate>>>) {
+  return (typeof outcome === "string" ? { decision: outcome } : outcome) as {
+    decision: string;
+    dialog?: string | null;
+    detail?: string;
+    attempts?: Array<{ tool: string; outcome: string; command?: string[] }>;
+  };
+}
+
+test("uzak pencere önce cevap verirse karar onundur, yerel pencere kapatılır, komut kayda geçer", async () => {
+  const fake = cueRunner({
+    onay: "never",
+    "onay-remote": { delayMs: 5, result: { code: 0, stdout: "ACILDI\nSONUC evet\n" } },
+  });
+  const outcome = detailedOf(await createDesktopConfirmationGate(fake.run, remoteEnv, options)(preview));
+  assert.equal(outcome.decision, "approved");
+  assert.equal(outcome.dialog, "onay-remote");
+  assert.deepEqual(fake.aborted, ["onay"]);
+  const remote = outcome.attempts?.find((item) => item.tool === "onay-remote");
+  assert.deepEqual(remote?.command, ["ssh", "desk-b", "/usr/bin/python3", "/opt/mcp-midas/onay/onay.py"]);
+  assert.equal(outcome.attempts?.find((item) => item.tool === "onay")?.command, undefined);
+});
+
+test("yerelde verilen Hayır karardır; açık kalan uzak pencere kapatma komutuyla kapatılır", async () => {
+  const fake = cueRunner({
+    onay: { delayMs: 5, result: { code: 1, stdout: "ACILDI\nSONUC hayir\n" } },
+    "onay-remote": "never",
+  });
+  const outcome = detailedOf(await createDesktopConfirmationGate(fake.run, remoteEnv, options)(preview));
+  assert.equal(outcome.decision, "rejected");
+  assert.equal(outcome.dialog, "onay");
+  assert.deepEqual(fake.aborted, ["onay-remote"]);
+  assert.ok(fake.seen.some((spec) => spec.command === "close-remote"));
+});
+
+test("gösterilmiş pencerede zaman aşımı karardır; geç açılan öteki pencere sonradan onaylayamaz", async () => {
+  const fake = cueRunner({
+    onay: { delayMs: 5, result: { code: 2, stdout: "ACILDI\nSONUC zaman-asimi\n" } },
+    "onay-remote": { delayMs: 30, result: { code: 0, stdout: "ACILDI\nSONUC evet\n" } },
+  });
+  const outcome = detailedOf(await createDesktopConfirmationGate(fake.run, remoteEnv, options)(preview));
+  assert.equal(outcome.decision, "timeout");
+  assert.deepEqual(fake.aborted, ["onay-remote"]);
+});
+
+test("hiç açılamayan uzak pencere sayılmaz; yerel cevap karar verir", async () => {
+  const fake = cueRunner({
+    onay: { delayMs: 20, result: { code: 1, stdout: "ACILDI\nSONUC hayir\n" } },
+    "onay-remote": { delayMs: 1, result: { code: 255, stderr: "ssh: connect to host desk-b: No route to host" } },
+  });
+  const outcome = detailedOf(await createDesktopConfirmationGate(fake.run, remoteEnv, options)(preview));
+  assert.equal(outcome.decision, "rejected");
+  assert.equal(outcome.dialog, "onay");
+});
+
+test("gösterildikten sonra hatayla biten pencere ret sayılmaz, öteki pencerenin cevabı beklenir", async () => {
+  const fake = cueRunner({
+    onay: { delayMs: 30, result: { code: 0, stdout: "ACILDI\nSONUC evet\n" } },
+    "onay-remote": { delayMs: 1, result: { code: 255, stdout: "ACILDI\n", stderr: "Connection reset" } },
+  });
+  const outcome = detailedOf(await createDesktopConfirmationGate(fake.run, remoteEnv, options)(preview));
+  assert.equal(outcome.decision, "approved");
+  assert.equal(outcome.dialog, "onay");
+});
+
+test("iki pencere de açılamazsa yerel kdialog/zenity yedeğine geçilir", async () => {
+  const fake = cueRunner({
+    onay: { delayMs: 1, result: { code: null, spawnError: { code: "ENOENT", message: "spawn ENOENT" } } },
+    "onay-remote": { delayMs: 1, result: { code: 255, stderr: "ssh: connect to host desk-b: No route to host" } },
+    kdialog: { delayMs: 1, result: { code: 0, stdout: "hayir\n" } },
+  });
+  const outcome = detailedOf(await createDesktopConfirmationGate(fake.run, remoteEnv, options)(preview));
+  assert.equal(outcome.decision, "rejected");
+  assert.equal(outcome.dialog, "kdialog");
+});
+
+test("uzak pencere stdin'de yerel pencereyle aynı modeli alır", async () => {
+  const fake = cueRunner({
+    onay: { delayMs: 1, result: { code: 1, stdout: "ACILDI\nSONUC hayir\n" } },
+    "onay-remote": "never",
+  });
+  await createDesktopConfirmationGate(fake.run, remoteEnv, options)(preview);
+  const local = fake.seen.find((spec) => spec.tool === "onay");
+  const remote = fake.seen.find((spec) => spec.tool === "onay-remote" && spec.command === "ssh");
+  assert.ok(local && remote);
+  assert.equal(remote.stdin, local.stdin);
+  assert.deepEqual(remote.args, ["desk-b", "/usr/bin/python3", "/opt/mcp-midas/onay/onay.py"]);
+});
+
+const unwatchedEnv = {
+  MIDAS_CONFIRM_LOCAL: JSON.stringify(["ssh", "desk-a", "/usr/bin/python3", "/opt/mcp-midas/onay/onay.py"]),
+  MIDAS_CONFIRM_LOCAL_CLOSE: JSON.stringify(["close-local"]),
+  MIDAS_CONFIRM_REMOTE: JSON.stringify(["ssh", "desk-b", "/usr/bin/python3", "/opt/mcp-midas/onay/onay.py"]),
+  MIDAS_CONFIRM_REMOTE_CLOSE: JSON.stringify(["close-remote"]),
+};
+
+test("ekransız makinede MIDAS_CONFIRM_LOCAL yerel pencerenin yerine sorar", async () => {
+  const fake = cueRunner({
+    onay: { delayMs: 5, result: { code: 0, stdout: "ACILDI\nSONUC evet\n" } },
+    "onay-remote": "never",
+  });
+  const outcome = detailedOf(await createDesktopConfirmationGate(fake.run, unwatchedEnv, options)(preview));
+  assert.equal(outcome.decision, "approved");
+  const local = fake.seen.find((spec) => spec.tool === "onay");
+  assert.equal(local?.command, "ssh");
+  assert.deepEqual(local?.args, ["desk-a", "/usr/bin/python3", "/opt/mcp-midas/onay/onay.py"]);
+  assert.deepEqual(outcome.attempts?.find((item) => item.tool === "onay")?.command, ["ssh", ...(local?.args ?? [])]);
+});
+
+test("ikinci pencere önce cevap verirse MIDAS_CONFIRM_LOCAL ile açılan pencere kapatılır", async () => {
+  const fake = cueRunner({
+    onay: "never",
+    "onay-remote": { delayMs: 5, result: { code: 1, stdout: "ACILDI\nSONUC hayir\n" } },
+  });
+  const outcome = detailedOf(await createDesktopConfirmationGate(fake.run, unwatchedEnv, options)(preview));
+  assert.equal(outcome.decision, "rejected");
+  assert.deepEqual(fake.aborted, ["onay"]);
+  assert.ok(fake.seen.some((spec) => spec.command === "close-local"));
+});
+
+test("MIDAS_CONFIRM_LOCAL varken hiçbir pencere açılmazsa kdialog/zenity burada çalışmaz, sonuç hatadır", async () => {
+  const fake = cueRunner({
+    onay: { delayMs: 1, result: { code: 255, stderr: "ssh: connect to host desk-a: No route to host" } },
+    "onay-remote": { delayMs: 1, result: { code: 255, stderr: "ssh: connect to host desk-b: No route to host" } },
+  });
+  const outcome = detailedOf(await createDesktopConfirmationGate(fake.run, unwatchedEnv, options)(preview));
+  assert.equal(outcome.decision, "error");
+  assert.ok(!fake.seen.some((spec) => spec.tool === "kdialog" || spec.tool === "zenity"));
+});
+
+test("geçersiz komut ayarı yok sayılmaz: hiçbir pencere açılmadan hata (ret) döner", async () => {
+  const fake = cueRunner({ onay: { delayMs: 1, result: { code: 0, stdout: "ACILDI\nSONUC evet\n" } } });
+  const outcome = detailedOf(
+    await createDesktopConfirmationGate(fake.run, { DISPLAY: ":0", MIDAS_CONFIRM_REMOTE: "ssh desk-b onay.py" }, options)(preview)
+  );
+  assert.equal(outcome.decision, "error");
+  assert.match(outcome.detail ?? "", /MIDAS_CONFIRM_REMOTE geçersiz/);
+  assert.equal(fake.seen.length, 0);
+});
+
+test("komut ayarı yalnız boş olmayan JSON dizi kabul eder", () => {
+  assert.equal(parseCommandSetting("X", undefined), null);
+  assert.equal(parseCommandSetting("X", "  "), null);
+  assert.deepEqual(parseCommandSetting("X", '["/usr/local/bin/my-approval-window","--flag"]'), ["/usr/local/bin/my-approval-window", "--flag"]);
+  for (const bad of ["[]", "my-approval-window", '[""]', "[1]", '{"a":1}']) {
+    assert.throws(() => parseCommandSetting("X", bad), /X geçersiz/, bad);
+  }
 });

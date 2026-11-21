@@ -5,6 +5,16 @@
  */
 import * as midas from "./midas.js";
 import { session } from "./session.js";
+import { defineMessages } from "./i18n.js";
+
+const M = defineMessages(
+  {
+    failed: "BAŞARISIZ",
+  },
+  {
+    failed: "FAILED",
+  }
+);
 
 const symbol = process.argv[2] ?? "TUCLK";
 
@@ -23,7 +33,7 @@ try {
       (value) => JSON.stringify(value, null, 2),
       (error: unknown) => {
         process.exitCode = 1;
-        return `BAŞARISIZ: ${error instanceof Error ? error.message : String(error)}`;
+        return `${M().failed}: ${error instanceof Error ? error.message : String(error)}`;
       }
     );
     console.log(outcome);

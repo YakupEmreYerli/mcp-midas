@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+// Bu dosyadaki beklentiler Türkçe metinleri sabitler; dil sistem yerelinden bağımsız seçilir.
+process.env.MIDAS_LANG = "tr";
+
 // technicals.ts midas.ts üzerinden config.ts'i yükler; o da kimlik bilgisini ister.
 process.env.MIDAS_PHONE ??= "test-only";
 process.env.MIDAS_PASSWORD ??= "test-only";

@@ -1,4 +1,60 @@
 import { MidasApiError } from "./errors.js";
+import { defineMessages, locale } from "./i18n.js";
+
+const M = defineMessages(
+  {
+    mustBePositive: (field: string) => `${field} sıfırdan büyük olmalıdır`,
+    currentPrice: "güncel fiyat",
+    symbolMismatch: (requested: string, resolved: string) =>
+      `Emir sembolü birebir eşleşmedi: istenen ${requested}, Midas sonucu ${resolved}. İşlem reddedildi.`,
+    tpslSellOnly: "Kâr al/zarar durdur emirleri Midas'ta yalnızca satış (SELL) yönünde verilebilir",
+    profitAbove: (profit: number, reference: number) => `Kâr alma fiyatı (${profit}) güncel fiyatın (${reference}) üstünde olmalıdır`,
+    stopLossNoProfit: "STOP_LOSS emrinde take_profit_price verilmez; ikisi için TAKE_PROFIT_AND_STOP_LOSS kullan",
+    lossBelow: (loss: number, reference: number) => `Zarar durdurma fiyatı (${loss}) güncel fiyatın (${reference}) altında olmalıdır`,
+    profitNoStop: "TAKE_PROFIT emrinde stop_loss_price verilmez; ikisi için TAKE_PROFIT_AND_STOP_LOSS kullan",
+    fundBuy: "Midas Atlas TEFAS fon alımını desteklemiyor; fon alışını Midas telefon uygulamasından ver. Fon satışı ve BIST/ABD emirleri buradan verilebilir.",
+    fundDemandOnly: "TEFAS fon emirleri yalnızca DEMAND tipiyle gönderilebilir",
+    fundByQuantity: "TEFAS fon satışı adetle verilir; amount_try değil quantity kullan",
+    stockTypes: "BIST hisse emirlerinde yalnızca MARKET, LIMIT, TAKE_PROFIT, STOP_LOSS ve TAKE_PROFIT_AND_STOP_LOSS desteklenir",
+    thisType: "bu",
+    updateBase: (type: string) =>
+      `Midas ${type} emrinin güncellenmesine izin vermiyor (showUpdate: false); bu emir yerinde değiştirilemez.`,
+    notCancelable: (base: string) => `${base} Midas emrin iptal edilebilir olduğunu da belirtmiyor; emri Midas uygulamasından kontrol edin.`,
+    newValue: "<yeni>",
+    replaceSteps: (base: string, uid: string, symbol: string, placeArgs: string) =>
+      `${base} Değiştirmek için iptal edip yeniden girin: önce cancel_order (order_id: "${uid}", symbol: "${symbol}"), ` +
+      `iptal gerçekleştikten sonra place_order (${placeArgs}). Her iki adım ayrı masaüstü onayı ister; ` +
+      `iptal ile yeni emir arasında pozisyon korumasız kalır.`,
+    priceUnknown: "Fiyat karşılaştırılamadı",
+    priceMoved: (percent: string) => `Fiyat %${percent} değişti`,
+  },
+  {
+    mustBePositive: (field) => `${field} must be greater than zero`,
+    currentPrice: "current price",
+    symbolMismatch: (requested, resolved) =>
+      `The order symbol isn't an exact match: you asked for ${requested}, Midas returned ${resolved}. Order rejected.`,
+    tpslSellOnly: "Midas only accepts take-profit/stop-loss orders on the sell (SELL) side",
+    profitAbove: (profit, reference) => `The take-profit price (${profit}) must be above the current price (${reference})`,
+    stopLossNoProfit: "A STOP_LOSS order doesn't take take_profit_price; use TAKE_PROFIT_AND_STOP_LOSS for both",
+    lossBelow: (loss, reference) => `The stop-loss price (${loss}) must be below the current price (${reference})`,
+    profitNoStop: "A TAKE_PROFIT order doesn't take stop_loss_price; use TAKE_PROFIT_AND_STOP_LOSS for both",
+    fundBuy: "Midas Atlas can't buy TEFAS funds; buy funds in the Midas phone app. Fund sells and BIST/US orders work here.",
+    fundDemandOnly: "TEFAS fund orders can only be sent as DEMAND",
+    fundByQuantity: "TEFAS fund sells go by quantity; use quantity, not amount_try",
+    stockTypes: "BIST stock orders only support MARKET, LIMIT, TAKE_PROFIT, STOP_LOSS and TAKE_PROFIT_AND_STOP_LOSS",
+    thisType: "this",
+    updateBase: (type) =>
+      `Midas doesn't allow updating ${type === "this" ? "this" : `this ${type}`} order (showUpdate: false), so it can't be changed in place.`,
+    notCancelable: (base) => `${base} Midas doesn't mark it as cancelable either; check the order in the Midas app.`,
+    newValue: "<new>",
+    replaceSteps: (base, uid, symbol, placeArgs) =>
+      `${base} To change it, cancel and place it again: first cancel_order (order_id: "${uid}", symbol: "${symbol}"), ` +
+      `then, once the cancel has gone through, place_order (${placeArgs}). Each step needs its own desktop approval; ` +
+      `the position is unprotected between the cancel and the new order.`,
+    priceUnknown: "Couldn't compare the price",
+    priceMoved: (percent) => `The price moved ${percent}%`,
+  }
+);
 
 export type Side = "BUY" | "SELL";
 export type TpslOrderType = "TAKE_PROFIT" | "STOP_LOSS" | "TAKE_PROFIT_AND_STOP_LOSS";
@@ -44,7 +100,7 @@ interface UpdateOrderFields {
 
 function positive(value: number | undefined, field: string): number {
   if (value == null || !Number.isFinite(value) || value <= 0) {
-    throw new MidasApiError(`${field} sıfırdan büyük olmalıdır`);
+    throw new MidasApiError(M().mustBePositive(field));
   }
   return value;
 }
@@ -52,7 +108,7 @@ function positive(value: number | undefined, field: string): number {
 export function assertExactResolvedSymbol(requested: string, resolved: string): void {
   if (requested.trim().toUpperCase() !== resolved.trim().toUpperCase()) {
     throw new MidasApiError(
-      `Emir sembolü birebir eşleşmedi: istenen ${requested.trim()}, Midas sonucu ${resolved}. İşlem reddedildi.`
+      M().symbolMismatch(requested.trim(), resolved)
     );
   }
 }
@@ -85,9 +141,9 @@ export function resolveTpslOrderType(takeProfitPrice?: number, stopLossPrice?: n
  */
 function buildTpslPlaceOrderRequest(fields: PlaceOrderFields & { orderType: TpslOrderType }): Record<string, unknown> {
   if (fields.side !== "SELL") {
-    throw new MidasApiError("Kâr al/zarar durdur emirleri Midas'ta yalnızca satış (SELL) yönünde verilebilir");
+    throw new MidasApiError(M().tpslSellOnly);
   }
-  const reference = positive(fields.referencePrice, "güncel fiyat");
+  const reference = positive(fields.referencePrice, M().currentPrice);
   const wantsProfit = fields.orderType !== "STOP_LOSS";
   const wantsLoss = fields.orderType !== "TAKE_PROFIT";
   const request: Record<string, unknown> = {
@@ -99,7 +155,7 @@ function buildTpslPlaceOrderRequest(fields: PlaceOrderFields & { orderType: Tpsl
   if (wantsProfit) {
     const profit = positive(fields.takeProfitPrice, "take_profit_price");
     if (profit <= reference) {
-      throw new MidasApiError(`Kâr alma fiyatı (${profit}) güncel fiyatın (${reference}) üstünde olmalıdır`);
+      throw new MidasApiError(M().profitAbove(profit, reference));
     }
     Object.assign(request, {
       limitPrice: profit,
@@ -108,12 +164,12 @@ function buildTpslPlaceOrderRequest(fields: PlaceOrderFields & { orderType: Tpsl
       isProfitByRatio: false,
     });
   } else if (fields.takeProfitPrice != null) {
-    throw new MidasApiError("STOP_LOSS emrinde take_profit_price verilmez; ikisi için TAKE_PROFIT_AND_STOP_LOSS kullan");
+    throw new MidasApiError(M().stopLossNoProfit);
   }
   if (wantsLoss) {
     const loss = positive(fields.stopLossPrice, "stop_loss_price");
     if (loss >= reference) {
-      throw new MidasApiError(`Zarar durdurma fiyatı (${loss}) güncel fiyatın (${reference}) altında olmalıdır`);
+      throw new MidasApiError(M().lossBelow(loss, reference));
     }
     Object.assign(request, {
       stopPrice: loss,
@@ -122,15 +178,16 @@ function buildTpslPlaceOrderRequest(fields: PlaceOrderFields & { orderType: Tpsl
       isLossByRatio: false,
     });
   } else if (fields.stopLossPrice != null) {
-    throw new MidasApiError("TAKE_PROFIT emrinde stop_loss_price verilmez; ikisi için TAKE_PROFIT_AND_STOP_LOSS kullan");
+    throw new MidasApiError(M().profitNoStop);
   }
   if (fields.endingDate) request.endingDate = fields.endingDate;
   request.quantity = positive(fields.quantity, "quantity");
   return request;
 }
 
-export const FUND_BUY_UNSUPPORTED =
-  "Midas Atlas TEFAS fon alımını desteklemiyor; fon alışını Midas telefon uygulamasından ver. Fon satışı ve BIST/ABD emirleri buradan verilebilir.";
+export function fundBuyUnsupported(): string {
+  return M().fundBuy;
+}
 
 /**
  * Emir yerleştirme isteği.
@@ -143,13 +200,13 @@ export const FUND_BUY_UNSUPPORTED =
 export function buildPlaceOrderRequest(fields: PlaceOrderFields): Record<string, unknown> {
   if (fields.kind === "fund") {
     if (fields.orderType !== "DEMAND") {
-      throw new MidasApiError("TEFAS fon emirleri yalnızca DEMAND tipiyle gönderilebilir");
+      throw new MidasApiError(M().fundDemandOnly);
     }
     if (fields.side === "BUY") {
-      throw new MidasApiError(FUND_BUY_UNSUPPORTED);
+      throw new MidasApiError(fundBuyUnsupported());
     }
     if (fields.amountTry != null) {
-      throw new MidasApiError("TEFAS fon satışı adetle verilir; amount_try değil quantity kullan");
+      throw new MidasApiError(M().fundByQuantity);
     }
     return {
       type: "DEMAND",
@@ -164,7 +221,7 @@ export function buildPlaceOrderRequest(fields: PlaceOrderFields): Record<string,
   }
   if (fields.orderType !== "MARKET" && fields.orderType !== "LIMIT") {
     throw new MidasApiError(
-      "BIST hisse emirlerinde yalnızca MARKET, LIMIT, TAKE_PROFIT, STOP_LOSS ve TAKE_PROFIT_AND_STOP_LOSS desteklenir"
+      M().stockTypes
     );
   }
   const request: Record<string, unknown> = {
@@ -213,30 +270,28 @@ export function updateNotAllowedMessage(order: {
   quantity?: number | null;
   eligibleToCancel?: boolean | null;
 }, symbol: string): string {
-  const type = order.type ?? "bu";
-  const base = `Midas ${type} emrinin güncellenmesine izin vermiyor (showUpdate: false); bu emir yerinde değiştirilemez.`;
+  const text = M();
+  const type = order.type ?? text.thisType;
+  const base = text.updateBase(type);
   if (order.eligibleToCancel === false) {
-    return `${base} Midas emrin iptal edilebilir olduğunu da belirtmiyor; emri Midas uygulamasından kontrol edin.`;
+    return text.notCancelable(base);
   }
   const sym = symbol.trim().toUpperCase();
   const qty = order.quantity != null ? `, quantity: ${order.quantity}` : "";
   const side = order.side ? `, side: "${order.side}"` : "";
   let placeArgs = `symbol: "${sym}"${side}, order_type: "${type}"${qty}`;
-  if (type === "TAKE_PROFIT_AND_STOP_LOSS") placeArgs += ", take_profit_price: <yeni>, stop_loss_price: <yeni>";
-  else if (type === "TAKE_PROFIT") placeArgs += ", take_profit_price: <yeni>";
-  else if (type === "STOP_LOSS") placeArgs += ", stop_loss_price: <yeni>";
-  else if (type === "LIMIT") placeArgs += ", limit_price: <yeni>";
-  return (
-    `${base} Değiştirmek için iptal edip yeniden girin: önce cancel_order (order_id: "${order.uid}", symbol: "${sym}"), ` +
-    `iptal gerçekleştikten sonra place_order (${placeArgs}). Her iki adım ayrı masaüstü onayı ister; ` +
-    `iptal ile yeni emir arasında pozisyon korumasız kalır.`
-  );
+  const fresh = text.newValue;
+  if (type === "TAKE_PROFIT_AND_STOP_LOSS") placeArgs += `, take_profit_price: ${fresh}, stop_loss_price: ${fresh}`;
+  else if (type === "TAKE_PROFIT") placeArgs += `, take_profit_price: ${fresh}`;
+  else if (type === "STOP_LOSS") placeArgs += `, stop_loss_price: ${fresh}`;
+  else if (type === "LIMIT") placeArgs += `, limit_price: ${fresh}`;
+  return text.replaceSteps(base, order.uid, sym, placeArgs);
 }
 
 export function meaningfulPriceDrift(before: number | null | undefined, after: number | null | undefined): string | null {
-  if (before == null || after == null || before <= 0 || after <= 0) return "Fiyat karşılaştırılamadı";
+  if (before == null || after == null || before <= 0 || after <= 0) return M().priceUnknown;
   const percent = Math.abs((after - before) / before) * 100;
   return percent > 2
-    ? `Fiyat %${percent.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} değişti`
+    ? M().priceMoved(percent.toLocaleString(locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
     : null;
 }

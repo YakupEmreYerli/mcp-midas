@@ -1,3 +1,17 @@
+import { defineMessages, locale } from "./i18n.js";
+
+const M = defineMessages(
+  {
+    hours: (value: string) => `${value} sa`,
+    line: (issued: string, exp: string, appExp: string, left: string, access: string) =>
+      `refresh_token verildi ${issued}, bitiş ${exp} (uygulama bitiş ${appExp}, kalan ${left}); access bitiş ${access}`,
+  },
+  {
+    hours: (value) => `${value} h`,
+    line: (issued, exp, appExp, left, access) =>
+      `refresh_token issued ${issued}, expires ${exp} (app expiry ${appExp}, ${left} left); access expires ${access}`,
+  }
+);
 /**
  * storageState içindeki oturum sürelerini özetler. Yalnız zaman bilgisi döner: token
  * değerleri, jti ya da hesap alanları asla dışarı çıkmaz; sonuç loga yazılabilir.
@@ -51,15 +65,12 @@ export function describeAuthExpiry(state: StorageStateLike, atlasOrigin = "https
 
 function stamp(ms: number | null): string {
   if (ms === null) return "?";
-  return new Date(ms).toLocaleString("tr-TR", { timeZone: process.env.TZ || undefined, hour12: false });
+  return new Date(ms).toLocaleString(locale(), { timeZone: process.env.TZ || undefined, hour12: false });
 }
 
 /** Tek satırlık log metni: yalnız tarih/saat ve kalan süre. */
 export function formatAuthExpiry(e: AuthExpiry, now = Date.now()): string {
   const limit = e.refreshTokenExp ?? e.refreshExpiry;
-  const left = limit === null ? "?" : `${Math.max(0, (limit - now) / 3_600_000).toFixed(1)} sa`;
-  return (
-    `refresh_token verildi ${stamp(e.refreshIssuedAt)}, bitiş ${stamp(e.refreshTokenExp)} ` +
-    `(uygulama bitiş ${stamp(e.refreshExpiry)}, kalan ${left}); access bitiş ${stamp(e.accessExpiry)}`
-  );
+  const left = limit === null ? "?" : M().hours(Math.max(0, (limit - now) / 3_600_000).toFixed(1));
+  return M().line(stamp(e.refreshIssuedAt), stamp(e.refreshTokenExp), stamp(e.refreshExpiry), left, stamp(e.accessExpiry));
 }

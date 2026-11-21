@@ -16,6 +16,9 @@ import {
   parseLoginWindowMode,
 } from "../src/login-window.js";
 
+// Bu dosyadaki beklentiler Türkçe metinleri sabitler; dil sistem yerelinden bağımsız seçilir.
+process.env.MIDAS_LANG = "tr";
+
 test("giriş penceresi kipi varsayılan olarak gizlidir ve eski görünür davranış seçilebilir", () => {
   assert.equal(parseLoginWindowMode(undefined), "hidden");
   assert.equal(parseLoginWindowMode(""), "hidden");

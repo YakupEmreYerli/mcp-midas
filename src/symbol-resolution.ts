@@ -1,4 +1,27 @@
 import { MidasApiError } from "./errors.js";
+import { defineMessages } from "./i18n.js";
+
+const M = defineMessages(
+  {
+    us: "ABD",
+    describe: (symbol: string, name: string, market: string, country: string, type: string) =>
+      `${symbol} — ${name}; piyasa: ${market}, ülke: ${country}, tip: ${type}`,
+    notFound: (requested: string) => `"${requested}" için enstrüman bulunamadı`,
+    ambiguousOrder: (requested: string, count: number, list: string) =>
+      `"${requested}" sembolü ${count} farklı enstrümanla birebir eşleşiyor ve ` +
+      `pozisyonlarınız hangisi olduğunu ayırt etmiyor; emir için tahmin yapılmadı, işlem reddedildi. ` +
+      `Adaylar: ${list}.`,
+  },
+  {
+    us: "US",
+    describe: (symbol, name, market, country, type) => `${symbol} — ${name}; market: ${market}, country: ${country}, type: ${type}`,
+    notFound: (requested) => `No instrument found for "${requested}"`,
+    ambiguousOrder: (requested, count, list) =>
+      `The symbol "${requested}" exactly matches ${count} different instruments and ` +
+      `your positions don't tell which one you mean; nothing was guessed for the order, so it was rejected. ` +
+      `Candidates: ${list}.`,
+  }
+);
 
 /**
  * Sembol çözümlemenin ağa çıkmayan seçim mantığı. Midas araması aynı sembolü taşıyan
@@ -61,7 +84,7 @@ function fromPosition(position: HeldInstrument): SearchCandidate {
 
 /** Aday için insan okunur piyasa etiketi; yalnız gösterim içindir, seçimde kullanılmaz. */
 export function marketLabel(candidate: Pick<SearchCandidate, "country" | "type">): string {
-  if (candidate.country === "US") return "ABD";
+  if (candidate.country === "US") return M().us;
   if (candidate.country === "TR") return /FUND/i.test(candidate.type) ? "TEFAS" : "BIST";
   return candidate.country || "?";
 }
@@ -70,7 +93,7 @@ export function describeCandidate(candidate: SearchCandidate): string {
   const name = candidate.subtitle && candidate.subtitle !== candidate.title
     ? `${candidate.title} (${candidate.subtitle})`
     : candidate.title || candidate.symbol;
-  return `${candidate.symbol} — ${name}; piyasa: ${marketLabel(candidate)}, ülke: ${candidate.country || "?"}, tip: ${candidate.type || "?"}`;
+  return M().describe(candidate.symbol, name, marketLabel(candidate), candidate.country || "?", candidate.type || "?");
 }
 
 /** Okuma sonucunda gösterilecek sade aday listesi. */
@@ -114,7 +137,7 @@ export function pickInstrument(requested: string, results: SearchCandidate[], op
   }
 
   if (pool.length === 0) {
-    if (!results.length) throw new MidasApiError(`"${requested.trim()}" için enstrüman bulunamadı`);
+    if (!results.length) throw new MidasApiError(M().notFound(requested.trim()));
     // Birebir eşleşme yok: okumada bulanık ilk sonuç; emir yolu bunu ayrıca reddeder.
     return { asset: results[0], candidates: [], resolvedBy: "fuzzy" };
   }
@@ -141,9 +164,7 @@ export function pickInstrument(requested: string, results: SearchCandidate[], op
 
   if (options.mode === "order") {
     throw new MidasApiError(
-      `"${requested.trim()}" sembolü ${pool.length} farklı enstrümanla birebir eşleşiyor ve ` +
-        `pozisyonlarınız hangisi olduğunu ayırt etmiyor; emir için tahmin yapılmadı, işlem reddedildi. ` +
-        `Adaylar: ${pool.map((c, i) => `${i + 1}) ${describeCandidate(c)}`).join("; ")}.`
+      M().ambiguousOrder(requested.trim(), pool.length, pool.map((c, i) => `${i + 1}) ${describeCandidate(c)}`).join("; "))
     );
   }
 

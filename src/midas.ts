@@ -1,4 +1,5 @@
 import { gql, MidasApiError } from "./api.js";
+import { defineMessages } from "./i18n.js";
 import { config } from "./config.js";
 import { confirmOrderOnDesktop } from "./desktop-confirmation.js";
 import {
@@ -29,6 +30,79 @@ import {
   type ResolveMode,
   type SearchCandidate,
 } from "./symbol-resolution.js";
+
+const M = defineMessages(
+  {
+    noAccount: (market: string) => `Bu Midas profilinde ${market} hesabı bulunamadı`,
+    ambiguityNote: "Bu sembolü birden çok enstrüman taşıyor; farklı enstrüman için market parametresini (TR ya da US) ver.",
+    trOnly: "Emir araçları yalnızca BIST hisseleri ve TEFAS fonları içindir",
+    detailUnverified: "Midas enstrüman ayrıntısını doğrulayamadı; işlem reddedildi",
+    noTryPrice: (symbol: string) => `${symbol} için güncel TRY fiyatı yok; işlem reddedildi`,
+    noPrep: "Midas emir hazırlığını döndürmedi",
+    overCap: (estimated: string, cap: string) => `Tahmini ₺${estimated} tutar, ₺${cap} güvenlik tavanını aşıyor`,
+    noOrderDetail: (orderId: string) => `Emir ayrıntısı bulunamadı: ${orderId}`,
+    instrumentChanged: "Çözümlenen enstrüman onay önizlemesinden farklı",
+    tpslOnly: (orderType: string) =>
+      `take_profit_price/stop_loss_price yalnızca TAKE_PROFIT, STOP_LOSS ve TAKE_PROFIT_AND_STOP_LOSS emirlerinde kullanılır; ${orderType} için verilemez`,
+    tpslNoLimit: "Kâr al/zarar durdur emrinde limit_price ve amount_try verilmez; quantity, take_profit_price ve/veya stop_loss_price kullan",
+    tpslStocksOnly: "Kâr al/zarar durdur emirleri yalnızca BIST hisseleri için verilebilir",
+    amountFundOnly: "amount_try yalnızca TEFAS fon alışında kullanılır; BIST hissesinde quantity ver",
+    typeNotAccepted: (type: string, available: string) => `${type} şu anda kabul edilmiyor; kullanılabilir tipler: ${available}`,
+    sharesBlocked: " Adetler bekleyen başka bir satış emrinde (ör. mevcut kâr al/zarar durdur) bloke olabilir; önce o emri cancel_order ile iptal edin.",
+    sellable: (available: number, quantity: number, blocked: string) => `Satılabilir adet ${available}; ${quantity} adet gönderilemez.${blocked}`,
+    stopFloor: (floor: number) => `Zarar durdurma fiyatı Midas alt sınırı ${floor} altında`,
+    profitCeiling: (ceiling: number) => `Kâr alma fiyatı Midas üst sınırı ${ceiling} üstünde`,
+    fractional: (symbol: string) => `${symbol} kesirli adedi desteklemiyor`,
+    limitLow: (lowest: number) => `Limit fiyatı günlük alt sınır ${lowest} altında`,
+    limitHigh: (highest: number) => `Limit fiyatı günlük üst sınır ${highest} üstünde`,
+    marketFund: "TR FON (TEFAS)",
+    marketStock: "TR HİSSE (BIST)",
+    noPlaceId: "Midas emri kabul ettiğini doğrulayan emir kimliği döndürmedi",
+    nothingToUpdate: "Güncellenecek en az bir emir alanı verilmelidir",
+    wrongInstrument: "Emir, çözümlenen enstrümana ait değil; işlem reddedildi",
+    updateUnsupported: (type: string) => `${type} emir güncellemesi desteklenmiyor`,
+    valuesChanged: "Emrin mevcut değerleri onay önizlemesinden sonra değişti",
+    noUpdateId: "Midas güncelleme sonucunda emir kimliği döndürmedi",
+    notCancelable: "Midas bu emrin iptal edilebilir olduğunu belirtmiyor",
+    cancelChanged: "Emir iptal onayından sonra değişti veya artık iptal edilemiyor",
+    noCancelId: "Midas iptal sonucunda emir kimliği döndürmedi",
+  },
+  {
+    noAccount: (market) => `No ${market} account found in this Midas profile`,
+    ambiguityNote: "Several instruments share this symbol; to get a different one, pass the market parameter (TR or US).",
+    trOnly: "Order tools only work with BIST stocks and TEFAS funds",
+    detailUnverified: "Midas couldn't confirm the instrument details; order rejected",
+    noTryPrice: (symbol) => `No current TRY price for ${symbol}; order rejected`,
+    noPrep: "Midas didn't return the order preparation",
+    overCap: (estimated, cap) => `The estimated ₺${estimated} exceeds the ₺${cap} safety cap`,
+    noOrderDetail: (orderId) => `Order details not found: ${orderId}`,
+    instrumentChanged: "The resolved instrument differs from the approval preview",
+    tpslOnly: (orderType) =>
+      `take_profit_price/stop_loss_price only apply to TAKE_PROFIT, STOP_LOSS and TAKE_PROFIT_AND_STOP_LOSS orders, not to ${orderType}`,
+    tpslNoLimit: "Take-profit/stop-loss orders don't take limit_price or amount_try; use quantity, take_profit_price and/or stop_loss_price",
+    tpslStocksOnly: "Take-profit/stop-loss orders are only available for BIST stocks",
+    amountFundOnly: "amount_try only applies to TEFAS fund buys; use quantity for BIST stocks",
+    typeNotAccepted: (type, available) => `${type} isn't accepted right now; available types: ${available}`,
+    sharesBlocked: " The shares may be held by another pending sell order (e.g. an existing take profit/stop loss); cancel that order with cancel_order first.",
+    sellable: (available, quantity, blocked) => `Only ${available} can be sold; can't send ${quantity}.${blocked}`,
+    stopFloor: (floor) => `The stop-loss price is below the Midas floor of ${floor}`,
+    profitCeiling: (ceiling) => `The take-profit price is above the Midas ceiling of ${ceiling}`,
+    fractional: (symbol) => `${symbol} doesn't support fractional quantities`,
+    limitLow: (lowest) => `The limit price is below the daily floor of ${lowest}`,
+    limitHigh: (highest) => `The limit price is above the daily ceiling of ${highest}`,
+    marketFund: "TR fund (TEFAS)",
+    marketStock: "TR stock (BIST)",
+    noPlaceId: "Midas didn't return an order ID confirming it accepted the order",
+    nothingToUpdate: "Give at least one order field to update",
+    wrongInstrument: "The order doesn't belong to the resolved instrument; order rejected",
+    updateUnsupported: (type) => `Updating ${type} orders isn't supported`,
+    valuesChanged: "The order's values changed after the approval preview",
+    noUpdateId: "Midas didn't return an order ID after the update",
+    notCancelable: "Midas doesn't mark this order as cancelable",
+    cancelChanged: "The order changed after the cancel approval or can no longer be canceled",
+    noCancelId: "Midas didn't return an order ID after the cancel",
+  }
+);
 
 export type { Side } from "./order-domain.js";
 
@@ -82,7 +156,7 @@ async function accountFor(market: Market): Promise<Account> {
   const { accounts } = await getPortfolio();
   const match = accounts.find((acc) => acc.assetVertical === market);
   if (match) return match;
-  throw new MidasApiError(`Bu Midas profilinde ${market} hesabı bulunamadı`);
+  throw new MidasApiError(M().noAccount(market));
 }
 
 /** Midas'ın pozisyon satırı (HOLDINGS belgesindeki Holding parçası). */
@@ -208,7 +282,7 @@ function ambiguityInfo(asset: ResolvedAsset) {
     ambiguousSymbol: true,
     resolvedBy: asset.resolvedBy,
     candidates: candidateSummary(asset.candidates),
-    note: "Bu sembolü birden çok enstrüman taşıyor; farklı enstrüman için market parametresini (TR ya da US) ver.",
+    note: M().ambiguityNote,
   };
 }
 
@@ -384,16 +458,16 @@ async function exactOrderAsset(symbol: string, preferUid?: string) {
   const asset = await resolveSymbol(symbol, { mode: "order", preferUid });
   assertExactResolvedSymbol(symbol, asset.symbol);
   if (asset.country !== "TR") {
-    throw new MidasApiError("Emir araçları yalnızca BIST hisseleri ve TEFAS fonları içindir");
+    throw new MidasApiError(M().trOnly);
   }
   const data = await gql("GetAssetSnapshot", Q.INSTRUMENT_QUOTE, { uid: asset.uid, currency: "TRY" });
   const snapshot = data.asset;
   if (!snapshot?.uid || snapshot.uid !== asset.uid) {
-    throw new MidasApiError("Midas enstrüman ayrıntısını doğrulayamadı; işlem reddedildi");
+    throw new MidasApiError(M().detailUnverified);
   }
   const price = snapshot.tradePrice?.price;
   if (!Number.isFinite(price) || price <= 0) {
-    throw new MidasApiError(`${asset.symbol} için güncel TRY fiyatı yok; işlem reddedildi`);
+    throw new MidasApiError(M().noTryPrice(asset.symbol));
   }
   return { asset, snapshot, price: price as number, kind: isFund(snapshot) ? "fund" as const : "stock" as const };
 }
@@ -409,7 +483,7 @@ async function prepareOrder(
   const input = order.orderUid ? order : { stockUid: order.stockUid, side: order.side, type: order.type };
   const res = await gql<{ orderPreparationV2?: OrderPreparation }>("PrepareOrder", Q.PREPARE_ORDER, { accountUid: account, input });
   if (res.orderPreparationV2) return res.orderPreparationV2;
-  throw new MidasApiError("Midas emir hazırlığını döndürmedi");
+  throw new MidasApiError(M().noPrep);
 }
 
 function defaultEndingDate(prep: OrderPreparation): string | undefined {
@@ -422,7 +496,7 @@ function defaultEndingDate(prep: OrderPreparation): string | undefined {
 function assertOrderValue(estimatedTry: number): void {
   const cap = config.maxOrderValueTry;
   if (estimatedTry <= cap) return;
-  throw new MidasApiError(`Tahmini ₺${estimatedTry.toFixed(2)} tutar, ₺${cap.toFixed(2)} güvenlik tavanını aşıyor`);
+  throw new MidasApiError(M().overCap(estimatedTry.toFixed(2), cap.toFixed(2)));
 }
 
 function sideLabel(side: Side): "ALIŞ" | "SATIŞ" {
@@ -431,7 +505,7 @@ function sideLabel(side: Side): "ALIŞ" | "SATIŞ" {
 
 async function orderDetail(accountUid: string, orderId: string): Promise<any> {
   const data = await gql("OrderDetail", Q.ORDER_DETAIL, { accountUid, orderId });
-  if (!data.orderDetail?.uid) throw new MidasApiError(`Emir ayrıntısı bulunamadı: ${orderId}`);
+  if (!data.orderDetail?.uid) throw new MidasApiError(M().noOrderDetail(orderId));
   return data.orderDetail;
 }
 
@@ -454,7 +528,7 @@ async function revalidateAsset(
   try {
     const current = await exactOrderAsset(symbol, expected.uid);
     if (current.asset.uid !== expected.uid || current.snapshot.name !== expected.name) {
-      return { ok: false, reason: "Çözümlenen enstrüman onay önizlemesinden farklı" };
+      return { ok: false, reason: M().instrumentChanged };
     }
     const drift = meaningfulPriceDrift(expected.price, current.price);
     return drift ? { ok: false, reason: drift } : { ok: true };
@@ -474,48 +548,48 @@ export async function placeOrder(input: PlaceOrderInput) {
   const tpsl = isTpslOrderType(orderType);
   if (!tpsl && (input.takeProfitPrice != null || input.stopLossPrice != null)) {
     throw new MidasApiError(
-      `take_profit_price/stop_loss_price yalnızca TAKE_PROFIT, STOP_LOSS ve TAKE_PROFIT_AND_STOP_LOSS emirlerinde kullanılır; ${orderType} için verilemez`
+      M().tpslOnly(orderType)
     );
   }
   if (tpsl && (input.limitPrice != null || input.amountTry != null)) {
     throw new MidasApiError(
-      "Kâr al/zarar durdur emrinde limit_price ve amount_try verilmez; quantity, take_profit_price ve/veya stop_loss_price kullan"
+      M().tpslNoLimit
     );
   }
   if (tpsl && resolved.kind !== "stock") {
-    throw new MidasApiError("Kâr al/zarar durdur emirleri yalnızca BIST hisseleri için verilebilir");
+    throw new MidasApiError(M().tpslStocksOnly);
   }
   if (resolved.kind === "stock" && input.amountTry != null) {
-    throw new MidasApiError("amount_try yalnızca TEFAS fon alışında kullanılır; BIST hissesinde quantity ver");
+    throw new MidasApiError(M().amountFundOnly);
   }
   // Atlas, kâr al ve zarar durdur bacaklarını tek "Kâr al, zarar durdur" sekmesinden
   // hazırlar; yalnız TAKE_PROFIT ya da STOP_LOSS gönderilse de hazırlık bu tiple yapılır.
   const prepType = tpsl ? "TAKE_PROFIT_AND_STOP_LOSS" : orderType;
   const prep = await prepareOrder(account.accountUid, { stockUid: resolved.asset.uid, side: input.side, type: prepType });
   if (prep.availableOrderTypes?.length && !prep.availableOrderTypes.includes(prepType)) {
-    throw new MidasApiError(`${prepType} şu anda kabul edilmiyor; kullanılabilir tipler: ${prep.availableOrderTypes.join(", ")}`);
+    throw new MidasApiError(M().typeNotAccepted(prepType, prep.availableOrderTypes.join(", ")));
   }
   if (input.side === "SELL" && input.quantity != null) {
     const available = prep.availableSharesDecoupled ?? prep.availableShares;
     if (available != null && input.quantity > available) {
       const blocked = tpsl
-        ? " Adetler bekleyen başka bir satış emrinde (ör. mevcut kâr al/zarar durdur) bloke olabilir; önce o emri cancel_order ile iptal edin."
+        ? M().sharesBlocked
         : "";
-      throw new MidasApiError(`Satılabilir adet ${available}; ${input.quantity} adet gönderilemez.${blocked}`);
+      throw new MidasApiError(M().sellable(available, input.quantity, blocked));
     }
   }
   if (tpsl && prep.priceRange) {
     const floor = prep.priceRange.fatFingerMinPrice;
     const ceiling = prep.priceRange.fatFingerMaxPrice;
     if (floor != null && input.stopLossPrice != null && input.stopLossPrice < floor) {
-      throw new MidasApiError(`Zarar durdurma fiyatı Midas alt sınırı ${floor} altında`);
+      throw new MidasApiError(M().stopFloor(floor));
     }
     if (ceiling != null && input.takeProfitPrice != null && input.takeProfitPrice > ceiling) {
-      throw new MidasApiError(`Kâr alma fiyatı Midas üst sınırı ${ceiling} üstünde`);
+      throw new MidasApiError(M().profitCeiling(ceiling));
     }
   }
   if (resolved.kind === "stock" && !prep.isFractionable && input.quantity != null && !Number.isInteger(input.quantity)) {
-    throw new MidasApiError(`${resolved.asset.symbol} kesirli adedi desteklemiyor`);
+    throw new MidasApiError(M().fractional(resolved.asset.symbol));
   }
   const band = orderType === "LIMIT" ? prep.priceRange : null;
   if (band) {
@@ -523,8 +597,8 @@ export async function placeOrder(input: PlaceOrderInput) {
     const lowest = band.minPrice ?? band.fatFingerMinPrice;
     const highest = band.maxPrice ?? band.fatFingerMaxPrice;
     const asked = input.limitPrice ?? 0;
-    if (lowest != null && asked < lowest) throw new MidasApiError(`Limit fiyatı günlük alt sınır ${lowest} altında`);
-    if (highest != null && asked > highest) throw new MidasApiError(`Limit fiyatı günlük üst sınır ${highest} üstünde`);
+    if (lowest != null && asked < lowest) throw new MidasApiError(M().limitLow(lowest));
+    if (highest != null && asked > highest) throw new MidasApiError(M().limitHigh(highest));
   }
 
   const request = buildPlaceOrderRequest({
@@ -552,7 +626,7 @@ export async function placeOrder(input: PlaceOrderInput) {
     action: "PLACE",
     instrumentName: resolved.snapshot.name,
     symbol: resolved.asset.symbol,
-    market: resolved.kind === "fund" ? "TR FON (TEFAS)" : "TR HİSSE (BIST)",
+    market: resolved.kind === "fund" ? M().marketFund : M().marketStock,
     side: sideLabel(input.side),
     orderType,
     quantity: input.quantity,
@@ -573,7 +647,7 @@ export async function placeOrder(input: PlaceOrderInput) {
     mutate: async () => {
       const placed = await gql("PlaceOrder", Q.PLACE_ORDER, { accountUid: account.accountUid, request });
       const order = placed.placeOrderV2?.order;
-      if (!order?.uid) throw new MidasApiError("Midas emri kabul ettiğini doğrulayan emir kimliği döndürmedi");
+      if (!order?.uid) throw new MidasApiError(M().noPlaceId);
       const [pendingResult, detailResult] = await Promise.allSettled([
         pendingForAsset(account.accountUid, resolved.asset.uid),
         orderDetail(account.accountUid, order.uid),
@@ -606,16 +680,16 @@ export async function updateOrder(input: UpdateOrderInput) {
     input.takeProfitPrice == null &&
     input.stopLossPrice == null
   ) {
-    throw new MidasApiError("Güncellenecek en az bir emir alanı verilmelidir");
+    throw new MidasApiError(M().nothingToUpdate);
   }
   const account = await accountFor("TR");
   const existing = await orderDetail(account.accountUid, input.orderId);
   // Aynı sembolü birden çok enstrüman taşıyorsa emrin kendi enstrümanı seçilir.
   const resolved = await exactOrderAsset(input.symbol, existing.stockUid);
-  if (existing.stockUid !== resolved.asset.uid) throw new MidasApiError("Emir, çözümlenen enstrümana ait değil; işlem reddedildi");
+  if (existing.stockUid !== resolved.asset.uid) throw new MidasApiError(M().wrongInstrument);
   if (!existing.showUpdate) throw new MidasApiError(updateNotAllowedMessage(existing, resolved.asset.symbol));
   const supported: UpdatableOrderType[] = ["LIMIT", "STOP", "STOP_LIMIT", "TAKE_PROFIT", "STOP_LOSS", "TAKE_PROFIT_AND_STOP_LOSS"];
-  if (!supported.includes(existing.type)) throw new MidasApiError(`${existing.type} emir güncellemesi desteklenmiyor`);
+  if (!supported.includes(existing.type)) throw new MidasApiError(M().updateUnsupported(existing.type));
   await prepareOrder(account.accountUid, {
     stockUid: resolved.asset.uid,
     side: existing.side,
@@ -646,7 +720,7 @@ export async function updateOrder(input: UpdateOrderInput) {
     action: "UPDATE",
     instrumentName: resolved.snapshot.name,
     symbol: resolved.asset.symbol,
-    market: resolved.kind === "fund" ? "TR FON (TEFAS)" : "TR HİSSE (BIST)",
+    market: resolved.kind === "fund" ? M().marketFund : M().marketStock,
     side: sideLabel(existing.side),
     orderType: existing.type,
     quantity,
@@ -671,7 +745,7 @@ export async function updateOrder(input: UpdateOrderInput) {
         const latest = await orderDetail(account.accountUid, input.orderId);
         return JSON.stringify(stableOrderValues(latest)) === JSON.stringify(oldValues)
           ? { ok: true }
-          : { ok: false, reason: "Emrin mevcut değerleri onay önizlemesinden sonra değişti" };
+          : { ok: false, reason: M().valuesChanged };
       } catch (error) {
         return { ok: false, reason: error instanceof Error ? error.message : String(error) };
       }
@@ -683,7 +757,7 @@ export async function updateOrder(input: UpdateOrderInput) {
         stockUid: resolved.asset.uid,
         request,
       });
-      if (!data.updateOrder?.order?.uid) throw new MidasApiError("Midas güncelleme sonucunda emir kimliği döndürmedi");
+      if (!data.updateOrder?.order?.uid) throw new MidasApiError(M().noUpdateId);
       const [pendingResult, detailResult] = await Promise.allSettled([
         pendingForAsset(account.accountUid, resolved.asset.uid),
         orderDetail(account.accountUid, existing.uid),
@@ -724,15 +798,15 @@ export async function cancelOrder(orderUid: string, symbol: string) {
   const account = await accountFor("TR");
   const existing = await orderDetail(account.accountUid, orderUid);
   const resolved = await exactOrderAsset(symbol, existing.stockUid);
-  if (existing.stockUid !== resolved.asset.uid) throw new MidasApiError("Emir, çözümlenen enstrümana ait değil; işlem reddedildi");
-  if (!existing.eligibleToCancel) throw new MidasApiError("Midas bu emrin iptal edilebilir olduğunu belirtmiyor");
+  if (existing.stockUid !== resolved.asset.uid) throw new MidasApiError(M().wrongInstrument);
+  if (!existing.eligibleToCancel) throw new MidasApiError(M().notCancelable);
   const oldValues = stableOrderValues(existing);
   const quantity = Number(existing.quantity) || 0;
   const preview: ApprovalPreview = {
     action: "CANCEL",
     instrumentName: resolved.snapshot.name,
     symbol: resolved.asset.symbol,
-    market: resolved.kind === "fund" ? "TR FON (TEFAS)" : "TR HİSSE (BIST)",
+    market: resolved.kind === "fund" ? M().marketFund : M().marketStock,
     side: sideLabel(existing.side),
     orderType: existing.type,
     quantity,
@@ -757,7 +831,7 @@ export async function cancelOrder(orderUid: string, symbol: string) {
         const latest = await orderDetail(account.accountUid, orderUid);
         return latest.eligibleToCancel && JSON.stringify(stableOrderValues(latest)) === JSON.stringify(oldValues)
           ? { ok: true }
-          : { ok: false, reason: "Emir iptal onayından sonra değişti veya artık iptal edilemiyor" };
+          : { ok: false, reason: M().cancelChanged };
       } catch (error) {
         return { ok: false, reason: error instanceof Error ? error.message : String(error) };
       }
@@ -765,7 +839,7 @@ export async function cancelOrder(orderUid: string, symbol: string) {
     mutate: async () => {
       const cancelVars = { accountUid: account.accountUid, orderId: orderUid, stockUid: resolved.asset.uid };
       const data = await gql("CancelOrder", Q.CANCEL_ORDER, cancelVars);
-      if (!data.cancelOrder?.order?.uid) throw new MidasApiError("Midas iptal sonucunda emir kimliği döndürmedi");
+      if (!data.cancelOrder?.order?.uid) throw new MidasApiError(M().noCancelId);
       const [pendingResult, detailResult] = await Promise.allSettled([
         pendingForAsset(account.accountUid, resolved.asset.uid),
         orderDetail(account.accountUid, orderUid),

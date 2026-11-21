@@ -10,6 +10,9 @@ import {
   updateNotAllowedMessage,
 } from "../src/order-domain.js";
 
+// Bu dosyadaki beklentiler Türkçe metinleri sabitler; dil sistem yerelinden bağımsız seçilir.
+process.env.MIDAS_LANG = "tr";
+
 test("emir yolu bulanık arama sonucunu reddeder", () => {
   assert.throws(() => assertExactResolvedSymbol("VOO", "IOO"), /birebir eşleşmedi/);
   assert.doesNotThrow(() => assertExactResolvedSymbol(" thyao ", "THYAO"));

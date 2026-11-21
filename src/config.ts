@@ -6,6 +6,16 @@ import { config as loadDotenv } from "dotenv";
 import { parseIdleCloseMs, parseKeepAliveMs, parseLoginMethod, parseLoginWindowMode } from "./login-window.js";
 import { parseAccountLabel, resolveDataPaths } from "./instance.js";
 import { parseCommandSetting } from "./command-setting.js";
+import { defineMessages, resolveLanguage } from "./i18n.js";
+
+const M = defineMessages(
+  {
+    maxOrder: "MAX_ORDER_VALUE_TRY pozitif bir sayı olmalı",
+  },
+  {
+    maxOrder: "MAX_ORDER_VALUE_TRY must be a positive number",
+  }
+);
 
 /** Depo kökü (dist/ ya da src/ klasörünün bir üstü); yerel dosyalar burada tutulur. */
 export const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -60,5 +70,7 @@ export const config = {
 };
 
 if (!Number.isFinite(config.maxOrderValueTry) || config.maxOrderValueTry <= 0) {
-  throw new Error("MAX_ORDER_VALUE_TRY pozitif bir sayı olmalı");
+  throw new Error(M().maxOrder);
 }
+// Geçersiz MIDAS_LANG açılışta hata verir; sessizce İngilizceye düşmez.
+resolveLanguage(env);

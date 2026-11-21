@@ -18,6 +18,18 @@ import {
   type Currency,
   type TxStatus,
 } from "./history-parse.js";
+import { defineMessages } from "./i18n.js";
+
+const M = defineMessages(
+  {
+    unknownFilter: (filter: string, valid: string) => `Bilinmeyen filtre "${filter}". Geçerli kimlikler: ${valid}`,
+    ordersError: (error: string) => `Midas emir listesi hatası: ${error}`,
+  },
+  {
+    unknownFilter: (filter, valid) => `Unknown filter "${filter}". Valid IDs: ${valid}`,
+    ordersError: (error) => `Midas order list error: ${error}`,
+  }
+);
 
 const HISTORY_PAGE = 50;
 const MAX_HISTORY_PAGES = 40;
@@ -118,9 +130,7 @@ async function filterPath(filter: string | undefined): Promise<string[]> {
   const filters: Array<{ id: string; parentId: string | null }> = data.transactionHistoryFilterTree?.filters ?? [];
   const byId = new Map(filters.map((f) => [f.id, f]));
   if (!byId.has(filter)) {
-    throw new MidasApiError(
-      `Bilinmeyen filtre "${filter}". Geçerli kimlikler: ${filters.map((f) => f.id).join(", ")}`
-    );
+    throw new MidasApiError(M().unknownFilter(filter, filters.map((f) => f.id).join(", ")));
   }
   const path: string[] = [];
   for (let node = byId.get(filter); node; node = node.parentId ? byId.get(node.parentId) : undefined) {
@@ -164,7 +174,7 @@ async function recentOrders(memberUid: string, stopBefore: string | null) {
   for (let page = 0; page < MAX_ORDER_PAGES; page++) {
     const data = await gql("RecentOrdersV2", Q.RECENT_ORDERS, { memberUid, page, size: ORDER_PAGE });
     const r = data.recentOrdersV2;
-    if (r?.error) throw new MidasApiError(`Midas emir listesi hatası: ${r.error}`);
+    if (r?.error) throw new MidasApiError(M().ordersError(r.error));
     if (page === 0) pending.push(...(r?.pendingOrders ?? []));
     const items: RecentOrder[] = r?.orderHistory ?? [];
     history.push(...items);
@@ -383,7 +393,7 @@ export async function getAllPendingOrders(): Promise<PendingOrderSummary[]> {
   const memberUid = await session.getMemberUid();
   const data = await gql("RecentOrdersV2", Q.RECENT_ORDERS, { memberUid, page: 0, size: ORDER_PAGE });
   const r = data.recentOrdersV2;
-  if (r?.error) throw new MidasApiError(`Midas emir listesi hatası: ${r.error}`);
+  if (r?.error) throw new MidasApiError(M().ordersError(r.error));
   return ((r?.pendingOrders ?? []) as RecentOrder[]).map((o) => {
     const od = o.transactionDetails ?? {};
     const trailing = parseMoney(o.trailingDetail);

@@ -19,6 +19,16 @@ import {
   type MacdValue,
   type PriceLevel,
 } from "./indicators.js";
+import { defineMessages } from "./i18n.js";
+
+const M = defineMessages(
+  {
+    notEnough: (symbol: string, count: number) => `${symbol} için teknik göstergeleri hesaplamaya yetecek fiyat geçmişi yok (${count} mum)`,
+  },
+  {
+    notEnough: (symbol, count) => `Not enough price history for ${symbol} to compute technical indicators (${count} candles)`,
+  }
+);
 
 /** Midas'ın grafik verisindeki tek mum: açılış, yüksek, düşük, kapanış, hacim, zaman (ms). */
 export interface Candle {
@@ -146,7 +156,7 @@ function supportAndResistance(candles: Candle[], close: number) {
 /** Mum dizisinden teknik özet. */
 export function computeTechnicals(symbol: string, candles: Candle[], interval: string): Technicals {
   if (candles.length < MIN_CANDLES) {
-    throw new Error(`${symbol} için teknik göstergeleri hesaplamaya yetecek fiyat geçmişi yok (${candles.length} mum)`);
+    throw new Error(M().notEnough(symbol, candles.length));
   }
   const closes = candles.map((k) => k.c);
   const vols = candles.map((k) => k.v);

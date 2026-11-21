@@ -4,15 +4,33 @@
  */
 import { formatAuthExpiry } from "./auth-expiry.js";
 import type { KeepAliveResult } from "./session.js";
+import { defineMessages } from "./i18n.js";
+
+const M = defineMessages(
+  {
+    alive: (expiry: string) => `keepAlive: oturum canlı, durum kaydedildi; ${expiry}`,
+    noExpiry: "süre bilgisi okunamadı",
+    skipped: (reason: string) => `keepAlive: atlandı (${reason})`,
+    loggedOut: "keepAlive: oturum düşmüş; giriş başlatılmadı, bir sonraki araç çağrısı giriş akışını açacak",
+    error: (message: string) => `keepAlive: hata: ${message}`,
+  },
+  {
+    alive: (expiry) => `keepAlive: session alive, state saved; ${expiry}`,
+    noExpiry: "couldn't read the expiry",
+    skipped: (reason) => `keepAlive: skipped (${reason})`,
+    loggedOut: "keepAlive: session lost; no sign-in started, the next tool call will start the sign-in flow",
+    error: (message) => `keepAlive: error: ${message}`,
+  }
+);
 
 export function describeKeepAlive(result: KeepAliveResult, now = Date.now()): string {
   switch (result.status) {
     case "alive":
-      return `keepAlive: oturum canlı, durum kaydedildi; ${result.expiry ? formatAuthExpiry(result.expiry, now) : "süre bilgisi okunamadı"}`;
+      return M().alive(result.expiry ? formatAuthExpiry(result.expiry, now) : M().noExpiry);
     case "skipped":
-      return `keepAlive: atlandı (${result.reason})`;
+      return M().skipped(result.reason);
     case "logged-out":
-      return "keepAlive: oturum düşmüş; giriş başlatılmadı, bir sonraki araç çağrısı giriş akışını açacak";
+      return M().loggedOut;
   }
 }
 
@@ -35,7 +53,7 @@ export function startKeepAliveLoop(options: {
     try {
       log(describeKeepAlive(await tick()));
     } catch (error) {
-      log(`keepAlive: hata: ${error instanceof Error ? error.message : String(error)}`);
+      log(M().error(error instanceof Error ? error.message : String(error)));
     } finally {
       running = false;
     }

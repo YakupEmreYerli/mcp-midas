@@ -17,6 +17,9 @@ import { buildDialogModel, formatApprovalMessage } from "../src/confirmation-vie
 import { createDesktopConfirmationGate, kdialogArgs, zenityArgs } from "../src/desktop-confirmation-core.js";
 import type { ApprovalPreview } from "../src/order-approval.js";
 
+// Bu dosyadaki beklentiler Türkçe metinleri sabitler; dil sistem yerelinden bağımsız seçilir.
+process.env.MIDAS_LANG = "tr";
+
 // Sunucu testleri geçici bir veri dizininde koşar: proje kökündeki gerçek oturum dosyasına
 // dokunulmaz, durum aracı tarayıcı açmaz.
 const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "mcp-midas-test-"));

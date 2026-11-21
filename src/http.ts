@@ -17,6 +17,22 @@ import { session } from "./session.js";
 import { createServer } from "./server.js";
 import { config } from "./config.js";
 import { startKeepAliveLoop } from "./keepalive.js";
+import { defineMessages } from "./i18n.js";
+
+const M = defineMessages(
+  {
+    notFound: "bulunamadı",
+    unauthorized: "yetkisiz",
+    methodNotAllowed: "Yönteme izin verilmiyor",
+    listening: (url: string) => `midas-mcp HTTP servisi dinliyor: ${url}`,
+  },
+  {
+    notFound: "not found",
+    unauthorized: "unauthorized",
+    methodNotAllowed: "Method not allowed",
+    listening: (url) => `midas-mcp HTTP service listening on ${url}`,
+  }
+);
 
 const HOST = "127.0.0.1";
 const PORT = Number(process.env.MIDAS_HTTP_PORT ?? 8766);
@@ -56,11 +72,11 @@ const httpServer = http.createServer(async (req, res) => {
   if (url.pathname === "/health") {
     return reply(res, 200, { ok: true, browser: session.isStarted() });
   }
-  if (url.pathname !== "/mcp") return reply(res, 404, { error: "bulunamadı" });
-  if (!authorized(req)) return reply(res, 401, { error: "yetkisiz" });
+  if (url.pathname !== "/mcp") return reply(res, 404, { error: M().notFound });
+  if (!authorized(req)) return reply(res, 401, { error: M().unauthorized });
   if (req.method !== "POST") {
     // Durumsuz modda sürdürülecek, sunucunun başlattığı bir akış yoktur.
-    return reply(res, 405, { jsonrpc: "2.0", error: { code: -32000, message: "Yönteme izin verilmiyor" }, id: null });
+    return reply(res, 405, { jsonrpc: "2.0", error: { code: -32000, message: M().methodNotAllowed }, id: null });
   }
 
   const server = createServer();
@@ -102,5 +118,5 @@ process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
 
 httpServer.listen(PORT, HOST, () => {
-  console.error(`midas-mcp HTTP servisi dinliyor: http://${HOST}:${PORT}/mcp`);
+  console.error(M().listening(`http://${HOST}:${PORT}/mcp`));
 });

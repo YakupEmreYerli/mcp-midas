@@ -3,6 +3,9 @@ import { test } from "node:test";
 import { describeAuthExpiry, formatAuthExpiry } from "../src/auth-expiry.js";
 import { describeKeepAlive, startKeepAliveLoop } from "../src/keepalive.js";
 
+// Bu dosyadaki beklentiler Türkçe metinleri sabitler; dil sistem yerelinden bağımsız seçilir.
+process.env.MIDAS_LANG = "tr";
+
 const SECRET = "gizli-imza-degeri";
 
 function jwt(payload: Record<string, unknown>): string {

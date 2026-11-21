@@ -4,6 +4,9 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { ordersEnabled } from "../src/tool-flags.js";
 
+// Bu dosyadaki beklentiler Türkçe metinleri sabitler; dil sistem yerelinden bağımsız seçilir.
+process.env.MIDAS_LANG = "tr";
+
 // config.ts kimlik bilgisini içe aktarımda ister; araç listesi için tarayıcı açılmaz.
 process.env.MIDAS_PHONE ??= "5550000000";
 process.env.MIDAS_PASSWORD ??= "test-only";

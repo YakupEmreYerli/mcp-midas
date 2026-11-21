@@ -8,6 +8,9 @@ import {
   type SearchCandidate,
 } from "../src/symbol-resolution.js";
 
+// Bu dosyadaki beklentiler Türkçe metinleri sabitler; dil sistem yerelinden bağımsız seçilir.
+process.env.MIDAS_LANG = "tr";
+
 // Sahte arama sonuçları: aynı "GTM" sembolünü taşıyan bir ABD hissesi ve bir TEFAS fonu.
 const ZOOMINFO: SearchCandidate = {
   uid: "us-gtm",

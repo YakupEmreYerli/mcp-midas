@@ -16,6 +16,9 @@ import { buildDialogModel, formatApprovalMessage } from "../src/confirmation-vie
 import { parseCommandSetting } from "../src/command-setting.js";
 import { ApprovalDeniedError, executeWithApproval, type ApprovalPreview } from "../src/order-approval.js";
 
+// Bu dosyadaki beklentiler Türkçe metinleri sabitler; dil sistem yerelinden bağımsız seçilir.
+process.env.MIDAS_LANG = "tr";
+
 const preview: ApprovalPreview = {
   action: "UPDATE",
   instrumentName: "Aselsan Elektronik Sanayi ve Ticaret A.Ş.",

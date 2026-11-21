@@ -3,7 +3,7 @@
 Sunucu `MIDAS_LANG` ile dili açıkça seçmişse pencereye `dil` gönderir ve o geçerlidir. Seçmemişse
 pencere dili burada bulunur: ortamda LC_ALL → LC_MESSAGES → LANG; üçü de boşsa (ssh ile açılan
 pencerede sık olur) sistemin yerel dosyasındaki LANG (/etc/locale.conf, yoksa /etc/default/locale).
-"tr" ile başlayan Türkçe, gerisi İngilizce.
+"tr" ile başlayan Türkçe, gerisi İngilizce. C ve POSIX "dil seçilmemiş" demektir, boş sayılır.
 """
 
 from __future__ import annotations
@@ -12,6 +12,12 @@ import os
 from collections.abc import Iterable, Mapping
 
 LOCALE_FILES = ("/etc/locale.conf", "/etc/default/locale")
+
+
+def _chosen(value: str) -> str:
+    """Boş, C, C.UTF-8 ve POSIX dil seçimi değildir; "" döner."""
+    value = value.strip()
+    return "" if value.split(".")[0].upper() in ("", "C", "POSIX") else value
 
 
 def _language_of(value: str) -> str:
@@ -27,7 +33,7 @@ def _lang_from_file(path: str) -> str | None:
     for line in lines:
         key, sep, value = line.strip().partition("=")
         if sep and key.strip() == "LANG":
-            value = value.strip().strip("\"'").strip()
+            value = _chosen(value.strip().strip("\"'"))
             if value:
                 return value
     return None
@@ -37,7 +43,7 @@ def device_language(env: Mapping[str, str] | None = None, locale_files: Iterable
     """Cihazın dili: "tr" ya da "en". `env` ve `locale_files` yalnız testler için verilir."""
     env = os.environ if env is None else env
     for key in ("LC_ALL", "LC_MESSAGES", "LANG"):
-        value = (env.get(key) or "").strip()
+        value = _chosen(env.get(key) or "")
         if value:
             return _language_of(value)
     for path in locale_files:

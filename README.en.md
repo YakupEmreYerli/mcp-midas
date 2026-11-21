@@ -185,10 +185,12 @@ English. An invalid value stops the server at start-up.
 
 The approval and SMS code windows use the language of the device that shows them. When a
 window opens on another machine (over ssh, for example), it looks at that machine's locale:
-`LC_ALL`, then `LC_MESSAGES`, then `LANG`; these are often empty in a window opened over ssh,
+`LC_ALL`, then `LC_MESSAGES`, then `LANG`; these are often empty or `C` in a window opened over ssh,
 and then `LANG` from `/etc/locale.conf` (or `/etc/default/locale`) applies. If `MIDAS_LANG` is
 set, the windows use that language too. Notifications, tool descriptions, error messages and
 the kdialog/zenity fallbacks are produced on the server, so they use the server's language.
+If the window opens on another machine, update the copy there too; an older copy still works
+but always opens in Turkish.
 
 Tool names, argument names and JSON fields never change with the
 language.

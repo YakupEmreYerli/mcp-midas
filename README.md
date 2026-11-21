@@ -183,10 +183,11 @@ başlıyorsa Türkçe, değilse İngilizce. Geçersiz bir değer sunucuyu açıl
 
 Onay ve SMS kodu pencereleri ise açıldıkları cihazın dilini kullanır. Pencere başka bir
 makinede açılıyorsa (örneğin ssh ile) o makinenin yereline bakar: önce `LC_ALL`, `LC_MESSAGES`,
-`LANG`; ssh ile açılan pencerede bunlar çoğu zaman boştur, o zaman `/etc/locale.conf` (yoksa
+`LANG`; ssh ile açılan pencerede bunlar çoğu zaman boştur ya da `C`'dir, o zaman `/etc/locale.conf` (yoksa
 `/etc/default/locale`) içindeki `LANG` geçerlidir. `MIDAS_LANG` verilmişse pencereler de o dilde
 açılır. Bildirimler, araç açıklamaları, hata mesajları ve kdialog/zenity yedekleri sunucuda
-üretildiği için sunucunun dilindedir.
+üretildiği için sunucunun dilindedir. Pencere başka makinede açılıyorsa oradaki kopyayı da
+güncelle; eski kopya çalışır ama hep Türkçe açılır.
 
 Araç adları, argüman adları ve JSON alanları dile göre değişmez.
 

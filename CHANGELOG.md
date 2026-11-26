@@ -10,6 +10,14 @@ See [RELEASES.md](RELEASES.md) for what each number promises and which versions 
 
 ### Added
 
+- **`midas` command line.** The package also installs `midas`, so agents can use the tools without
+  loading their definitions into every chat. It is always an MCP client: local mode runs the
+  server in-process, `--server URL` connects to a running HTTP service with its bearer token, and
+  `--account <name>` picks a service from `~/.config/mcp-midas/accounts.json`. Read commands print
+  short plain text (`--json` for the raw result). `buy`, `sell`, `modify` and `cancel` print a
+  preview built from read tools and send nothing without `--confirm`; `--confirm` is not an
+  approval, the server still asks in the approval window.
+
 - **English.** The approval and SMS code windows, the kdialog/zenity fallbacks, desktop
   notifications, tool and argument descriptions, server instructions, the account line,
   error messages returned to the agent and log lines now come in Turkish or English.

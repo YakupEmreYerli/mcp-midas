@@ -54,6 +54,8 @@ Kapsamda olanlar, belgelendiği gibi kullanılan son sürümde:
 - onaydan sonra önizlemeden farklı bir emrin (sembol, yön, miktar, fiyat, hesap) gönderilmesi,
 - `MIDAS_ORDERS_ENABLED=1` verilmeden emir araçlarının listelenmesi ya da çalışması,
 - emir isteğinin kendiliğinden yinelenmesi,
+- `midas` komutunun `--confirm` olmadan bir yazma aracı (`place_order`, `update_order`,
+  `cancel_order`) çağırması ya da `--confirm`'ün sunucudaki onayı atlatması,
 - şifrenin, SMS kodunun ya da oturum token'larının loga, denetim günlüğüne, hata mesajına
   veya araç sonucuna sızması; hassas dosyaların belgelenenden geniş izinle yazılması,
 - HTTP servisinin `127.0.0.1` dışında dinlemesi ya da `/mcp` isteğini geçerli token olmadan kabul etmesi,

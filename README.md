@@ -311,6 +311,56 @@ yok sayılmaz: her onay isteği hata döner. Hangi pencerenin karar verdiği (`o
 `onay-remote`) ve yapılandırılmış komutun kendisi denetim günlüğüne yazılır. Güven modeli için
 aşağıdaki [Başka makinede onay: güven modeli](#başka-makinede-onay-güven-modeli) bölümünü oku.
 
+## Komut satırı
+
+Aynı paket `midas` komutunu da kurar. Araç tanımları her sohbette bağlama yüklenmesin istiyorsan
+ajana MCP yerine bu komutu kullandırabilirsin. Komut her zaman bir MCP istemcisi gibi çalışır:
+aynı araçları çağırır, aynı `MIDAS_ORDERS_ENABLED` bayrağına ve aynı onay kapısına takılır.
+
+```sh
+npm run build && npm link     # ya da: ln -s "$PWD/dist/cli/main.js" ~/.local/bin/midas
+midas status                  # oturum açık mı (giriş başlatmaz)
+midas portfolio
+midas positions
+midas price THYAO
+midas orders
+midas history --from 2026-11-01 --filter orders
+midas buy THYAO 10 --limit 295.5             # yalnız önizleme
+midas buy THYAO 10 --limit 295.5 --confirm   # sunucuya gönderir, onay penceresi açılır
+midas --help
+```
+
+Çıktı kısa düz metindir; `--json` aracın ham JSON'unu basar.
+
+**İki kip.** Seçenek vermezsen komut paketi kendi sürecinde çalıştırır (yerel kip; `.env` ve
+tarayıcı bu makinede). `--server http://127.0.0.1:8766/mcp` ile çalışan HTTP servisine bağlanır
+(uzak kip); jeton varsayılan olarak servisin kendi jeton dosyasından (`MIDAS_TOKEN_FILE`, yoksa
+`~/.config/mcp-midas/token`) okunur, `--token-file` ile başka bir dosya verilebilir. Uzak kipte
+emir de, onay penceresi de servisin çalıştığı yerde kalır.
+
+**Hesaplar.** Birden çok servisin varsa (bkz. Birden çok hesap) onlara ad ver:
+`~/.config/mcp-midas/accounts.json` (ya da `$XDG_CONFIG_HOME/mcp-midas/accounts.json`).
+
+```json
+{
+  "default": "kisisel",
+  "accounts": {
+    "kisisel": { "server": "http://127.0.0.1:8766/mcp", "token_file": "~/.config/mcp-midas/token" },
+    "ikinci": { "server": "http://127.0.0.1:8767/mcp", "token_file": "~/.config/mcp-midas-ikinci/token" }
+  }
+}
+```
+
+Sonra `midas portfolio --account ikinci` (eşi `--hesap`). Bilinmeyen ad hata verir, başka hesaba
+düşmez. `--local` dosyayı yok sayıp yerel kipe geçer.
+
+**Emir komutları.** `buy`, `sell`, `modify` ve `cancel` önce yalnız okuma araçlarıyla bir önizleme
+basar ve hiçbir şey göndermez. Göndermek için aynı komut `--confirm` ile çalıştırılır.
+`--confirm` onay değildir: emri sunucuya iletir, sunucu emri Midas'tan yeniden çözüp masaüstü
+penceresinde (ya da açıksa telefonda) senden ayrıca onay ister. Komut emir isteğini yinelemez;
+reddedilen ya da zaman aşımına uğrayan emir için yeni çağrı yeni onay ister. Sunucuda emir araçları
+kapalıysa komut bunu söyler.
+
 ## Araçlar
 
 ### Okuma (her zaman açık)
@@ -372,7 +422,8 @@ paketindeki kâr al/zarar durdur satış formunun gönderdiğiyle aynıdır.
 - **Hata ret değildir.** Ekran yoksa ya da pencere açılamazsa işlem yine reddedilir ama bu
   "onay penceresi açılamadı" hatası olarak bildirilir, kullanıcı reddi sayılmaz.
 - **Atlatma kanalı yok.** MCP arayüzünde `confirmed`, `approve` ya da onayı atlayan bir
-  argüman, ortam değişkeni veya ayar yoktur.
+  argüman, ortam değişkeni veya ayar yoktur. `midas` komutunun `--confirm` seçeneği de onay
+  değildir: yalnız emri sunucuya iletir, onay yine pencereden istenir.
 - **Onaydan sonra yeniden doğrulama.** Sunucu sembolü ve güncel fiyatı yeniden çözer;
   enstrüman değişmişse ya da fiyat %2'den fazla oynamışsa işlem iptal edilir.
   `MAX_ORDER_VALUE_TRY` tavanı (varsayılan ₺10.000) ek bir sınırdır, onayın yerine geçmez.

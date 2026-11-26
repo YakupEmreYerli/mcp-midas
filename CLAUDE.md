@@ -35,6 +35,11 @@ desteklenen emirleri yalnızca yerel insan onayından sonra gönderebilir.
   `MIDAS_ORDERS_ENABLED=1` verildiğinde kaydedilir (`src/tool-flags.ts`); yoksa araç
   listesinde hiç görünmez. Bayrak yalnız aracın var olup olmadığını belirler, onay kapısını
   gevşetmez. Bayrağı açan başka bir değer ya da yol eklenmez.
+- **Komut satırı (`midas`) ikinci emir yolu değildir.** `src/cli/` her iki kipte de MCP istemcisidir
+  (yerel: süreç içi `createServer()`, uzak: `--server` ile HTTP servisi); araçları doğrudan
+  `midas.ts`'ten çağırmaz. Emir komutları `--confirm` olmadan yalnız okuma araçlarıyla önizleme
+  basar, yazma aracı çağırmaz. `--confirm` onay değildir, onay kapısını gevşetmez; yazma çağrısı
+  yinelenmez. Hesap adları koda yazılmaz, kullanıcının `accounts.json` dosyasından gelir.
 - **Kimlik bilgisi yalnız ortamda.** `MIDAS_PHONE` ve `MIDAS_PASSWORD` ortam değişkeniyle
   (sır yöneticisi ya da gitignore'lu `.env`) verilir; koda, loga, commit'e yazılmaz.
 - **Oturum `storageState` ile açılır.** Okumada 401 sonrası sunucu içinde tek paylaşılan

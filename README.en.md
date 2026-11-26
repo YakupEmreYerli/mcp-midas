@@ -320,6 +320,57 @@ audit log records which window decided (`onay` or `onay-remote`) and the configu
 itself. For the trust model, read
 [Approving on another machine: trust model](#approving-on-another-machine-trust-model) below.
 
+## Command line
+
+The same package also installs a `midas` command. If you'd rather not load the tool definitions
+into every chat, have your agent use this command instead of MCP. It always works as an MCP
+client: it calls the same tools and goes through the same `MIDAS_ORDERS_ENABLED` flag and the
+same approval gate.
+
+```sh
+npm run build && npm link     # or: ln -s "$PWD/dist/cli/main.js" ~/.local/bin/midas
+midas status                  # is the session open (never starts a login)
+midas portfolio
+midas positions
+midas price THYAO
+midas orders
+midas history --from 2026-11-01 --filter orders
+midas buy THYAO 10 --limit 295.5             # preview only
+midas buy THYAO 10 --limit 295.5 --confirm   # sends it to the server, the approval window opens
+midas --help
+```
+
+Output is short plain text; `--json` prints the tool's raw JSON.
+
+**Two modes.** With no options the command runs the package in its own process (local mode;
+`.env` and the browser are on this machine). `--server http://127.0.0.1:8766/mcp` connects to a
+running HTTP service (remote mode); the token is read from the service's own token file by
+default (`MIDAS_TOKEN_FILE`, otherwise `~/.config/mcp-midas/token`), and `--token-file` points
+somewhere else. In remote mode both the order and the approval window stay where the service runs.
+
+**Accounts.** If you run several services (see Several accounts), give them names in
+`~/.config/mcp-midas/accounts.json` (or `$XDG_CONFIG_HOME/mcp-midas/accounts.json`).
+
+```json
+{
+  "default": "personal",
+  "accounts": {
+    "personal": { "server": "http://127.0.0.1:8766/mcp", "token_file": "~/.config/mcp-midas/token" },
+    "second": { "server": "http://127.0.0.1:8767/mcp", "token_file": "~/.config/mcp-midas-second/token" }
+  }
+}
+```
+
+Then `midas portfolio --account second`. An unknown name is an error; it never falls back to
+another account. `--local` ignores the file and uses local mode.
+
+**Order commands.** `buy`, `sell`, `modify` and `cancel` first print a preview built only with read
+tools and send nothing. To send, run the same command with `--confirm`. `--confirm` is not an
+approval: it passes the order to the server, which resolves it again from Midas and asks you
+separately in the desktop window (or on the phone, when enabled). The command never repeats an
+order request; after a refusal or a timeout, a new call needs a new approval. If the server has
+the order tools turned off, the command says so.
+
 ## Tools
 
 ### Read (always on)
@@ -385,7 +436,9 @@ fields match what the take-profit/stop-loss sell form in the Atlas web bundle se
   still refused, but it's reported as an "approval window couldn't open" error, not as the
   user saying No.
 - **No bypass channel.** The MCP interface has no `confirmed`, `approve` or any other
-  argument, environment variable or setting that skips the approval.
+  argument, environment variable or setting that skips the approval. The `midas` command's
+  `--confirm` isn't an approval either: it only passes the order to the server, which still
+  asks in the window.
 - **Revalidation after approval.** The server resolves the symbol and current price again;
   if the instrument changed or the price moved more than 2%, the order is dropped. The
   `MAX_ORDER_VALUE_TRY` cap (default ₺10,000) is an extra limit, not a substitute for

@@ -56,6 +56,8 @@ In scope, in the latest release used as documented:
   sent after approval,
 - order tools being listed or running without `MIDAS_ORDERS_ENABLED=1`,
 - an order request being retried on its own,
+- the `midas` command calling a write tool (`place_order`, `update_order`, `cancel_order`)
+  without `--confirm`, or `--confirm` skipping the server's approval,
 - the password, SMS code or session tokens leaking into logs, the audit log, an error message
   or a tool result; sensitive files being written with wider permissions than documented,
 - the HTTP service listening on anything other than `127.0.0.1`, or accepting a `/mcp` request without a valid token,

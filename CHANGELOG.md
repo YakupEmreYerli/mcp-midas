@@ -45,6 +45,13 @@ See [RELEASES.md](RELEASES.md) for what each number promises and which versions 
   machine whose locale doesn't start with `tr`, messages, windows and tool descriptions are
   now English; set `MIDAS_LANG=tr` to keep Turkish.
 
+### Fixed
+
+- When Midas accepted the phone approval but Atlas then returned `login?error=sso_failed`, the sign-in
+  waited out the 3 minutes and wrongly reported the notification as not approved. It now stops right
+  away with the status and Midas's reference, and every sign-in step (host and path only, never the
+  query) is logged.
+
 ## [0.4.0] - 2026-11-21
 
 Several accounts side by side, optional approval on another machine, and a quieter browser.

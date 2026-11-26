@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { chromium, type BrowserContext, type Page } from "playwright";
 import { config } from "./config.js";
 import { describeAuthExpiry, type AuthExpiry } from "./auth-expiry.js";
+import { loginStep, ssoFailure } from "./sso-error.js";
 import { defineMessages, forcedLanguage } from "./i18n.js";
 import {
   askSmsCode,
@@ -60,6 +61,9 @@ const M = defineMessages(
     failedTitle: (title: string) => `${title} yapılamadı`,
     retryNext: (what: string) => `${what} Sonraki istekte giriş yeniden başlar.`,
     timedOut: (what: string) => `Midas girişi zaman aşımına uğradı: ${what}`,
+    ssoFailed: (status: string, ref: string, description: string) =>
+      `Midas onayı aldı ama Atlas girişi tamamlayamadı (${description}; durum ${status}, başvuru ${ref}). Sorun Midas tarafında; aynı başvuru kimliğiyle Midas desteğine bildirilebilir.`,
+    stepLog: (step: string) => `giriş adımı: ${step}`,
     turnstileLog: "giriş: Turnstile başsız doğrulanamadı; form gönderilmedi, gizli pencereye geçiliyor",
     formNotSent: "Midas giriş formu gönderilemedi: doğrulama (Turnstile) tamamlanmadı.",
     stillRejected: "Midas girişi tamamlandı ama API oturumu hâlâ reddediyor (HTTP 401).",
@@ -82,6 +86,9 @@ const M = defineMessages(
     failedTitle: (title) => `${title} failed`,
     retryNext: (what) => `${what} Sign-in starts again with the next request.`,
     timedOut: (what) => `Midas sign-in timed out: ${what}`,
+    ssoFailed: (status, ref, description) =>
+      `Midas accepted the approval but Atlas couldn't finish the sign-in (${description}; status ${status}, reference ${ref}). The problem is on Midas's side; you can report it to Midas support with this reference.`,
+    stepLog: (step) => `sign-in step: ${step}`,
     turnstileLog: "login: couldn't pass Turnstile headless; form not submitted, switching to the hidden window",
     formNotSent: "Couldn't submit the Midas sign-in form: the verification (Turnstile) wasn't completed.",
     stillRejected: "Midas sign-in finished, but the API still rejects the session (HTTP 401).",
@@ -565,7 +572,21 @@ export class MidasSession {
     const sms = config.loginMethod === "sms";
     const giveUpAt = Date.now() + (sms ? 480_000 : 180_000);
     let switched = false;
+    let lastStep = "";
     for (; Date.now() < giveUpAt; await page.waitForTimeout(1000)) {
+      // Adımlar günlüğe yalnız alan ve yol olarak yazılır (kod, state ya da kimlik bilgisi yok).
+      const step = loginStep(page.url());
+      if (step !== lastStep) {
+        console.error(M().stepLog(step));
+        lastStep = step;
+      }
+      const failure = ssoFailure(page.url(), config.atlasUrl);
+      if (failure) {
+        const message = M().ssoFailed(failure.status ?? "?", failure.ref ?? "?", failure.description ?? failure.error);
+        console.error(message);
+        notifyDesktop(M().failedTitle(loginTitle()), message, "critical");
+        throw new Error(message);
+      }
       if (this.backInApp()) return;
       if (!sms || switched || !page.url().includes("/giris/mobil-onay")) continue;
       const button = page.getByRole("button", { name: "SMS ile giriş yap" });

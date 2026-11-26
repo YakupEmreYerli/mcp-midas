@@ -18,7 +18,8 @@
   },
   "type": "module",
   "bin": {
-    "mcp-midas": "dist/index.js"
+    "mcp-midas": "dist/index.js",
+    "midas": "dist/cli/main.js"
   },
   "scripts": {
     "build": "tsc",

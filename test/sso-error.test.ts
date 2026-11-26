@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 process.env.MIDAS_LANG = "tr";
-const { ssoFailure, loginStep } = await import("../src/sso-error.js");
+const sso = await import("../src/sso-error.js");
+const { ssoFailure, loginStep } = sso;
 
 const ATLAS = "https://atlas.getmidas.com";
 
@@ -30,4 +31,13 @@ test("adım satırı yalnız alan ve yolu taşır; kod, state ve telefon gibi so
   assert.equal(line, "atlas.getmidas.com/auth/callback");
   assert.ok(!line.includes("gizli"));
   assert.equal(loginStep("bozuk"), "?");
+});
+
+test("sayfa denetimlerinin adları sadeleşir; rakamlar (telefon gibi) maskelenir, boş ve tekrar düşer", () => {
+  const { controlLabels } = sso;
+  assert.deepEqual(controlLabels(["  SMS ile\n giriş yap ", "", "Kod 123456 gönderildi", "SMS ile giriş yap", "x".repeat(80)]), [
+    "SMS ile giriş yap",
+    "Kod •••••• gönderildi",
+    "x".repeat(60),
+  ]);
 });

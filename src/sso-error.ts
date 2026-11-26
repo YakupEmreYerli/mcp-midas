@@ -39,3 +39,14 @@ export function loginStep(url: string): string {
     return "?";
   }
 }
+
+/**
+ * Giriş sayfasındaki düğme ve bağlantı yazıları, günlüğe yazılmadan önce sadeleşir: boşluk
+ * toplanır, rakamlar (maskeli telefon, kod) gizlenir, 60 karakterde kesilir, boş ve tekrar düşer.
+ */
+export function controlLabels(texts: string[]): string[] {
+  const labels = texts
+    .map((text) => text.replace(/\s+/g, " ").trim().replace(/\d/g, "•").slice(0, 60))
+    .filter(Boolean);
+  return [...new Set(labels)];
+}

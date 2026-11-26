@@ -1,9 +1,10 @@
-import { readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium, type BrowserContext, type Page } from "playwright";
 import { config } from "./config.js";
 import { describeAuthExpiry, type AuthExpiry } from "./auth-expiry.js";
-import { loginStep, ssoFailure } from "./sso-error.js";
+import { controlLabels, loginStep, ssoFailure } from "./sso-error.js";
 import { defineMessages, forcedLanguage } from "./i18n.js";
 import {
   askSmsCode,
@@ -64,6 +65,8 @@ const M = defineMessages(
     ssoFailed: (status: string, ref: string, description: string) =>
       `Midas onayı aldı ama Atlas girişi tamamlayamadı (${description}; durum ${status}, başvuru ${ref}). Sorun Midas tarafında; aynı başvuru kimliğiyle Midas desteğine bildirilebilir.`,
     stepLog: (step: string) => `giriş adımı: ${step}`,
+    noSmsSwitchLog: (labels: string, shot: string) =>
+      `giriş: mobil onay sayfasında SMS düğmesi bulunamadı; sayfadaki düğmeler: ${labels || "(yok)"}; ekran görüntüsü: ${shot}`,
     turnstileLog: "giriş: Turnstile başsız doğrulanamadı; form gönderilmedi, gizli pencereye geçiliyor",
     formNotSent: "Midas giriş formu gönderilemedi: doğrulama (Turnstile) tamamlanmadı.",
     stillRejected: "Midas girişi tamamlandı ama API oturumu hâlâ reddediyor (HTTP 401).",
@@ -89,6 +92,8 @@ const M = defineMessages(
     ssoFailed: (status, ref, description) =>
       `Midas accepted the approval but Atlas couldn't finish the sign-in (${description}; status ${status}, reference ${ref}). The problem is on Midas's side; you can report it to Midas support with this reference.`,
     stepLog: (step) => `sign-in step: ${step}`,
+    noSmsSwitchLog: (labels, shot) =>
+      `login: no SMS button on the mobile approval page; buttons on the page: ${labels || "(none)"}; screenshot: ${shot}`,
     turnstileLog: "login: couldn't pass Turnstile headless; form not submitted, switching to the hidden window",
     formNotSent: "Couldn't submit the Midas sign-in form: the verification (Turnstile) wasn't completed.",
     stillRejected: "Midas sign-in finished, but the API still rejects the session (HTTP 401).",
@@ -572,6 +577,7 @@ export class MidasSession {
     const sms = config.loginMethod === "sms";
     const giveUpAt = Date.now() + (sms ? 480_000 : 180_000);
     let switched = false;
+    let mobileTicks = 0;
     let lastStep = "";
     for (; Date.now() < giveUpAt; await page.waitForTimeout(1000)) {
       // Adımlar günlüğe yalnız alan ve yol olarak yazılır (kod, state ya da kimlik bilgisi yok).
@@ -589,9 +595,16 @@ export class MidasSession {
       }
       if (this.backInApp()) return;
       if (!sms || switched || !page.url().includes("/giris/mobil-onay")) continue;
-      const button = page.getByRole("button", { name: "SMS ile giriş yap" });
-      if (!(await button.count())) continue;
-      await button.first().click();
+      // Düğme ya da bağlantı olabilir, yazısı ve açılma zamanı değişebilir: "SMS" geçen ilk etkin denetim.
+      const button = page
+        .getByRole("button", { name: /sms/i })
+        .or(page.getByRole("link", { name: /sms/i }))
+        .first();
+      if (!(await button.count()) || !(await button.isEnabled())) {
+        if (++mobileTicks === 10) await this.logLoginPage();
+        continue;
+      }
+      await button.click();
       switched = true;
       if (await this.typeSmsCodeFromCommand(giveUpAt)) continue;
       if (this.hiddenWindow) await this.revealLoginWindow();
@@ -600,6 +613,21 @@ export class MidasSession {
     const what = sms ? M().smsTimeout : M().pushTimeout;
     notifyDesktop(M().failedTitle(loginTitle()), M().retryNext(what), "critical");
     throw new Error(M().timedOut(what));
+  }
+
+  /**
+   * SMS düğmesi bulunamayınca sayfadaki düğme yazılarını (rakamlar maskeli) günlüğe, ekran
+   * görüntüsünü veri klasörüne 0600 izinle yazar; Midas sayfayı değiştirdiğinde seçici buna göre düzeltilir.
+   */
+  private async logLoginPage(): Promise<void> {
+    const page = this.page!;
+    const texts = await page.locator("button, a, [role=button], [role=link]").allInnerTexts().catch(() => []);
+    const shot = join(dirname(config.sessionDir), ".midas-login-page.png");
+    await page
+      .screenshot({ path: shot, fullPage: true })
+      .then(() => chmodSync(shot, 0o600))
+      .catch(() => undefined);
+    console.error(M().noSmsSwitchLog(controlLabels(texts).join(" | "), shot));
   }
 
   /**

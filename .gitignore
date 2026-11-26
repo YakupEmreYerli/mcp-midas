@@ -16,3 +16,6 @@
 # Python bayt kodu (onay penceresi)
 __pycache__/
 *.pyc
+
+# Giriş sayfasının tanı ekran görüntüsü (SMS düğmesi bulunamayınca)
+.midas-login-page.png

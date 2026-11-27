@@ -37,7 +37,7 @@ like this:
 ```
 
 The test count grows over time; what matters is `fail 0`. To actually run the server you also
-need `npx playwright install chromium`. To try the approval window you need PySide6 and
+need `npx camoufox-js fetch`. To try the approval window you need PySide6 and
 QtWebEngine in the system Python; without them, `kdialog` or `zenity` is used.
 
 ## What to work on
@@ -119,10 +119,13 @@ describing what you'd like to do.
 - **Routing uses the root field name.** The gateway routes on the `x-apollo-operation-name`
   header, and its value must be the first root field in the document, not the operation name.
   If the first selection is an alias, pass the real field name to `gql()` explicitly.
-- **Headless Chromium gets a 403.** Without a normal user agent and client hint headers, the
-  gateway rejects the request; `session.ts` sets them.
+- **Some cookies are bound to the browser.** They are dropped when the session is restored
+  (`withoutBrowserBoundCookies`).
+- **In-page scripts run with the `mw:` prefix.** Cookie-carrying `fetch` and
+  localStorage reads must run in the page's own world (`session.pageScript`). The SSO origin's
+  storage isn't cleared; in Firefox that breaks the form.
 - **A persistent profile isn't enough on its own.** Atlas keeps the identity in session
-  cookies, which Chromium doesn't write to disk. The session is saved to `.midas-state.json`
+  cookies, which the browser doesn't write to disk. The session is saved to `.midas-state.json`
   with `storageState()`. A stale snapshot must be deleted before a new login, or its
   localStorage overwrites the fresh tokens.
 - **Don't treat the session as open just by looking at the URL.** The profile can still show

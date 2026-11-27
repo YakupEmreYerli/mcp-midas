@@ -1,14 +1,15 @@
-import { chmodSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { appendFileSync, chmodSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium, type BrowserContext, type Page } from "playwright";
+import { launchOptions } from "camoufox-js";
+import { firefox, type BrowserContext, type Page, type Response } from "playwright-core";
 import { config } from "./config.js";
 import { describeAuthExpiry, type AuthExpiry } from "./auth-expiry.js";
-import { controlLabels, loginStep, ssoFailure } from "./sso-error.js";
+import { controlLabels, jsonKeys, loginStep, redactTrace, ssoFailure, withoutBrowserBoundCookies } from "./sso-error.js";
 import { defineMessages, forcedLanguage } from "./i18n.js";
 import {
   askSmsCode,
-  hiddenLaunchArgs,
+  hiddenLaunch,
   resolveSmsCodeCommand,
   KWIN_HIDE_PLUGIN,
   KWIN_REVEAL_PLUGIN,
@@ -65,6 +66,8 @@ const M = defineMessages(
     ssoFailed: (status: string, ref: string, description: string) =>
       `Midas onayı aldı ama Atlas girişi tamamlayamadı (${description}; durum ${status}, başvuru ${ref}). Sorun Midas tarafında; aynı başvuru kimliğiyle Midas desteğine bildirilebilir.`,
     stepLog: (step: string) => `giriş adımı: ${step}`,
+    smsSwitchLog: "giriş: SMS ile girişe geçildi",
+    traceLog: (file: string, count: number) => `giriş izi: ${count} istek, ${file}`,
     noSmsSwitchLog: (labels: string, shot: string) =>
       `giriş: mobil onay sayfasında SMS düğmesi bulunamadı; sayfadaki düğmeler: ${labels || "(yok)"}; ekran görüntüsü: ${shot}`,
     turnstileLog: "giriş: Turnstile başsız doğrulanamadı; form gönderilmedi, gizli pencereye geçiliyor",
@@ -92,6 +95,8 @@ const M = defineMessages(
     ssoFailed: (status, ref, description) =>
       `Midas accepted the approval but Atlas couldn't finish the sign-in (${description}; status ${status}, reference ${ref}). The problem is on Midas's side; you can report it to Midas support with this reference.`,
     stepLog: (step) => `sign-in step: ${step}`,
+    smsSwitchLog: "login: switched to SMS sign-in",
+    traceLog: (file, count) => `sign-in trace: ${count} requests, ${file}`,
     noSmsSwitchLog: (labels, shot) =>
       `login: no SMS button on the mobile approval page; buttons on the page: ${labels || "(none)"}; screenshot: ${shot}`,
     turnstileLog: "login: couldn't pass Turnstile headless; form not submitted, switching to the hidden window",
@@ -115,33 +120,29 @@ const SUBMIT_READY = "button[type=submit]:not([disabled])";
 const SMS_WINDOW = fileURLToPath(new URL("../onay/sms.py", import.meta.url));
 
 /**
- * Başsız Chromium kendini "HeadlessChrome" diye tanıtır ve istemci ipuçlarını göndermez;
- * geçit böyle istekleri yönlendirmeden 403 ile reddeder. Sıradan bir masaüstü Chrome'u
- * gibi görünmek için kullanıcı aracısı ve ipuçları elle verilir.
+ * Camoufox'u (Firefox tabanlı tarayıcı) kendi kalıcı profilinde açar; giriş penceresi
+ * de okuma tarayıcısı da bu.
  */
-const CHROME_MAJOR = 151;
-/** Each host claims its own OS, so the user agent matches what the browser really runs on. */
-const PLATFORM_IDENTITY: Record<string, { ua: string; hint: string }> = {
-  darwin: { ua: "Macintosh; Intel Mac OS X 10_15_7", hint: "macOS" },
-  linux: { ua: "X11; Linux x86_64", hint: "Linux" },
-  win32: { ua: "Windows NT 10.0; Win64; x64", hint: "Windows" },
-};
-const PLATFORM = PLATFORM_IDENTITY[process.platform] ?? PLATFORM_IDENTITY.win32;
+async function launchCamoufox(
+  profileDir: string,
+  headless: boolean,
+  extra: { args: string[]; env: Record<string, string> } = { args: [], env: {} }
+): Promise<BrowserContext> {
+  const os = process.platform === "darwin" ? "macos" : process.platform === "win32" ? "windows" : "linux";
+  // main_world_eval: sayfa içi fetch'in sayfanın kendi kimliğiyle gitmesi için ("mw:" önekli betikler).
+  const options = await launchOptions({ headless, os, locale: "tr-TR", main_world_eval: true });
+  return firefox.launchPersistentContext(profileDir, {
+    ...options,
+    args: [...(options.args ?? []), ...extra.args],
+    env: { ...(options.env as Record<string, string>), ...extra.env },
+    viewport: null,
+  });
+}
 
 /** Without MIDAS_PHONE and MIDAS_PASSWORD the login form is left to the user. */
 function hasCredentials(): boolean {
   return Boolean(config.phone && config.password);
 }
-const DESKTOP_IDENTITY = {
-  userAgent:
-    `Mozilla/5.0 (${PLATFORM.ua}) AppleWebKit/537.36 (KHTML, like Gecko) ` +
-    `Chrome/${CHROME_MAJOR}.0.0.0 Safari/537.36`,
-  extraHTTPHeaders: {
-    "sec-ch-ua": `"Chromium";v="${CHROME_MAJOR}", "Not=A?Brand";v="99"`,
-    "sec-ch-ua-mobile": "?0",
-    "sec-ch-ua-platform": `"${PLATFORM.hint}"`,
-  },
-};
 
 /** Sayfa yüklendikten sonra uygulamanın kendini toparlaması için beklenen süre. */
 const SETTLE_MS = 3000;
@@ -304,13 +305,18 @@ export class MidasSession {
     // Without credentials the user signs in by hand, which a headless browser cannot show.
     if (mode === "headless" && !hasCredentials()) mode = "hidden";
     if (mode === "headless") {
-      await this.openBrowser("headless", { fullChromium: true });
+      await this.openBrowser("headless");
       if (!this.onLoginScreen() && (await this.isAuthenticated())) return;
-      await this.clearAppStorage();
-      if (await this.submitLoginForm(20_000)) {
-        await this.awaitApproval();
-        await this.assertAuthenticated();
-        return;
+      const stopTrace = this.traceLogin();
+      try {
+        await this.openLoginScreen();
+        if (await this.submitLoginForm(20_000)) {
+          await this.awaitApproval();
+          await this.assertAuthenticated();
+          return;
+        }
+      } finally {
+        stopTrace();
       }
       console.error(M().turnstileLog);
       await this.shutdownBrowser();
@@ -319,7 +325,16 @@ export class MidasSession {
 
     await this.openBrowser(mode === "visible" ? "visible" : "hidden");
     if (!this.onLoginScreen() && (await this.isAuthenticated())) return;
-    await this.clearAppStorage();
+    const stopTrace = this.traceLogin();
+    try {
+      await this.loginInWindow(mode);
+    } finally {
+      stopTrace();
+    }
+  }
+
+  private async loginInWindow(mode: LoginWindowMode): Promise<void> {
+    await this.openLoginScreen();
     let submitted = await this.submitLoginForm(30_000);
     if (!submitted && mode === "hidden") {
       await this.revealLoginWindow();
@@ -359,28 +374,18 @@ export class MidasSession {
   }
 
   /**
-   * Kalıcı profille Chromium açar, kayıtlı oturumu geri yükler ve Atlas'a gider. Sayfanın
+   * Kalıcı profille Camoufox açar, kayıtlı oturumu geri yükler ve Atlas'a gider. Sayfanın
    * geçide giden istekleri izlenir; `x-midas-rid` oradan alınır.
    */
-  private async openBrowser(mode: LaunchMode, options: { fullChromium?: boolean } = {}): Promise<void> {
+  private async openBrowser(mode: LaunchMode): Promise<void> {
     const hidden = mode === "hidden";
     this.hiddenWindow = hidden;
     // Betik pencere açılmadan yüklenir ki KWin pencereyi eşleme anında yakalasın.
-    const kwinHides = hidden ? await loadKwinScript(KWIN_HIDE_PLUGIN, kwinHideScript()) : false;
-
-    const ctx = await chromium.launchPersistentContext(config.sessionDir, {
-      ...DESKTOP_IDENTITY,
-      headless: mode === "headless",
-      // Yeni başsız kip tam Chromium'u kullanır; headless shell'e göre gerçek tarayıcıya yakındır.
-      ...(options.fullChromium ? { channel: "chromium" } : {}),
-      locale: "tr-TR",
-      viewport: { width: 1440, height: 900 },
-      args: ["--disable-blink-features=AutomationControlled", ...(hidden ? hiddenLaunchArgs() : [])],
-    });
+    if (hidden) await loadKwinScript(KWIN_HIDE_PLUGIN, kwinHideScript());
+    const ctx = await launchCamoufox(`${config.sessionDir}-camoufox`, mode === "headless", hidden ? hiddenLaunch() : undefined);
     this.context = ctx;
     const page = ctx.pages()[0] ?? (await ctx.newPage());
     this.page = page;
-    if (hidden && !kwinHides) await this.minimizeWindow();
 
     const gatewayPath = new URL(config.graphqlUrl).pathname;
     page.on("request", (request) => {
@@ -396,7 +401,7 @@ export class MidasSession {
 
   /**
    * Atlas kimliği tarayıcı oturumu boyunca yaşayan çerezlerde ve localStorage'da tutar;
-   * Chromium kapanırken bu çerezleri diske yazmaz, yani kalıcı profil tek başına oturumu
+   * Tarayıcı kapanırken bu çerezleri diske yazmaz, yani kalıcı profil tek başına oturumu
    * taşımaz. `storageState()` bellekteki çerezleri de verdiği için anlık görüntü buradan
    * alınır (0600) ve sonraki açılışta `replayState` ile geri konur; yeniden başlatma böylece
    * yeni bildirim onayı istemez. Dönen değer token sürelerinin özetidir.
@@ -425,7 +430,8 @@ export class MidasSession {
       return;
     }
     try {
-      if (snapshot.cookies?.length) await this.context!.addCookies(snapshot.cookies);
+      const cookies = withoutBrowserBoundCookies([...(snapshot.cookies ?? [])]);
+      if (cookies.length) await this.context!.addCookies(cookies);
       for (const { origin, localStorage = [] } of snapshot.origins ?? []) {
         if (localStorage.length === 0) continue;
         const entries = JSON.stringify(localStorage.map(({ name, value }) => [name, value]));
@@ -453,7 +459,7 @@ export class MidasSession {
     if (!(await pollUntil(page, () => this.requestId !== null))) return false;
     const status = (await page
       .evaluate(
-        `(async () => (await fetch(${JSON.stringify(config.graphqlUrl)}, {
+        this.pageScript(`(async () => (await fetch(${JSON.stringify(config.graphqlUrl)}, {
            method: "POST",
            credentials: "include",
            headers: {
@@ -464,22 +470,29 @@ export class MidasSession {
              "x-midas-rid": ${JSON.stringify(this.requestId)},
            },
            body: JSON.stringify({ query: "{__typename}" }),
-         })).status)()`
+         })).status)()`)
       )
       .catch(() => 0)) as number;
     return status !== 0 && status !== 401 && status !== 403;
   }
 
-  /** Uygulamanın bayat localStorage'ını siler; uygulama girişli gibi davranmayı bırakıp SSO formunu gösterir. */
-  private async clearAppStorage(): Promise<void> {
+  /**
+   * Giriş ekranını açar. Tarayıcıya bağlı çerezler silinir, giriş onlarsız başlar. Uygulamanın bayat localStorage'ı Atlas'ın düz bir sayfasında
+   * (robots.txt; uygulama yönlendirmesi yok) silinir; SSO alanının depolamasına dokunulmaz, çünkü Firefox'ta
+   * o temizlik SSO formunu bozuyor. Sonra Atlas'ın giriş sayfası SSO formuna yönlendirir.
+   */
+  private async openLoginScreen(): Promise<void> {
     const page = this.page!;
-    await page.evaluate(`localStorage.clear(); sessionStorage.clear()`).catch(() => {});
-    await page.goto(config.atlasUrl, { waitUntil: "domcontentloaded" }).catch(() => {});
+    await this.context!.clearCookies({ name: /^(cf_clearance|__cf_bm|_cfuvid)$/ });
+    await page.goto(new URL("robots.txt", config.atlasUrl).href, { waitUntil: "load" }).catch(() => {});
+    await page.evaluate(this.pageScript(`localStorage.clear(); sessionStorage.clear()`)).catch(() => {});
+    await page.goto(new URL("login", config.atlasUrl).href, { waitUntil: "domcontentloaded" }).catch(() => {});
     await page.waitForTimeout(SETTLE_MS);
-    if (!this.onLoginScreen()) {
-      await page.goto(new URL("login", config.atlasUrl).href, { waitUntil: "domcontentloaded" }).catch(() => {});
-      await page.waitForTimeout(SETTLE_MS);
-    }
+  }
+
+  /** Sayfanın kendi bağlamında (çerezli fetch, localStorage) çalışması gereken betik; Camoufox "mw:" önekini ister. */
+  pageScript(script: string): string {
+    return `mw:${script}`;
   }
 
   /** Sayfa SSO alanında ya da Atlas'ın giriş ekranında mı. */
@@ -496,31 +509,10 @@ export class MidasSession {
     return !this.isStarted() || this.onLoginScreen();
   }
 
-  /** KWin yoksa yedek yol: pencereyi CDP ile simge durumuna küçültür. */
-  private async minimizeWindow(): Promise<void> {
-    try {
-      const cdp = await this.context!.newCDPSession(this.page!);
-      const { windowId } = (await cdp.send("Browser.getWindowForTarget")) as { windowId: number };
-      await cdp.send("Browser.setWindowBounds", { windowId, bounds: { windowState: "minimized" } });
-      await cdp.detach().catch(() => {});
-    } catch {
-      // Küçültülemezse pencere görünür kalır; giriş yine çalışır.
-    }
-  }
-
   /** Gizli giriş penceresini kullanıcının etkileşimi için öne getirir. */
   private async revealLoginWindow(): Promise<void> {
     await unloadKwinScript(KWIN_HIDE_PLUGIN);
-    const shown = await loadKwinScript(KWIN_REVEAL_PLUGIN, kwinRevealScript());
-    if (shown) return;
-    try {
-      const cdp = await this.context!.newCDPSession(this.page!);
-      const { windowId } = (await cdp.send("Browser.getWindowForTarget")) as { windowId: number };
-      await cdp.send("Browser.setWindowBounds", { windowId, bounds: { windowState: "normal" } });
-      await cdp.detach().catch(() => {});
-    } catch {
-      // Gösterilemezse zaman aşımı hatası kullanıcıya yine döner.
-    }
+    await loadKwinScript(KWIN_REVEAL_PLUGIN, kwinRevealScript());
   }
 
   /**
@@ -572,6 +564,62 @@ export class MidasSession {
    * `MIDAS_SMS_CODE_COMMAND` ile) sorulur, olmazsa Midas penceresi öne getirilir ve kodu
    * kullanıcının oraya yazması beklenir. Kod koda ya da loga hiç girmez.
    */
+  /**
+   * Giriş boyunca (tarayıcı açıldıktan sonra) Midas alanlarına giden istekleri veri klasöründeki izine (0600, her girişte
+   * baştan) yazar: yöntem, alan ve yol, durum, yönlendirme hedefi, istek ve yanıt başlıklarının
+   * yalnız adları, JSON gövdenin anahtar adları, çerez adları; 400 ve üstü ya da callback/token yanıtında maskeli gövde. Sorgu,
+   * çerez ve token değerleri yazılmaz. Atlas girişi reddettiğinde sebebi buradan okunur.
+   */
+  private traceLogin(): () => void {
+    const page = this.page!;
+    const file = join(dirname(config.sessionDir), ".midas-login-trace.jsonl");
+    writeFileSync(file, "", { mode: 0o600 });
+    chmodSync(file, 0o600);
+    let count = 0;
+    const write = (entry: object) => {
+      count++;
+      try {
+        appendFileSync(file, JSON.stringify(entry) + "\n");
+      } catch {
+        // İz yazılamazsa giriş yine sürer.
+      }
+    };
+    const onResponse = async (response: Response) => {
+      const request = response.request();
+      const url = new URL(request.url());
+      if (!url.hostname.endsWith("getmidas.com")) return;
+      if (["image", "stylesheet", "font", "script", "media"].includes(request.resourceType())) return;
+      const status = response.status();
+      const headers = await response.allHeaders().catch(() => ({}) as Record<string, string>);
+      const location = headers["location"];
+      const setCookies = (await response.headersArray().catch(() => []))
+        .filter((h) => h.name.toLowerCase() === "set-cookie")
+        .map((h) => h.value.split("=")[0]);
+      const wantBody = status >= 400 || /callback|token/i.test(url.pathname);
+      const body = wantBody && !location ? redactTrace(await response.text().catch(() => "")) : undefined;
+      const entry = {
+        t: new Date().toISOString(),
+        method: request.method(),
+        url: loginStep(request.url()),
+        queryKeys: [...url.searchParams.keys()],
+        bodyKeys: jsonKeys(request.postData()),
+        type: request.resourceType(),
+        status,
+        location: location ? loginStep(new URL(location, url).href) : undefined,
+        requestHeaders: Object.keys(await request.allHeaders().catch(() => ({}))),
+        responseHeaders: Object.keys(headers),
+        setCookies,
+        body,
+      };
+      write(entry);
+    };
+    page.on("response", onResponse);
+    return () => {
+      page.off("response", onResponse);
+      console.error(M().traceLog(file, count));
+    };
+  }
+
   private async awaitApproval(): Promise<void> {
     const page = this.page!;
     const sms = config.loginMethod === "sms";
@@ -606,6 +654,7 @@ export class MidasSession {
       }
       await button.click();
       switched = true;
+      console.error(M().smsSwitchLog);
       if (await this.typeSmsCodeFromCommand(giveUpAt)) continue;
       if (this.hiddenWindow) await this.revealLoginWindow();
       notifyDesktop(loginTitle(), M().typeSms, "critical");
@@ -671,7 +720,7 @@ export class MidasSession {
 
   /** Üye kimliği uygulamanın localStorage'ından okunur; portföy sorguları bunu ister. */
   private async loadMemberUid(): Promise<void> {
-    const stored = await this.page!.evaluate(`window.localStorage.getItem("midas:member-uid")`);
+    const stored = await this.page!.evaluate(this.pageScript(`window.localStorage.getItem("midas:member-uid")`));
     if (typeof stored !== "string" || !stored) {
       throw new Error(M().noMemberUid);
     }

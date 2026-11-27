@@ -90,7 +90,7 @@ export async function gql<T = any>(
 
     let reply: { status: number; text: string };
     try {
-      reply = (await page.evaluate(inPageFetch(config.graphqlUrl, init))) as typeof reply;
+      reply = (await page.evaluate(session.pageScript(inPageFetch(config.graphqlUrl, init)))) as typeof reply;
     } catch (error) {
       // Oturumu kapanmış sayfa başka bir kökenden sunulur; fetch HTTP durumu vermeden
       // başarısız olabilir.

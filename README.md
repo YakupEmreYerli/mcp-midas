@@ -71,7 +71,7 @@ Midas uygulaması.
 git clone https://github.com/YakupEmreYerli/mcp-midas.git
 cd mcp-midas
 npm ci
-npx playwright install chromium
+npx camoufox-js fetch
 npm run build
 ```
 
@@ -195,14 +195,14 @@ Araç adları, argüman adları ve JSON alanları dile göre değişmez.
 
 Midas girişi telefonda bildirim onayı ister ve SSO formunda Cloudflare Turnstile
 doğrulaması vardır; başsız tarayıcı bu doğrulamayı güvenilir biçimde geçemediği için giriş
-görünür (headed) bir Chromium'la yapılır. `MIDAS_LOGIN_WINDOW` bu pencerenin nasıl
-açılacağını belirler:
+görünür (headed) bir tarayıcı penceresinde yapılır. `MIDAS_LOGIN_WINDOW`
+giriş penceresinin nasıl açılacağını belirler:
 
 | Değer | Davranış |
 | --- | --- |
-| `hidden` (varsayılan) | Chromium XWayland'da (`--ozone-platform=x11`) `mcp-midas-login` sınıfıyla açılır. KDE Plasma'da KWin'e geçici bir betik yüklenir: betik yalnız bu sınıftaki pencereyi küçültür, ekran dışına alır, saydam yapar ve görev çubuğundan gizler; giriş bitince kaldırılır. KWin yoksa pencere CDP ile simge durumuna küçültülür. Form gönderilince masaüstüne "Telefonundaki Midas bildirimini onayla" bildirimi (`notify-send`) düşer. Doğrulama 30 sn içinde kendiliğinden geçmezse pencere öne getirilir ve bildirimle haber verilir. |
+| `hidden` (varsayılan) | Tarayıcı XWayland'da (`MOZ_ENABLE_WAYLAND=0`, `GDK_BACKEND=x11`) `mcp-midas-login` sınıfıyla açılır. KDE Plasma'da KWin'e geçici bir betik yüklenir: betik yalnız bu sınıftaki pencereyi küçültür, ekran dışına alır, saydam yapar ve görev çubuğundan gizler; giriş bitince kaldırılır. KWin yoksa pencere görünür kalır. Form gönderilince masaüstüne "Telefonundaki Midas bildirimini onayla" bildirimi (`notify-send`) düşer. Doğrulama 30 sn içinde kendiliğinden geçmezse pencere öne getirilir ve bildirimle haber verilir. |
 | `visible` | Eski davranış: normal, görünür tarayıcı penceresi. |
-| `headless` | Deneysel. Form tam Chromium'un yeni başsız kipiyle doldurulur. Turnstile 20 sn içinde geçmezse form **gönderilmeden** (telefona bildirim gitmeden) `hidden` kipine düşülür. |
+| `headless` | Deneysel. Form başsız tarayıcıda doldurulur. Turnstile 20 sn içinde geçmezse form **gönderilmeden** (telefona bildirim gitmeden) `hidden` kipine düşülür. |
 
 `MIDAS_LOGIN_METHOD=sms` ikinci adımı telefon bildiriminden SMS koduna çevirir. Bildirim
 onayının "geçersiz imza" verdiği hesaplar için. Mobil onay ekranında "SMS ile giriş yap"
@@ -357,7 +357,7 @@ düşmez. `--local` dosyayı yok sayıp yerel kipe geçer.
 **Emir komutları.** `buy`, `sell`, `modify` ve `cancel` önce yalnız okuma araçlarıyla bir önizleme
 basar ve hiçbir şey göndermez. Göndermek için aynı komut `--confirm` ile çalıştırılır.
 `--confirm` onay değildir: emri sunucuya iletir, sunucu emri Midas'tan yeniden çözüp masaüstü
-penceresinde (ya da açıksa telefonda) senden ayrıca onay ister. Komut emir isteğini yinelemez;
+penceresinde senden ayrıca onay ister. Komut emir isteğini yinelemez;
 reddedilen ya da zaman aşımına uğrayan emir için yeni çağrı yeni onay ister. Sunucuda emir araçları
 kapalıysa komut bunu söyler.
 
@@ -479,7 +479,7 @@ oturum çerezleri kendiliğinden eklenir. Belgelenmemiş iç uç noktalara dayan
 Midas bir değişiklik yaptığında haber vermeden bozulabilir.
 
 Atlas kimliği `access_token` (~15 dk) ve `refresh_token` (24 sa) çerezlerinde tutar ve
-Chromium bunları profile yazmaz; bu yüzden oturum her başarılı açılıştan sonra, canlı tutma
+tarayıcı bunları profile yazmaz; bu yüzden oturum her başarılı açılıştan sonra, canlı tutma
 turlarında ve kapanışta `storageState()` ile saklanır. Açık sayfa `access_token`'ı süresi
 dolmadan bir dakika önce kendisi yeniler; yenileme `refresh_token`'ı değiştirmez ve süresini
 uzatmaz (bitiş, girişten 24 saat sonrasında sabit kalır). 401/403 alan bir okuma isteği paylaşılan giriş akışından

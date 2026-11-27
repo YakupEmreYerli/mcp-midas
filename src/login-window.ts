@@ -25,7 +25,7 @@ const M = defineMessages(
 
 /**
  * Giriş gerektiğinde tarayıcının nasıl açılacağı.
- * - `hidden`: görünür (headed) Chromium XWayland'da açılır, KWin betiği onu küçültür,
+ * - `hidden`: görünür (headed) tarayıcı XWayland'da açılır, KWin betiği onu küçültür,
  *   ekran dışına alır, görev çubuğundan gizler. Varsayılan.
  * - `visible`: eski davranış; normal görünür pencere.
  * - `headless`: giriş formu başsız doldurulur. Cloudflare Turnstile doğrulaması başsız
@@ -35,7 +35,7 @@ export type LoginWindowMode = "hidden" | "visible" | "headless";
 
 export const LOGIN_WINDOW_MODES: readonly LoginWindowMode[] = ["hidden", "visible", "headless"];
 
-/** Chromium'a `--class` ile verilen X11 WM_CLASS; KWin betiği yalnız bu pencereye dokunur. */
+/** Tarayıcıya `--class` ile verilen X11 WM_CLASS; KWin betiği yalnız bu pencereye dokunur. */
 export const LOGIN_WINDOW_CLASS = "mcp-midas-login";
 
 export const DEFAULT_KEEPALIVE_HOURS = 4;
@@ -135,13 +135,13 @@ export function parseKeepAliveMs(value: string | undefined): number {
 }
 
 /**
- * `hidden` modda Chromium'a eklenen argümanlar. Wayland'da istemci pencere konumunu
+ * `hidden` modda tarayıcıya eklenen argüman ve ortam. Wayland'da istemci pencere konumunu
  * belirleyemez ve KWin betiği `resourceClass`'ı yalnız X11 penceresinde `--class` ile
- * alabilir; bu yüzden pencere XWayland'da açılır. DISPLAY yoksa ek argüman verilmez.
+ * alabilir; bu yüzden Firefox tabanlı tarayıcı XWayland'da açılır. DISPLAY yoksa ek bir şey verilmez.
  */
-export function hiddenLaunchArgs(env: NodeJS.ProcessEnv = process.env): string[] {
-  if (!env.DISPLAY) return [];
-  return ["--ozone-platform=x11", `--class=${LOGIN_WINDOW_CLASS}`];
+export function hiddenLaunch(env: NodeJS.ProcessEnv = process.env): { args: string[]; env: Record<string, string> } {
+  if (!env.DISPLAY) return { args: [], env: {} };
+  return { args: [`--class=${LOGIN_WINDOW_CLASS}`], env: { MOZ_ENABLE_WAYLAND: "0", GDK_BACKEND: "x11" } };
 }
 
 /** Giriş penceresini küçültür, ekran dışına alır, saydam yapar, görev çubuğundan gizler. */

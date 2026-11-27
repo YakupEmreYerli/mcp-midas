@@ -1,3 +1,4 @@
+
 /**
  * Giriş akışının iz ve hata yardımcıları. Midas onayı aldıktan sonra Atlas kodu token'a çeviremezse
  * sayfa `/login?error=sso_failed&error_status=…&error_ref=…` adresine döner; bu tanınmazsa akış
@@ -49,4 +50,35 @@ export function controlLabels(texts: string[]): string[] {
     .map((text) => text.replace(/\s+/g, " ").trim().replace(/\d/g, "•").slice(0, 60))
     .filter(Boolean);
   return [...new Set(labels)];
+}
+
+/**
+ * Giriş izine giren yanıt gövdesi: JWT, 40+ karakterlik gizli dizi (kod, verifier) ve 7+ haneli
+ * rakam dizisi (telefon) maskelenir, 2000 karakterde kesilir. 32 haneli başvuru kimliği kalır.
+ */
+export function redactTrace(text: string): string {
+  return text
+    .replace(/eyJ[\w-]+\.[\w-]+\.[\w-]*/g, "[jwt]")
+    .replace(/[\w-]{40,}/g, "[gizli]")
+    .replace(/(?<![\w-])\+?\d{7,}(?![\w-])/g, "[rakam]")
+    .slice(0, 2000);
+}
+
+/** İstek gövdesinin yalnız anahtar adları (JSON nesnesi ya da form); değerler hiç dönmez. */
+export function jsonKeys(body: string | null): string[] {
+  if (!body) return [];
+  try {
+    const parsed: unknown = JSON.parse(body);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? Object.keys(parsed) : [];
+  } catch {
+    return body.includes("=") ? [...new URLSearchParams(body).keys()] : [];
+  }
+}
+
+/**
+ * Tarayıcıya bağlı çerezler (cf_clearance, __cf_bm, _cfuvid) başka bir tarayıcıda işe yaramaz; oturum geri
+ * yüklenirken bunlar düşer, tarayıcı kendininkini alır.
+ */
+export function withoutBrowserBoundCookies<T extends { name: string }>(cookies: T[]): T[] {
+  return cookies.filter((cookie) => !["cf_clearance", "__cf_bm", "_cfuvid"].includes(cookie.name));
 }

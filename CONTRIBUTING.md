@@ -35,7 +35,7 @@ Bağımlılıklar indikten sonra derleme ve testler birkaç saniye sürer. Çık
 ```
 
 Test sayısı zamanla artar; önemli olan `fail 0`. Sunucuyu gerçekten çalıştıracaksan ayrıca
-`npx playwright install chromium` gerekir. Onay penceresini denemek için sistem
+`npx camoufox-js fetch` gerekir. Onay penceresini denemek için sistem
 Python'unda PySide6 ve QtWebEngine gerekir; yoksa `kdialog` ya da `zenity` kullanılır.
 
 ## Ne üzerinde çalışılır
@@ -111,9 +111,12 @@ yoksa yapmak istediğini anlatan bir issue aç.
 - **Yönlendirme kök alan adıyladır.** Geçit `x-apollo-operation-name` başlığıyla yönlendirir
   ve değer işlem adı değil, belgedeki ilk kök alan olmalıdır. İlk seçim takma adsa
   `gql()` çağrısına gerçek alan adını açıkça ver.
-- **Başsız Chromium 403 alır.** Normal user agent ve client hint başlıkları olmadan geçit
-  isteği reddeder; `session.ts` bunları ayarlar.
-- **Kalıcı profil tek başına yetmez.** Atlas kimliği oturum çerezlerinde tutar; Chromium
+- **Bazı çerezler tarayıcıya bağlıdır.** Oturum geri yüklenirken bunlar düşürülür
+  (`withoutBrowserBoundCookies`).
+- **Sayfa içi betik `mw:` önekiyle çalışır.** Çerezli `fetch` ve localStorage okuması
+  sayfanın kendi bağlamında gitmeli (`session.pageScript`). SSO alanının depolaması temizlenmez,
+  Firefox'ta formu bozuyor.
+- **Kalıcı profil tek başına yetmez.** Atlas kimliği oturum çerezlerinde tutar; tarayıcı
   bunları diske yazmaz. Oturum `storageState()` ile `.midas-state.json` dosyasına alınır.
   Bayat görüntü yeni girişten önce silinmelidir, yoksa localStorage'ı taze token'ları ezer.
 - **Yalnız URL'ye bakıp oturumu açık sayma.** Profil, çerezler gittikten sonra da

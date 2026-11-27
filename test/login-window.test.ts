@@ -6,7 +6,7 @@ import {
   extractSmsCode,
   parseIdleCloseMs,
   resolveSmsCodeCommand,
-  hiddenLaunchArgs,
+  hiddenLaunch,
   kwinHideScript,
   kwinRevealScript,
   LOGIN_WINDOW_CLASS,
@@ -44,8 +44,11 @@ test("canlı tutma aralığı saatten milisaniyeye çevrilir, 0 döngüyü kapat
 });
 
 test("gizli pencere yalnız X11 ekranı varsa XWayland'a ve ayırt edici sınıfa zorlanır", () => {
-  assert.deepEqual(hiddenLaunchArgs({ DISPLAY: ":0" }), ["--ozone-platform=x11", `--class=${LOGIN_WINDOW_CLASS}`]);
-  assert.deepEqual(hiddenLaunchArgs({}), []);
+  assert.deepEqual(hiddenLaunch({ DISPLAY: ":0" }), {
+    args: [`--class=${LOGIN_WINDOW_CLASS}`],
+    env: { MOZ_ENABLE_WAYLAND: "0", GDK_BACKEND: "x11" },
+  });
+  assert.deepEqual(hiddenLaunch({}), { args: [], env: {} });
 });
 
 test("KWin betikleri yalnız giriş penceresinin sınıfına dokunur", () => {

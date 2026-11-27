@@ -37,15 +37,15 @@ Genel
   --local                   paketi bu süreçte çalıştır
   --json                    ham JSON
 
---confirm onay değildir: emri sunucuya iletir, onay yine masaüstü penceresinde ya da açıksa
-telefonda ayrıca istenir.`,
+--confirm onay değildir: emri sunucuya iletir, onay yine masaüstü penceresinde ayrıca
+istenir.`,
     unknownCommand: (name: string) => `Bilinmeyen komut: ${name}. Komutlar için: midas --help`,
     badArity: (usage: string) => `Kullanım: midas ${usage}`,
     flagNotHere: (flag: string, command: string) => `--${flag} seçeneği "${command}" komutunda kullanılmaz`,
     quantityWord: "adet",
     notInteger: (what: string, value: string) => `${what} tam sayı olmalı: "${value}"`,
     preview: "ÖNİZLEME, gönderilmedi",
-    sendHint: "Göndermek için aynı komutu --confirm ile çalıştırın. Onay ayrıca masaüstü penceresinde (ya da açıksa telefonda) istenir.",
+    sendHint: "Göndermek için aynı komutu --confirm ile çalıştırın. Onay ayrıca masaüstü penceresinde istenir.",
     ordersDisabled: (tool: string) =>
       `Bu sunucuda emir araçları kapalı (${tool} yok). Sunucuyu çalıştıran kişi MIDAS_ORDERS_ENABLED=1 ile açabilir.`,
     notExact: (asked: string, got: string) => `Sembol birebir eşleşmedi: ${asked} yerine ${got} bulundu. Emir için birebir Midas sembolü gerekir.`,
@@ -91,14 +91,14 @@ General
   --json                    raw JSON
 
 --confirm is not an approval: it passes the order to the server, which still asks for approval
-in the desktop window or, when enabled, on the phone.`,
+in the desktop window.`,
     unknownCommand: (name) => `Unknown command: ${name}. For the list: midas --help`,
     badArity: (usage) => `Usage: midas ${usage}`,
     flagNotHere: (flag, command) => `--${flag} isn't used with "${command}"`,
     quantityWord: "quantity",
     notInteger: (what, value) => `${what} must be a whole number: "${value}"`,
     preview: "PREVIEW, not sent",
-    sendHint: "To send it, run the same command with --confirm. Approval is still asked in the desktop window (or on the phone, when enabled).",
+    sendHint: "To send it, run the same command with --confirm. Approval is still asked in the desktop window.",
     ordersDisabled: (tool) =>
       `Order tools are off on this server (no ${tool}). Whoever runs the server can turn them on with MIDAS_ORDERS_ENABLED=1.`,
     notExact: (asked, got) => `The symbol didn't match exactly: found ${got} instead of ${asked}. Orders need the exact Midas symbol.`,

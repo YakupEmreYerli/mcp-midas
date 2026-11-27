@@ -58,9 +58,9 @@ export const config = {
   idleCloseMs: parseIdleCloseMs(env.MIDAS_IDLE_CLOSE_MINUTES),
   /** Birden çok hesapta hesabın okunur adı (MIDAS_ACCOUNT_LABEL); sonuçlarda ve onay penceresinde görünür. */
   accountLabel: parseAccountLabel(env.MIDAS_ACCOUNT_LABEL),
-  /** Chromium'un kalıcı profil klasörü (MIDAS_DATA_DIR verilirse onun altında). */
+  /** Tarayıcının kalıcı profil klasörü (MIDAS_DATA_DIR verilirse onun altında). */
   sessionDir: dataPaths.sessionDir,
-  /** Çerez + localStorage anlık görüntüsü; Chromium'un atacağı oturum çerezleri dahil. */
+  /** Çerez + localStorage anlık görüntüsü; tarayıcının atacağı oturum çerezleri dahil. */
   stateFile: dataPaths.stateFile,
   orderLogFile: dataPaths.orderLogFile,
   atlasUrl: `${ATLAS_ORIGIN}/`,

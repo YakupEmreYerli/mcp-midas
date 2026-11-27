@@ -72,7 +72,7 @@ app on your phone.
 git clone https://github.com/YakupEmreYerli/mcp-midas.git
 cd mcp-midas
 npm ci
-npx playwright install chromium
+npx camoufox-js fetch
 npm run build
 ```
 
@@ -199,13 +199,13 @@ language.
 
 Midas login asks for a notification approval on your phone, and the SSO form has a
 Cloudflare Turnstile check that a headless browser can't pass reliably, so login runs in a
-headed Chromium. `MIDAS_LOGIN_WINDOW` decides how that window opens:
+headed browser window. `MIDAS_LOGIN_WINDOW` decides how the login window opens:
 
 | Value | Behaviour |
 | --- | --- |
-| `hidden` (default) | Chromium opens on XWayland (`--ozone-platform=x11`) with the window class `mcp-midas-login`. On KDE Plasma a temporary KWin script minimizes only windows of that class, moves them off-screen, makes them transparent and hides them from the taskbar; it is removed when login ends. Without KWin the window is minimized over CDP. Once the form is sent, a desktop notification (`notify-send`) asks you to approve the Midas notification on your phone. If the check doesn't pass on its own within 30 s, the window comes forward and a notification tells you. |
+| `hidden` (default) | The browser opens on XWayland (`MOZ_ENABLE_WAYLAND=0`, `GDK_BACKEND=x11`) with the window class `mcp-midas-login`. On KDE Plasma a temporary KWin script minimizes only windows of that class, moves them off-screen, makes them transparent and hides them from the taskbar; it is removed when login ends. Without KWin the window stays visible. Once the form is sent, a desktop notification (`notify-send`) asks you to approve the Midas notification on your phone. If the check doesn't pass on its own within 30 s, the window comes forward and a notification tells you. |
 | `visible` | The old behaviour: a normal, visible browser window. |
-| `headless` | Experimental. Fills the form in full Chromium's new headless mode. If Turnstile doesn't pass within 20 s, it falls back to `hidden` **without sending** the form (no notification reaches your phone). |
+| `headless` | Experimental. Fills the form in the headless browser. If Turnstile doesn't pass within 20 s, it falls back to `hidden` **without sending** the form (no notification reaches your phone). |
 
 `MIDAS_LOGIN_METHOD=sms` switches the second step from the phone notification to an SMS
 code, for accounts where approving the notification fails with "geçersiz imza" (invalid
@@ -367,7 +367,7 @@ another account. `--local` ignores the file and uses local mode.
 **Order commands.** `buy`, `sell`, `modify` and `cancel` first print a preview built only with read
 tools and send nothing. To send, run the same command with `--confirm`. `--confirm` is not an
 approval: it passes the order to the server, which resolves it again from Midas and asks you
-separately in the desktop window (or on the phone, when enabled). The command never repeats an
+separately in the desktop window. The command never repeats an
 order request; after a refusal or a timeout, a new call needs a new approval. If the server has
 the order tools turned off, the command says so.
 
@@ -496,7 +496,7 @@ attached automatically. Because it relies on undocumented internal endpoints, it
 without warning when Midas changes something.
 
 Atlas keeps the identity in the `access_token` (~15 min) and `refresh_token` (24 h) cookies,
-and Chromium doesn't write them to the profile; that's why the session is saved with
+and the browser doesn't write them to the profile; that's why the session is saved with
 `storageState()` after every successful start, on keep-alive rounds and at shutdown. The open
 page renews the `access_token` itself a minute before it expires; renewing doesn't change the
 `refresh_token` or extend it (it still expires 24 hours after login). A read request that gets

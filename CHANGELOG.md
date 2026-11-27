@@ -44,6 +44,9 @@ See [RELEASES.md](RELEASES.md) for what each number promises and which versions 
 - **Text language follows the system locale.** Until now every message was Turkish. On a
   machine whose locale doesn't start with `tr`, messages, windows and tool descriptions are
   now English; set `MIDAS_LANG=tr` to keep Turkish.
+- **Login is more reliable.** The browser now comes from `camoufox-js`; run `npx camoufox-js fetch`
+  after upgrading (replaces `npx patchright install chromium`). `MIDAS_BROWSER` is removed. The first
+  start after upgrading signs in once.
 
 ### Fixed
 
@@ -51,6 +54,15 @@ See [RELEASES.md](RELEASES.md) for what each number promises and which versions 
   waited out the 3 minutes and wrongly reported the notification as not approved. It now stops right
   away with the status and Midas's reference, and every sign-in step (host and path only, never the
   query) is logged.
+- With `MIDAS_LOGIN_METHOD=sms`, the SMS option on Midas's mobile approval page is found whether it
+  is a button or a link and whatever its exact wording; if none shows up, the buttons on the page and
+  a screenshot are saved for diagnosis.
+- During login, requests to Midas are written to a masked trace (`.midas-login-trace.jsonl`, 0600):
+  method, host and path, status, redirect target, header and cookie names, and the body only for
+  errors and the token step, with tokens and codes masked. Query values, cookie values and
+  credentials are never written.
+- A restored session no longer carries over cookies bound to the previous browser.
+- A read request now waits long enough (10 min) for a login that is already in progress.
 
 ## [0.4.0] - 2026-11-21
 

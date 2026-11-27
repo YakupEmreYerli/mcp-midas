@@ -4,6 +4,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { forcedLanguage, LANGUAGES, language, messageTables, resolveLanguage } from "../src/i18n.js";
@@ -131,7 +132,7 @@ test("Python pencerelerinin (onay.py, sms.py) metin tablosu iki dilde aynı anah
     "-c",
     "import json, sys; sys.path.insert(0, sys.argv[1]); import onay, sms; " +
       "print(json.dumps({'onay': onay.METIN, 'sms': sms.METIN}))",
-    new URL("../onay", import.meta.url).pathname,
+    fileURLToPath(new URL("../onay", import.meta.url)),
   ]).toString();
   const tables = JSON.parse(out) as Record<string, Record<string, Record<string, string>>>;
   for (const [name, table] of Object.entries(tables)) {
@@ -147,7 +148,7 @@ function runPython(code: string, ...args: string[]): unknown {
     "-I",
     "-c",
     "import json, sys; sys.path.insert(0, sys.argv[1]); " + code,
-    new URL("../onay", import.meta.url).pathname,
+    fileURLToPath(new URL("../onay", import.meta.url)),
     ...args,
   ]).toString();
   return JSON.parse(out);

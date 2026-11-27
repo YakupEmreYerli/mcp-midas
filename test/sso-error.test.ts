@@ -41,3 +41,30 @@ test("sayfa denetimlerinin adları sadeleşir; rakamlar (telefon gibi) maskeleni
     "x".repeat(60),
   ]);
 });
+
+test("iz gövdesinde token, uzun gizli dizi ve uzun rakam dizisi maskelenir; başvuru kimliği kalır", () => {
+  const { redactTrace } = sso;
+  const jwt = ["eyJ" + "a".repeat(8), "b".repeat(8), "c".repeat(8)].join(".");
+  const secret = "a".repeat(45);
+  const ref = "0123456789abcdef0123456789abcdef";
+  const digits = "1".repeat(10);
+  const body = `{"error":"forbidden","ref":"${ref}","t":"${jwt}","v":"${secret}","n":"${digits}"}`;
+  assert.equal(redactTrace(body), `{"error":"forbidden","ref":"${ref}","t":"[jwt]","v":"[gizli]","n":"[rakam]"}`);
+  assert.equal(redactTrace("x".repeat(3000)).length <= 2000, true);
+});
+
+test("istek gövdesinden yalnız JSON anahtar adları alınır; JSON değilse boş", () => {
+  const { jsonKeys } = sso;
+  assert.deepEqual(jsonKeys('{"code":"gizli","codeVerifier":"gizli","redirectUri":"x"}'), ["code", "codeVerifier", "redirectUri"]);
+  assert.deepEqual(jsonKeys("code=gizli&state=gizli"), ["code", "state"]);
+  assert.deepEqual(jsonKeys(null), []);
+  assert.deepEqual(jsonKeys("[1,2]"), []);
+});
+
+test("geri yüklenen oturumdan tarayıcıya bağlı çerezler düşer, kimlik çerezleri kalır", () => {
+  const { withoutBrowserBoundCookies } = sso;
+  const names = withoutBrowserBoundCookies([
+    { name: "cf_clearance" }, { name: "__cf_bm" }, { name: "_cfuvid" }, { name: "access_token" }, { name: "refresh_token" }, { name: "FPID" },
+  ]).map((c) => c.name);
+  assert.deepEqual(names, ["access_token", "refresh_token", "FPID"]);
+});

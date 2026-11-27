@@ -26,7 +26,7 @@ export interface ToolCaller {
 
 /** Okuma araçları: oturum kapalıysa istek girişi bekler (bildirimde 3 dk, SMS'te 8 dk). */
 export const READ_TIMEOUT_MS = 600_000;
-/** Yazma araçları: onay penceresi 120 sn, telefon dalı 30 sn + telefon beklemesi; SDK varsayılanı (60 sn) yetmez. */
+/** Yazma araçları: onay penceresi 120 sn bekleyebilir; SDK varsayılanı (60 sn) yetmez. */
 export const WRITE_TIMEOUT_MS = 600_000;
 
 export function toToolResult(result: any): ToolResult {

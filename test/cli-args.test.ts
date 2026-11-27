@@ -12,8 +12,8 @@ test("konum argümanları ve bayraklar ayrılır", () => {
 });
 
 test("--ad=değer biçimi ve --hesap eşi", () => {
-  const parsed = parseArgs(["--hesap=anne", "portfolio"]);
-  assert.equal(parsed.flags.account, "anne");
+  const parsed = parseArgs(["--hesap=is", "portfolio"]);
+  assert.equal(parsed.flags.account, "is");
   assert.deepEqual(parsed.positionals, ["portfolio"]);
 });
 

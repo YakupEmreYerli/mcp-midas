@@ -1,7 +1,7 @@
 {
   "name": "mcp-midas",
   "version": "0.4.0",
-  "description": "Midas aracı kurumunun Atlas web uygulaması için resmî olmayan MCP sunucusu (Playwright ile)",
+  "description": "Midas aracı kurumunun Atlas web uygulaması için resmî olmayan MCP sunucusu (Camoufox ile)",
   "author": "Yakup Emre Yerli",
   "license": "MIT",
   "homepage": "https://github.com/YakupEmreYerli/mcp-midas#readme",
@@ -12,7 +12,14 @@
   "bugs": {
     "url": "https://github.com/YakupEmreYerli/mcp-midas/issues"
   },
-  "keywords": ["mcp", "model-context-protocol", "midas", "bist", "tefas", "playwright"],
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "midas",
+    "bist",
+    "tefas",
+    "camoufox"
+  ],
   "engines": {
     "node": ">=20"
   },
@@ -30,8 +37,9 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.0",
+    "camoufox-js": "^0.13.0",
     "dotenv": "^16.6.1",
-    "playwright": "^1.63.0",
+    "playwright-core": "~1.62.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {

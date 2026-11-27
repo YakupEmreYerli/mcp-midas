@@ -17,5 +17,6 @@
 __pycache__/
 *.pyc
 
-# Giriş sayfasının tanı ekran görüntüsü (SMS düğmesi bulunamayınca)
+# Giriş tanısı: sayfa ekran görüntüsü ve istek izi
 .midas-login-page.png
+.midas-login-trace.jsonl

@@ -1,0 +1,58 @@
+<!doctype html>
+<!-- Vitrin: midas komut satırı. Çıktılar komutun kendi biçimiyle (src/cli/format.ts), veriler uydurmadır.
+     Üret: node docs/brand/vitrin/render.mjs. Türkçe metin sayfada, İngilizcesi data-en ve data-en-html özniteliğinde. -->
+<html lang="tr"><meta charset="utf-8"><link rel="stylesheet" href="ortak.css"><style>
+body{padding:40px 48px 24px}
+.uc{border-radius:12px;background:#151A45;box-shadow:0 0 0 1px #262C63,0 30px 60px -30px rgb(0 0 0 / .7);overflow:hidden}
+.bas{display:flex;align-items:center;gap:10px;height:44px;padding:0 18px;border-bottom:1px solid #262C63;font-size:13px;color:#8E95C8}
+.bas svg{width:14px;height:14px}
+.bas b{color:#E1E4FF;font-weight:600}
+.rozet{margin-left:auto;height:22px;padding:0 9px;display:inline-flex;align-items:center;border-radius:4px;background:#0A0D2A;box-shadow:inset 0 0 0 1px #262C63;font:500 11px/1 "Geist Mono";color:#B6BBE3;letter-spacing:.04em}
+.ekran{padding:18px 22px 22px;background:#0D1133;font:400 12px/1.62 "Midas TL","Geist Mono";color:#B6BBE3}
+.ekran>div{white-space:pre}
+.p{color:#8C96F6;font-weight:600}
+.ekran>div:has(.p){color:#FFFFFF;font-weight:500}
+.f{color:#8C96F6}
+.h{color:#8E95C8;font-weight:500}
+.b{color:#FFFFFF;font-weight:600}
+.c{color:#8E95C8}
+.up{color:#22D67E}.dn{color:#FF5468}
+.imlec{display:inline-block;width:7px;height:14px;background:#8C96F6;vertical-align:-2px;margin-left:2px}
+.alt{margin-top:16px}
+</style>
+<div class="uc">
+  <div class="bas">
+    <svg viewBox="30 30 68 68" aria-hidden="true"><rect x="30" y="30" width="14" height="68" rx="7" fill="#fff"/><rect x="84" y="30" width="14" height="68" rx="7" fill="#fff"/><circle cx="64" cy="64" r="13" fill="#4959EA"/></svg>
+    <span data-en-html="terminal · <b>midas</b> command line">terminal · <b>midas</b> komut satırı</span>
+    <span class="rozet" data-en="ILLUSTRATIVE · MADE-UP DATA">TEMSİLÎ · UYDURMA VERİ</span>
+  </div>
+  <div class="ekran">
+      <div><span class="p">$</span> midas status</div>
+      <div data-en-html="Session: logged-in · refresh expires 2026-11-28 09:12 UTC">Oturum: logged-in · yenileme bitişi 2026-11-28 09:12 UTC</div>
+      <div>&nbsp;</div>
+      <div><span class="p">$</span> midas portfolio</div>
+      <div data-en-html="Portfolio: 148,320.55 TRY · day: 1,240.10 TRY (&lt;span class=&quot;up&quot;&gt;+0.84%&lt;/span&gt;)">Portföy: 148.320,55 TRY · gün: 1.240,10 TRY (<span class="up">+0,84%</span>)</div>
+      <div data-en-html="TR TRY: cash 6,410.00 · buying power 6,410.00 · withdrawable 6,410.00">TR TRY: nakit 6.410,00 · alım gücü 6.410,00 · çekilebilir 6.410,00</div>
+      <div data-en-html="US USD: cash 182.40 · buying power 182.40 · withdrawable 182.40">US USD: nakit 182,40 · alım gücü 182,40 · çekilebilir 182,40</div>
+      <div>&nbsp;</div>
+      <div><span class="p">$</span> midas positions</div>
+      <div data-en-html="&lt;span class=&quot;h&quot;&gt;SYMBOL    QTY   AVG COST  PRICE     VALUE          P/L %&lt;/span&gt;"><span class="h">SEMBOL    ADET  MALİYET   FİYAT     DEĞER          K/Z %</span></div>
+      <div data-en-html="THYAO     120   284.1000  301.2500  36,150.00 TRY  &lt;span class=&quot;up&quot;&gt;+6.04%&lt;/span&gt;">THYAO     120   284,1000  301,2500  36.150,00 TRY  <span class="up">+6,04%</span></div>
+      <div data-en-html="ASELS     210   112.3500  118.3000  24,843.00 TRY  &lt;span class=&quot;up&quot;&gt;+5.30%&lt;/span&gt;">ASELS     210   112,3500  118,3000  24.843,00 TRY  <span class="up">+5,30%</span></div>
+      <div data-en-html="KCHOL     75    189.6000  182.1000  13,657.50 TRY  &lt;span class=&quot;dn&quot;&gt;-3.96%&lt;/span&gt;">KCHOL     75    189,6000  182,1000  13.657,50 TRY  <span class="dn">-3,96%</span></div>
+      <div data-en-html="VOO (US)  1.25  512.4000  548.9000  686.13 USD     &lt;span class=&quot;up&quot;&gt;+7.12%&lt;/span&gt;">VOO (US)  1,25  512,4000  548,9000  686,13 USD     <span class="up">+7,12%</span></div>
+      <div>&nbsp;</div>
+      <div><span class="p">$</span> midas buy THYAO 40 --limit 298.75</div>
+      <div data-en-html="&lt;span class=&quot;b&quot;&gt;PREVIEW, not sent&lt;/span&gt;"><span class="b">ÖNİZLEME, gönderilmedi</span></div>
+      <div data-en-html="&lt;span class=&quot;up&quot;&gt;BUY&lt;/span&gt; THYAO (Türk Hava Yolları) · BIST"><span class="up">ALIŞ</span> THYAO (Türk Hava Yolları) · BIST</div>
+      <div data-en-html="quantity: 40 · type: LIMIT (set by the server) @ 298.7500">adet: 40 · tip: LIMIT (sunucu belirler) @ 298,7500</div>
+      <div data-en-html="current price: 301.2500 TRY · estimated value: 11,950.00 TRY">güncel fiyat: 301,2500 TRY · tahmini tutar: 11.950,00 TRY</div>
+      <div data-en-html="To send it, run the same command with --confirm. Approval is still asked in the desktop window.">Göndermek için aynı komutu --confirm ile çalıştırın. Onay ayrıca masaüstü penceresinde istenir.</div>
+      <div>&nbsp;</div>
+      <div><span class="p">$</span> midas buy THYAO 40 --limit 298.75 <span class="f">--confirm</span></div>
+      <div data-en-html="&lt;span class=&quot;c&quot;&gt;# the approval window opened on the desktop · default is No&lt;/span&gt;"><span class="c"># onay penceresi masaüstünde açıldı · varsayılan Hayır</span></div>
+      <div><span class="p">$</span> <span class="imlec"></span></div>
+  </div>
+</div>
+<p class="not alt" data-en-html="Illustrative: made-up portfolio and prices · <b>Unofficial</b> · Not investment advice">Temsilî görsel: portföy ve fiyatlar uydurmadır · <b>Resmî değildir</b> · Yatırım tavsiyesi değildir</p>
+</html>

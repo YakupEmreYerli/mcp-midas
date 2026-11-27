@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- midas-mcp banner, 1280×640: docs/banner.tr.png ve docs/banner.en.png bu dosyadan üretilir.
+<!-- midas-mcp banner, 1280×640: docs/banner.*.png ve sosyal önizleme docs/sosyal.*.png (body.sosyal) bu dosyadan üretilir.
      Üret: node docs/brand/banner/render.mjs
      Türkçe metin sayfada, İngilizcesi data-en (vurgulu başlıkta data-en-html) özniteliğinde. İki onay penceresi ayrı görsel olarak
      tutulmaz: render.mjs onları onay/onay.html'den çekip img[data-pencere] yuvalarına koyar. -->
@@ -17,7 +17,7 @@ body{width:1280px;height:640px;position:relative;overflow:hidden;font-family:"Ge
 /* Kapı: pencerelerin iki yanında logodaki gibi iki ince direk; aralarında emir bekler. */
 .direk{position:absolute;top:58px;bottom:58px;width:6px;border-radius:3px;background:linear-gradient(#262C63,#1B2052 70%,transparent)}
 .sol{position:absolute;left:72px;top:0;bottom:0;width:440px;display:flex;flex-direction:column;justify-content:center}
-.kilit{display:block;height:46px;width:auto}
+.kilit{display:block;height:46px;width:auto;align-self:flex-start}
 h1{margin-top:40px;font-weight:600;font-size:40px;line-height:1.12;letter-spacing:-.025em;color:#FFFFFF;text-wrap:balance}
 h1 em{font-style:normal;color:#8C96F6}
 .alt{margin-top:18px;font-size:17px;line-height:1.5;color:#8E95C8;max-width:390px}
@@ -28,6 +28,12 @@ h1 em{font-style:normal;color:#8C96F6}
 .pen{position:absolute;display:block;border-radius:10px;overflow:hidden;
   box-shadow:0 0 0 1px rgb(140 150 246 / .22),0 2px 6px rgb(0 0 0 / .35),0 40px 80px -24px rgb(0 0 0 / .8)}
 .pen img{display:block;width:100%;height:auto}
+/* Sosyal önizleme (docs/sosyal.*.png): kart küçük gösterildiği için yazı büyür, akış satırları çıkar. */
+.sosyal .sol{width:470px}
+.sosyal h1{font-size:44px}
+.sosyal .alt{font-size:19px;max-width:440px}
+.sosyal .akis{display:none}
+.sosyal .not{font-size:14px}
 </style>
 <div class="direk" style="left:574px"></div>
 <div class="direk" style="left:1262px"></div>
@@ -35,9 +41,9 @@ h1 em{font-style:normal;color:#8C96F6}
 <div class="sol">
   <img class="kilit" src="../kilit-koyu.svg" alt="midas-mcp">
   <h1 data-en-html="The agent drafts the order. It <em>waits at the gate</em> until you approve.">Ajan emri hazırlar. Emir, sen onaylayana kadar <em>kapıda bekler</em>.</h1>
-  <p class="alt" data-en="Unofficial MCP server for Midas Atlas: read portfolio, prices and trades; orders only through a desktop approval window.">Midas Atlas için resmî olmayan MCP sunucusu: portföy, fiyat ve işlemleri okur; emir yalnız masaüstü onay penceresinden geçer.</p>
+  <p class="alt" data-en="Unofficial MCP server and CLI for Midas Atlas: reads portfolio, prices and trades; orders only go through desktop approval.">Midas Atlas için resmî olmayan MCP sunucusu ve komut satırı aracı: portföy, fiyat ve işlemleri okur; emir yalnız masaüstü onay penceresinden geçer.</p>
   <div class="akis">
-    <div><b style="color:#8C96F6" data-en="agent">ajan</b>› place_order THYAO 40 @ 298.75</div>
+    <div><b style="color:#8C96F6" data-en="agent">ajan</b>› midas buy THYAO 40 --confirm</div>
     <div><b style="color:#E1E4FF" data-en="you">sen</b><span data-en="› awaiting approval">› onay bekleniyor</span><span class="imlec"></span></div>
   </div>
 </div>

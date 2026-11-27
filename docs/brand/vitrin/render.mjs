@@ -1,4 +1,4 @@
-// Vitrin görsellerini iki dilde üretir (docs/vitrin/): okuma.png ve emir-kapilari.png bu klasördeki
+// Vitrin görsellerini iki dilde üretir (docs/vitrin/): okuma.png, emir-kapilari.png ve komut-satiri.png bu klasördeki
 // HTML'den 2x, onay-iptal-acik/koyu.png onay penceresinden (docs/brand/pencere.mjs, örnek İPTAL
 // emri) 1x. İngilizceler aynı adla .en.png; HTML'deki İngilizce metin data-en/data-en-html'de.
 // Çalıştır (depo kökünden): node docs/brand/vitrin/render.mjs [çıktı-klasörü]
@@ -14,7 +14,7 @@ const tarayici = await tarayiciAc();
 
 const ek = (dil) => (dil === "en" ? ".en" : "");
 
-for (const dil of ["tr", "en"]) for (const ad of ["okuma", "emir-kapilari"]) {
+for (const dil of ["tr", "en"]) for (const ad of ["okuma", "emir-kapilari", "komut-satiri"]) {
   const sayfa = await tarayici.newPage({ viewport: { width: 880, height: 400 }, deviceScaleFactor: 2 });
   await sayfa.goto(pathToFileURL(path.join(burasi, `${ad}.html`)).href);
   await sayfa.evaluate((dil) => {

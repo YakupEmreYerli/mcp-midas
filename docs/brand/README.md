@@ -132,8 +132,10 @@ altın zeminde gece yazı; renk her zaman sözcük ve piktogramla gelir.
 
 | Dosya | Boyut | İçerik |
 | --- | --- | --- |
-| [`../banner.tr.png`](../banner.tr.png), [`../banner.en.png`](../banner.en.png) | 1280×640 | Banner: her README kendi dilindekini başta gösterir; GitHub sosyal önizlemesi `banner.tr.png` |
+| [`../banner.tr.png`](../banner.tr.png), [`../banner.en.png`](../banner.en.png) | 1280×640 | Banner: her README kendi dilindekini başta gösterir |
+| [`../sosyal.tr.png`](../sosyal.tr.png), [`../sosyal.en.png`](../sosyal.en.png) | 1280×640 | GitHub sosyal önizlemesi (`sosyal.tr.png`): banner'ın büyük yazılı, akış satırsız hâli |
 | [`../vitrin/okuma.png`](../vitrin/okuma.png), [`okuma.en.png`](../vitrin/okuma.en.png) | 1760×1144 | Temsilî ajan oturumu: işlem geçmişi ve portföy okuma |
+| [`../vitrin/komut-satiri.png`](../vitrin/komut-satiri.png), [`komut-satiri.en.png`](../vitrin/komut-satiri.en.png) | 1760×1334 | Temsilî terminal oturumu: `midas` komutları ve emir önizlemesi |
 | [`../vitrin/emir-kapilari.png`](../vitrin/emir-kapilari.png), [`emir-kapilari.en.png`](../vitrin/emir-kapilari.en.png) | 1760×820 | Bir emrin geçtiği beş kapı ve denetim günlüğü |
 | [`../vitrin/onay-iptal-koyu.png`](../vitrin/onay-iptal-koyu.png), [`-acik`](../vitrin/onay-iptal-acik.png), [`-koyu.en`](../vitrin/onay-iptal-koyu.en.png), [`-acik.en`](../vitrin/onay-iptal-acik.en.png) | 560×832 | Onay penceresi, iki tema, örnek veri |
 
@@ -146,7 +148,7 @@ kimlikleri örnektir.
 
 Hepsi depodaki kaynaktan üretilir, Playwright'ın kendi Chromium'uyla (depo kökünden):
 
-- Banner: [`banner/banner.html`](banner/banner.html) → `node docs/brand/banner/render.mjs`
+- Banner ve sosyal önizleme: [`banner/banner.html`](banner/banner.html) → `node docs/brand/banner/render.mjs`
 - Vitrin: [`vitrin/`](vitrin/) altındaki HTML → `node docs/brand/vitrin/render.mjs` (İngilizce
   metin, banner'daki gibi `data-en` ve `data-en-html` özniteliklerinde)
 - Onay pencereleri ayrı görsel olarak tutulmaz: [`pencere.mjs`](pencere.mjs)

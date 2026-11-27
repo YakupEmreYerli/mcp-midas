@@ -348,6 +348,8 @@ midas --help
 
 Output is short plain text; `--json` prints the tool's raw JSON.
 
+![Illustrative terminal session: midas status, portfolio and positions print short plain text; midas buy THYAO 40 --limit 298.75 only shows a preview, and the same command with --confirm opens the approval window on the desktop. The data is made up.](docs/vitrin/komut-satiri.en.png)
+
 **Two modes.** With no options the command runs the package in its own process (local mode;
 `.env` and the browser are on this machine). `--server http://127.0.0.1:8766/mcp` connects to a
 running HTTP service (remote mode); the token is read from the service's own token file by

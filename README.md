@@ -339,6 +339,8 @@ midas --help
 
 Çıktı kısa düz metindir; `--json` aracın ham JSON'unu basar.
 
+![Temsilî terminal oturumu: midas status, portfolio ve positions kısa düz metin basıyor; midas buy THYAO 40 --limit 298.75 yalnız önizleme gösteriyor, aynı komut --confirm ile çalışınca masaüstünde onay penceresi açılıyor. Veriler uydurmadır.](docs/vitrin/komut-satiri.png)
+
 **İki kip.** Seçenek vermezsen komut paketi kendi sürecinde çalıştırır (yerel kip; `.env` ve
 tarayıcı bu makinede). `--server http://127.0.0.1:8766/mcp` ile çalışan HTTP servisine bağlanır
 (uzak kip); jeton varsayılan olarak servisin kendi jeton dosyasından (`MIDAS_TOKEN_FILE`, yoksa

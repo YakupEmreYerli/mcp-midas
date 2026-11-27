@@ -1,4 +1,5 @@
-// Banner'ı iki dilde üretir: docs/banner.tr.png ve docs/banner.en.png (1280×640).
+// Banner'ı ve GitHub sosyal önizlemesini iki dilde üretir: docs/banner.{tr,en}.png ve docs/sosyal.{tr,en}.png
+// (1280×640; sosyal önizleme aynı sayfanın body.sosyal hâli, yazısı büyük).
 // Çalıştır (depo kökünden): node docs/brand/banner/render.mjs [çıktı-klasörü]
 //
 // Onay pencereleri ayrı görsel olarak tutulmaz: docs/brand/pencere.mjs onay/onay.html'i örnek
@@ -16,7 +17,7 @@ const cikti = path.resolve(process.argv[2] ?? path.join(depo, "docs"));
 
 const tarayici = await tarayiciAc();
 fs.mkdirSync(cikti, { recursive: true });
-for (const dil of ["tr", "en"]) {
+for (const dil of ["tr", "en"]) for (const ad of ["banner", "sosyal"]) {
   const pencereler = {};
   for (const tur of ["alis", "satis"]) {
     pencereler[tur] = (await pencereCek(tarayici, { dil, tur, tema: "koyu", olcek: 2 })).toString("base64");
@@ -24,7 +25,8 @@ for (const dil of ["tr", "en"]) {
   const sayfa = await tarayici.newPage({ viewport: { width: 1280, height: 640 }, deviceScaleFactor: 1 });
   await sayfa.goto(pathToFileURL(path.join(burasi, "banner.html")).href);
   const eksik = await sayfa.evaluate(
-    async ({ dil, pencereler }) => {
+    async ({ dil, pencereler, ad }) => {
+      document.body.classList.toggle("sosyal", ad === "sosyal");
       if (dil === "en") {
         document.documentElement.lang = "en";
         for (const oge of document.querySelectorAll("[data-en]")) oge.textContent = oge.dataset.en;
@@ -39,10 +41,10 @@ for (const dil of ["tr", "en"]) {
         (aile) => ![...document.fonts].some((f) => f.family.replaceAll('"', "") === aile && f.status === "loaded"),
       );
     },
-    { dil, pencereler },
+    { dil, pencereler, ad },
   );
   if (eksik.length) throw new Error(`banner'da yüklenmeyen font: ${eksik.join(", ")} (onay/fontlar/)`);
-  const dosya = path.join(cikti, `banner.${dil}.png`);
+  const dosya = path.join(cikti, `${ad}.${dil}.png`);
   await sayfa.screenshot({ path: dosya });
   await sayfa.close();
   console.log("yazıldı", path.relative(process.cwd(), dosya) || dosya);

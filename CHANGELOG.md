@@ -8,6 +8,8 @@ See [RELEASES.md](RELEASES.md) for what each number promises and which versions 
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-27
+
 ### Added
 
 - **`midas` command line.** The package also installs `midas`, so agents can use the tools without
@@ -153,5 +155,7 @@ desktop.
 - The TEFAS fund buy tool, because Midas Atlas does not offer fund buying.
 - Screening and backtest scripts the server did not use.
 
+[Unreleased]: https://github.com/YakupEmreYerli/mcp-midas/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/YakupEmreYerli/mcp-midas/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/YakupEmreYerli/mcp-midas/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/YakupEmreYerli/mcp-midas/releases/tag/v0.3.0

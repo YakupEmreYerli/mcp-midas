@@ -1,7 +1,7 @@
 {
   "name": "mcp-midas",
   "version": "0.5.0",
-  "description": "Midas aracı kurumunun Atlas web uygulaması için resmî olmayan MCP sunucusu (Camoufox ile)",
+  "description": "Midas aracı kurumunun Atlas web uygulaması için resmî olmayan MCP sunucusu ve komut satırı aracı",
   "author": "Yakup Emre Yerli",
   "license": "MIT",
   "homepage": "https://github.com/YakupEmreYerli/mcp-midas#readme",
@@ -18,7 +18,7 @@
     "midas",
     "bist",
     "tefas",
-    "camoufox"
+    "cli"
   ],
   "engines": {
     "node": ">=20"

@@ -9,7 +9,7 @@
 
 **The agent reads the board and drafts the order. The order never reaches Midas until you approve it.**
 
-An [MCP](https://modelcontextprotocol.io) server for [Atlas](https://atlas.getmidas.com/),
+An [MCP](https://modelcontextprotocol.io) server and `midas` command line tool for [Atlas](https://atlas.getmidas.com/),
 the web app of the Turkish brokerage Midas. It lets an AI assistant read your portfolio,
 positions, transaction history and market data. Order tools are off by default; when
 enabled, every order waits for your approval on the desktop.
@@ -56,6 +56,10 @@ enabled, every order waits for your approval on the desktop.
   saved, and if it drops the server recovers with a single login flow.
 - **stdio or HTTP.** Connect it straight to an MCP client, or run it as a local service that
   shares one session between several clients.
+- **Command line.** The same tools also work as commands such as `midas portfolio` or
+  `midas price THYAO`. Tool definitions don't load into every chat, so the agent spends fewer
+  tokens. Order commands print a preview first; approval still comes from the desktop window
+  ([Command line](#command-line)).
 - **Turkish and English.** Windows, notifications, tool descriptions and error messages come
   in both languages; the system locale or `MIDAS_LANG` picks one.
 
@@ -134,6 +138,8 @@ For clients that read a JSON configuration:
   }
 }
 ```
+
+To use the command line instead of MCP, `npm link` is enough; see [Command line](#command-line).
 
 **5. (Optional) Persistent HTTP service**
 

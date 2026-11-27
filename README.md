@@ -10,7 +10,7 @@
 **Ajan tahtayı okur, emri hazırlar. Emir, sen onaylamadan Midas'a gitmez.**
 
 Midas aracı kurumunun web uygulaması [Atlas](https://atlas.getmidas.com/) için bir
-[MCP](https://modelcontextprotocol.io) sunucusu. Bir AI asistanın portföyünü,
+[MCP](https://modelcontextprotocol.io) sunucusu ve `midas` komut satırı aracı. Bir AI asistanın portföyünü,
 pozisyonlarını, işlem geçmişini ve piyasa verisini okumasını sağlar. Emir araçları
 varsayılan kapalıdır; açıldığında da her emir masaüstünde senin onayını bekler.
 
@@ -55,6 +55,10 @@ varsayılan kapalıdır; açıldığında da her emir masaüstünde senin onayı
   sunucu tek bir giriş akışıyla kendini toparlar.
 - **stdio ya da HTTP.** Doğrudan MCP istemcisine bağlanır ya da yerelde kalıcı bir servis
   olarak birden çok istemciye aynı oturumu paylaştırır.
+- **Komut satırı.** Aynı araçlar `midas portfolio`, `midas price THYAO` gibi komutlarla da
+  çalışır. Araç tanımları her sohbette bağlama yüklenmez, ajan daha az token harcar. Emir
+  komutları önce yalnız önizleme basar, onay yine masaüstü penceresinden gelir
+  ([Komut satırı](#komut-satırı)).
 - **Türkçe ve İngilizce.** Pencereler, bildirimler, araç açıklamaları ve hata mesajları iki
   dilde; dil sistem yerelinden ya da `MIDAS_LANG` ile seçilir.
 
@@ -132,6 +136,9 @@ JSON yapılandırması okuyan istemciler için:
   }
 }
 ```
+
+MCP yerine komut satırını kullanacaksan `npm link` yeter; ayrıntı [Komut satırı](#komut-satırı)
+bölümünde.
 
 **5. (İsteğe bağlı) Kalıcı HTTP servisi**
 
